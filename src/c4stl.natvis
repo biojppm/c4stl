@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?> 
+
+<!--
+@see http://blogs.msdn.com/b/vcblog/archive/2013/06/28/using-visual-studio-2013-to-write-maintainable-native-visualizations-natvis.aspx?PageIndex=2
+@see https://code.msdn.microsoft.com/windowsdesktop/Writing-type-visualizers-2eae77a2
+@see http://blogs.msdn.com/b/vcblog/archive/2015/09/28/debug-visualizers-in-visual-c-2015.aspx
+-->
+
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- http://stackoverflow.com/questions/36883414/limit-display-of-char-in-natvis-file-to-specific-length -->
+  <Type Name="c4::sstream">
+    <DisplayString>{this->m_buf,[this->m_size]} (sz={this->m_size})</DisplayString>
+    <Expand>
+      <Synthetic Name="put">
+        <DisplayString>{this->m_buf,[this->m_putpos]} (sz={this->m_putpos})</DisplayString>
+      </Synthetic>
+      <Synthetic Name="get (unread)">
+        <DisplayString>{this->m_buf+this->m_getpos,[this->m_putpos-this->m_getpos]} (sz={this->m_putpos-this->m_getpos})</DisplayString>
+      </Synthetic>
+      <Synthetic Name="get (read)">
+        <DisplayString>{this->m_buf,[this->m_getpos]} (sz={this->m_getpos})</DisplayString>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
+
+

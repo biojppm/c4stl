@@ -1,0 +1,8 @@
+*.bck
+\#*
+
+.vs/
+
+build/
+install/
+
