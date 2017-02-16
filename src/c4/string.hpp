@@ -1944,26 +1944,6 @@ public:
 
 public:
 
-    static span< const C, size_type > peek_next_str(c4::sstream & ss)
-    {
-        auto sg = ss.spang();
-        size_type pos = 0;
-        // skip leading whitespace
-        while(ss.remg() >= pos && std::isspace(ss.peek(pos)))
-        {
-            ++pos;
-        }
-        // now count until the next whitespace or until the stream ends
-        size_type first = pos;
-        while(ss.remg() >= pos && ( ! std::isspace(ss.peek(pos))))
-        {
-            ++pos;
-        }
-        return sg.range(first, pos);
-    }
-
-public:
-
 #ifndef C4_STR_DISABLE_EXPR_TPL
 
     // expression templates
@@ -2052,9 +2032,25 @@ c4::sstream& operator<< (c4::sstream& os, string_impl< C, Size, Str, Sub > const
 template< typename C, typename Size, class Str, class Sub >
 c4::sstream& operator>> (c4::sstream& is, string_impl< C, Size, Str, Sub > & n)
 {
-    auto sg = n.peek_next_str(is);
+    Str::size_type pos = 0;
+    // skip leading whitespace
+    while(is.remg() >= pos && std::isspace(is.peek(pos)))
+    {
+        ++pos;
+    }
+    // bump the stream to the end of the whitespace
+    is.advg(pos);
+    // now count until the next whitespace or until the stream ends
+    pos = 0;
+    while(is.remg() > pos)
+    {
+        C c = is.peek(pos);
+        if(std::isspace(c) || c == '\0') break;
+        ++pos;
+    }
     Str& ncast = static_cast< Str& >(n);
-    ncast.resize(sg.size());
+    ncast.resize(pos);
+    if(pos == 0) return is;  // skip the rest if it's only spaces
     is.read(ncast.data(), ncast.size());
     ncast.__nullterminate();
     return is;

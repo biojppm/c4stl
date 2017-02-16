@@ -6,7 +6,7 @@ C4_BEGIN_NAMESPACE(c4)
 template< class C, class Sz, class Str, class SubStr >
 void PrintTo(string_impl< C, Sz, Str, SubStr > const& s, ::std::ostream* os)
 {
-    os.write(s.data(), s.size());
+    os->write(s.data(), s.size());
 }
 
 #define _C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(classname)   \

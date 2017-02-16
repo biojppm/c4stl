@@ -12,7 +12,7 @@ See also:
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
   <Type Name="c4::span&lt;*&gt;">
-    <DisplayString>{m_ptr} (sz={m_size})</DisplayString>
+    <DisplayString>{m_ptr,[m_size]} (sz={m_size})</DisplayString>
     <Expand>
       <Item Name="[size]">m_size</Item>
       <ArrayItems>
@@ -22,7 +22,7 @@ See also:
     </Expand>
   </Type>
   <Type Name="c4::spanrs&lt;*&gt;">
-    <DisplayString>{m_ptr} (sz={m_size}, cap={m_capacity})</DisplayString>
+    <DisplayString>{m_ptr,[m_size]} (sz={m_size}, cap={m_capacity})</DisplayString>
     <Expand>
       <Item Name="[size]">m_size</Item>
       <Item Name="[capacity]">m_capacity</Item>
@@ -34,7 +34,7 @@ See also:
   </Type>
   <!-- display span<char>/span<const char> as a string too -->
   <Type Name="c4::span&lt;char,*&gt;">
-    <DisplayString>{m_ptr} (sz={m_size})</DisplayString>
+    <DisplayString>{m_ptr,[m_size]} (sz={m_size})</DisplayString>
     <StringView>m_ptr,[m_size]</StringView>
     <Expand>
       <Item Name="[size]">m_size</Item>
@@ -45,7 +45,7 @@ See also:
     </Expand>
   </Type>
   <Type Name="c4::span&lt;const char,*&gt;">
-    <DisplayString>{m_ptr} (sz={m_size})</DisplayString>
+    <DisplayString>{m_ptr,[m_size]} (sz={m_size})</DisplayString>
     <StringView>m_ptr,[m_size]</StringView>
     <Expand>
       <Item Name="[size]">m_size</Item>
@@ -57,7 +57,7 @@ See also:
   </Type>
   <!-- display spanrs<char>/spanrs<const char> as a string too -->
   <Type Name="c4::spanrs&lt;char,*&gt;">
-    <DisplayString>{m_ptr} (sz={m_size}, cap={m_capacity})</DisplayString>
+    <DisplayString>{m_ptr,[m_size]} (sz={m_size}, cap={m_capacity})</DisplayString>
     <StringView>m_ptr,[m_size]</StringView>
     <Expand>
       <Item Name="[size]">m_size</Item>
@@ -69,7 +69,7 @@ See also:
     </Expand>
   </Type>
   <Type Name="c4::spanrs&lt;const char,*&gt;">
-    <DisplayString>{m_ptr} (sz={m_size}, cap={m_capacity})</DisplayString>
+    <DisplayString>{m_ptr,[m_size]} (sz={m_size}, cap={m_capacity})</DisplayString>
     <StringView>m_ptr,[m_size]</StringView>
     <Expand>
       <Item Name="[size]">m_size</Item>
