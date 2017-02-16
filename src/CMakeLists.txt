@@ -59,6 +59,7 @@ if(C4STL_BUILD_TESTS)
     add_executable(c4stl-test
         ../test/main.cpp
         c4/log.test.cpp
+        c4/error.test.cpp
         c4/memory_util.test.cpp
         c4/preprocessor.test.cpp
         c4/span.test.cpp
