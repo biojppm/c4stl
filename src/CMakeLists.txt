@@ -31,7 +31,7 @@ set(src
     c4/windows.hpp
 )
 
-create_source_group("src" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
+create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
 
 if(MSVC)
 	list(APPEND src c4stl.natvis)
