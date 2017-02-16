@@ -18,11 +18,13 @@ template< class T, class I > using cspanrs = spanrs< const T, I >;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** a crtp base for implementing span */
 template< class T, class I, class SpanImpl >
 class _span_crtp
 {
-#define _c4ptr ((SpanImpl*)this)->m_ptr
-#define _c4sz ((SpanImpl*)this)->m_size
+#define _c4this ((SpanImpl*)this)
+#define _c4ptr  ((SpanImpl*)this)->m_ptr
+#define _c4sz   ((SpanImpl*)this)->m_size
 
 public:
 
@@ -67,27 +69,27 @@ public:
     C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT
     {
         C4_XASSERT(first >= 0 && first < _c4sz);
-        return SpanImpl::_select(_c4ptr + first, _c4sz - first);
+        return _c4this->_select(_c4ptr + first, _c4sz - first);
     }
-    C4_ALWAYS_INLINE SpanImpl subspan(I first, I num = I(-1)) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE SpanImpl subspan(I first, I num) const C4_NOEXCEPT
     {
         C4_XASSERT(first >= 0 && first < _c4sz);
-        num = num == I(-1) ? _c4sz - num : num;
         C4_XASSERT(first + num >= 0 && first + num < _c4sz);
-        return SpanImpl::_select(_c4ptr + first, num);
+        return _c4this->_select(_c4ptr + first, num);
     }
 
     C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT
     {
         C4_XASSERT(num >= 0 && num < _c4sz);
-        return SpanImpl::_select(_c4ptr, num);
+        return _c4this->_select(_c4ptr, num);
     }
     C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT
     {
         C4_XASSERT(num >= 0 && num < _c4sz);
-        return SpanImpl::_select(_c4ptr + _c4sz - num, num);
+        return _c4this->_select(_c4ptr + _c4sz - num, num);
     }
 
+#undef _c4this
 #undef _c4ptr
 #undef _c4sz
 };
@@ -141,7 +143,7 @@ public:
 template< class T, class I >
 class spanrs : public _span_crtp<T, I, spanrs<T, I>>
 {
-    friend class _span_crtp<T, I, span<T, I>>;
+    friend class _span_crtp<T, I, spanrs<T, I>>;
 
     T *m_ptr;
     I m_size;
@@ -159,7 +161,7 @@ public:
 
     C4_ALWAYS_INLINE spanrs() : m_ptr{nullptr}, m_size{0}, m_capacity{0} {}
     C4_ALWAYS_INLINE spanrs(T *p, I sz) : m_ptr{p}, m_size{sz}, m_capacity{sz} {}
-    C4_ALWAYS_INLINE spanrs(T *p, I sz, I cap) : m_ptr{p}, m_size{sz}, m_capacity{sz} {}
+    C4_ALWAYS_INLINE spanrs(T *p, I sz, I cap) : m_ptr{p}, m_size{sz}, m_capacity{cap} {}
     template< size_t N >
     C4_ALWAYS_INLINE spanrs(T (&arr)[N]) : m_ptr{arr}, m_size{N}, m_capacity{N} {}
 
@@ -171,7 +173,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE span _select(T *p, I sz) const { return spanrs(p, sz, m_capacity); }
+    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const { return spanrs(p, sz, m_capacity - sz); }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 

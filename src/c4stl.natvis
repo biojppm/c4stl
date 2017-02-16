@@ -1,29 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?> 
 
 <!--
-@see http://blogs.msdn.com/b/vcblog/archive/2013/06/28/using-visual-studio-2013-to-write-maintainable-native-visualizations-natvis.aspx?PageIndex=2
+Very good intro:
 @see https://code.msdn.microsoft.com/windowsdesktop/Writing-type-visualizers-2eae77a2
+See also:
+@see http://blogs.msdn.com/b/vcblog/archive/2013/06/28/using-visual-studio-2013-to-write-maintainable-native-visualizations-natvis.aspx?PageIndex=2
 @see http://blogs.msdn.com/b/vcblog/archive/2015/09/28/debug-visualizers-in-visual-c-2015.aspx
+@see http://stackoverflow.com/questions/36883414/limit-display-of-char-in-natvis-file-to-specific-length
 -->
 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <!-- http://stackoverflow.com/questions/36883414/limit-display-of-char-in-natvis-file-to-specific-length -->
+  <Type Name="c4::span&lt;*&gt;">
+    <DisplayString>{m_ptr} (sz={m_size})</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="c4::spanrs&lt;*&gt;">
+    <DisplayString>{m_ptr} (sz={m_size}, cap={m_capacity})</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[capacity]">m_capacity</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <!-- display span<char>/span<const char> as a string too -->
+  <Type Name="c4::span&lt;char,*&gt;">
+    <DisplayString>{m_ptr} (sz={m_size})</DisplayString>
+    <StringView>m_ptr,[m_size]</StringView>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="c4::span&lt;const char,*&gt;">
+    <DisplayString>{m_ptr} (sz={m_size})</DisplayString>
+    <StringView>m_ptr,[m_size]</StringView>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <!-- display spanrs<char>/spanrs<const char> as a string too -->
+  <Type Name="c4::spanrs&lt;char,*&gt;">
+    <DisplayString>{m_ptr} (sz={m_size}, cap={m_capacity})</DisplayString>
+    <StringView>m_ptr,[m_size]</StringView>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[capacity]">m_capacity</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="c4::spanrs&lt;const char,*&gt;">
+    <DisplayString>{m_ptr} (sz={m_size}, cap={m_capacity})</DisplayString>
+    <StringView>m_ptr,[m_size]</StringView>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[capacity]">m_capacity</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
   <Type Name="c4::sstream">
-    <DisplayString>{this->m_buf,[this->m_size]} (sz={this->m_size})</DisplayString>
+    <DisplayString>{m_buf,[m_size]} (sz={m_size})</DisplayString>
+    <StringView>m_buf,[m_size]</StringView>
     <Expand>
       <Synthetic Name="put">
-        <DisplayString>{this->m_buf,[this->m_putpos]} (sz={this->m_putpos})</DisplayString>
+        <DisplayString>{m_buf,[m_putpos]} (sz={m_putpos})</DisplayString>
+        <StringView>m_buf,[m_putpos]</StringView>
       </Synthetic>
       <Synthetic Name="get (unread)">
-        <DisplayString>{this->m_buf+this->m_getpos,[this->m_putpos-this->m_getpos]} (sz={this->m_putpos-this->m_getpos})</DisplayString>
+        <DisplayString>{m_buf+m_getpos,[m_putpos-m_getpos]} (sz={m_putpos-m_getpos})</DisplayString>
+        <StringView>m_buf+m_getpos,[m_putpos-m_getpos]</StringView>
       </Synthetic>
       <Synthetic Name="get (read)">
-        <DisplayString>{this->m_buf,[this->m_getpos]} (sz={this->m_getpos})</DisplayString>
+        <DisplayString>{m_buf,[m_getpos]} (sz={m_getpos})</DisplayString>
+        <StringView>m_buf,[m_getpos]</StringView>
       </Synthetic>
     </Expand>
   </Type>
 
 </AutoVisualizer>
-
-
