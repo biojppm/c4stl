@@ -2050,7 +2050,6 @@ c4::sstream& operator>> (c4::sstream& is, string_impl< C, Size, Str, Sub > & n)
     }
     Str& ncast = static_cast< Str& >(n);
     ncast.resize(pos);
-    if(pos == 0) return is;  // skip the rest if it's only spaces
     is.read(ncast.data(), ncast.size());
     ncast.__nullterminate();
     return is;
