@@ -54,6 +54,24 @@ void report_warning_fl (const char *file, int line,                   const char
 void report_warning_flf(const char *file, int line, const char *func, const char *fmt, ...);
 
 
+//-----------------------------------------------------------------------------
+struct ScopedErrorCallback
+{
+    error_callback_type m_original;
+
+    explicit ScopedErrorCallback(error_callback_type cb)
+        : m_original(get_error_callback())
+    {
+        set_error_callback(cb);
+    }
+    ~ScopedErrorCallback()
+    {
+        set_error_callback(m_original);
+    }
+};
+
+
+//-----------------------------------------------------------------------------
 /** Raise an error, and report a printf-formatted message.
  * If an error callback was set, it will be called.
  * @see set_error_callback() */
@@ -136,6 +154,8 @@ void report_warning_flf(const char *file, int line, const char *func, const char
 // Common error conditions
 #define C4_NOT_IMPLEMENTED() C4_ERROR("NOT IMPLEMENTED")
 #define C4_NOT_IMPLEMENTED_MSG(msg, ...) C4_ERROR("NOT IMPLEMENTED: " msg, ## __VA_ARGS__)
+#define C4_NOT_IMPLEMENTED_IF(condition) if(C4_UNLIKELY(condition)) { C4_ERROR("NOT IMPLEMENTED"); }
+#define C4_NOT_IMPLEMENTED_IF_MSG(condition, msg, ...) if(C4_UNLIKELY(condition)) { C4_ERROR("NOT IMPLEMENTED: " msg, ## __VA_ARGS__); }
 
 #define C4_NEVER_REACH() C4_UNREACHABLE(); C4_ERROR("never reach this point")
 #define C4_NEVER_REACH_MSG(msg, ...) C4_UNREACHABLE(); C4_ERROR("never reach this point: " msg, ## __VA_ARGS__)
