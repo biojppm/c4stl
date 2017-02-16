@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 project(c4stl-extern)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
 include(ExternalProject)
 include(ExternalProjectUtils)
 

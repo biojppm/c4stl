@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.6)
-project(c4stl)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -31,6 +30,8 @@ set(src
     c4/types.hpp
     c4/windows.hpp
 )
+
+create_source_group("src" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
 
 if(MSVC)
 	list(APPEND src c4stl.natvis)
