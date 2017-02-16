@@ -55,6 +55,7 @@ void report_warning_flf(const char *file, int line, const char *func, const char
 
 
 //-----------------------------------------------------------------------------
+/** RAII sets the error callback inside a scope. */
 struct ScopedErrorCallback
 {
     error_callback_type m_original;
@@ -95,6 +96,7 @@ struct ScopedErrorCallback
 #endif
 
 
+//-----------------------------------------------------------------------------
 /** Report a warning with a printf-formatted message. */
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
 
@@ -114,24 +116,7 @@ struct ScopedErrorCallback
 #endif
 
 
-/** Check that a condition is true, or raise an error when not
- *  true. Unlike C4_ASSERT, this check is not omitted in non-debug
- *  builds.
- *  @see C4_ASSERT */
-#define C4_CHECK(cond)                          \
-    if(C4_UNLIKELY(!(cond)))                    \
-    {                                           \
-        C4_ERROR("check failed: %s", #cond);    \
-    }
-
-/** like C4_CHECK(), and additionally log a printf-style message.
- * @see C4_CHECK */
-#define C4_CHECK_MSG(cond, fmt, ...)                                \
-    if(C4_UNLIKELY(!(cond)))                                        \
-    {                                                               \
-        C4_ERROR("check failed: %s\n" fmt, #cond, ## __VA_ARGS__);  \
-    }
-
+//-----------------------------------------------------------------------------
 // assertions - only in debug builds
 #ifdef NDEBUG // turn off assertions
 #   define C4_ASSERT(cond)
@@ -151,6 +136,27 @@ struct ScopedErrorCallback
 #   define C4_XASSERT_MSG(cond, fmt, ...)
 #endif
 
+
+//-----------------------------------------------------------------------------
+/** Check that a condition is true, or raise an error when not
+ *  true. Unlike C4_ASSERT, this check is not omitted in non-debug
+ *  builds.
+ *  @see C4_ASSERT */
+#define C4_CHECK(cond)                          \
+    if(C4_UNLIKELY(!(cond)))                    \
+    {                                           \
+        C4_ERROR("check failed: %s", #cond);    \
+    }
+
+/** like C4_CHECK(), and additionally log a printf-style message.
+ * @see C4_CHECK */
+#define C4_CHECK_MSG(cond, fmt, ...)                                \
+    if(C4_UNLIKELY(!(cond)))                                        \
+    {                                                               \
+        C4_ERROR("check failed: %s\n" fmt, #cond, ## __VA_ARGS__);  \
+    }
+
+//-----------------------------------------------------------------------------
 // Common error conditions
 #define C4_NOT_IMPLEMENTED() C4_ERROR("NOT IMPLEMENTED")
 #define C4_NOT_IMPLEMENTED_MSG(msg, ...) C4_ERROR("NOT IMPLEMENTED: " msg, ## __VA_ARGS__)

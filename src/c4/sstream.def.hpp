@@ -19,8 +19,8 @@ void sstream::printp_(const char* fmt, T const& arg, MoreArgs&& ...more)
     }
     write(fmt, next); // write the string up to the {} token
     fmt += next + 2; // prepare next call: advance the string (2 for the token)
-    *this << arg; // write the argument
-    printp_(fmt, std::forward< MoreArgs >(more)...); // write more arguments
+    *this << arg; // print the argument
+    printp_(fmt, std::forward< MoreArgs >(more)...); // print more arguments
 }
 
 //-----------------------------------------------------------------------------
@@ -35,8 +35,8 @@ void sstream::scanp_(const char* fmt, T & arg, MoreArgs&& ...more)
     }
     fmt += next + 2; // prepare next call: advance the string (2 for the token)
     m_getpos += next; // advance the needle
-    *this >> arg; // write the argument
-    scanp_(fmt, std::forward< MoreArgs >(more)...); // write more arguments
+    *this >> arg; // scan the argument
+    scanp_(fmt, std::forward< MoreArgs >(more)...); // scan more arguments
 }
 
 C4_END_NAMESPACE(c4)
