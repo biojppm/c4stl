@@ -88,11 +88,11 @@ void Log::_print_prefix(Channel const& ch, LogBuffer &buf)
     uint8_t md = mode();
     if((md & SHOW_TIMESTAMP) && (ch.name_len > 0))
     {
-        buf.printf("%lfms[%s]: ", exetime()/1.e3, ch.name);
+        buf.printf("%lfms[%s]: ", Time::exetime().ms(), ch.name);
     }
     else if((md & SHOW_TIMESTAMP))
     {
-        buf.printf("%lfms: ", exetime()/1.e3, ch.name);
+        buf.printf("%lfms: ", Time::exetime().ms(), ch.name);
     }
     else if((ch.name_len > 0))
     {
