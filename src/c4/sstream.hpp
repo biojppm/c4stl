@@ -209,6 +209,11 @@ public:
     /// set the current read (ie, get) position
     C4_ALWAYS_INLINE void seekg(size_t g) { C4_CHECK(g <= m_size && g <= m_putpos); m_getpos = g; }
 
+    /// advance the current write (ie, put) position
+    C4_ALWAYS_INLINE void advp(size_t p) { C4_CHECK(m_size - m_putpos >= p); m_putpos += p; }
+    /// advance the current read (ie, get) position
+    C4_ALWAYS_INLINE void advg(size_t g) { C4_CHECK(m_putpos - m_getpos >= g); m_getpos += g; }
+
     /// remaining size for writing (ie, put), WITHOUT terminating null character
     C4_ALWAYS_INLINE size_t remp() const { C4_XASSERT(m_putpos <= m_size); return m_size - m_putpos; }
     /// remaining size for reading (ie, get)
