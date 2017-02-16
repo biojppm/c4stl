@@ -4,6 +4,7 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+//-----------------------------------------------------------------------------
 TEST(span, default_init)
 {
     span< int > s;
@@ -20,6 +21,7 @@ TEST(spanrs, default_init)
     EXPECT_EQ(s.data(), nullptr);
 }
 
+//-----------------------------------------------------------------------------
 TEST(span, empty_init)
 {
     int arr[10];
@@ -48,11 +50,11 @@ TEST(spanrs, empty_init)
     }
 }
 
-template< class SpanClass >
-void test_subspan()
+//-----------------------------------------------------------------------------
+TEST(span, subspan)
 {
     int arr[10];
-    SpanClass s(arr);
+    span< int > s(arr);
     C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
 
     auto ss = s.subspan(0, 5);
@@ -65,17 +67,92 @@ void test_subspan()
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), &arr[5]);
 }
-
-TEST(span, subspan)
-{
-    test_subspan< span< int > >();
-}
 TEST(spanrs, subspan)
 {
-    test_subspan< spanrs< int > >();
+    int arr[10];
+    spanrs< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
+
+    auto ss = s.subspan(0, 5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.subspan(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
 }
 
+//-----------------------------------------------------------------------------
+TEST(span, first)
+{
+    int arr[10];
+    span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
 
+    auto ss = s.first(0);
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.capacity(), 0);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.first(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), arr);
+}
+TEST(spanrs, first)
+{
+    int arr[10];
+    spanrs< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
+
+    auto ss = s.first(0);
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.first(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+}
+
+//-----------------------------------------------------------------------------
+TEST(span, last)
+{
+    int arr[10];
+    span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
+
+    auto ss = s.last(0);
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.capacity(), 0);
+    EXPECT_EQ(ss.data(), arr + s.size());
+
+    ss = s.last(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), arr + 5);
+}
+TEST(spanrs, last)
+{
+    int arr[10];
+    spanrs< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
+
+    auto ss = s.last(0);
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.capacity(), 0);
+    EXPECT_EQ(ss.data(), arr + s.size());
+
+    ss = s.last(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), arr + 5);
+}
+
+//-----------------------------------------------------------------------------
 template< class T >
 void test_fromArray()
 {

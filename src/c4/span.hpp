@@ -173,7 +173,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const { return spanrs(p, sz, m_capacity - sz); }
+    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const { return spanrs(p, sz, m_capacity - (p - m_ptr)); }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
