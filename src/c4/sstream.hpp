@@ -187,15 +187,15 @@ public:
 
 public:
 
-    /// get the current reading string (from tellg to tellp)
-    C4_ALWAYS_INLINE const char* strg() const { C4_XASSERT(m_getpos < m_putpos && m_buf[m_putpos] == '\0'); return m_buf + m_getpos; }
     /// get the full resulting string (from 0 to tellp)
-    C4_ALWAYS_INLINE const char* str() const { C4_XASSERT(m_buf[m_putpos] == '\0'); return m_buf; }
+    C4_ALWAYS_INLINE const char* c_str() const { C4_XASSERT(m_buf[m_putpos] == '\0'); return m_buf; }
+    /// get the current reading string (from tellg to tellp)
+    C4_ALWAYS_INLINE const char* c_strg() const { C4_XASSERT(m_getpos < m_putpos && m_buf[m_putpos] == '\0'); return m_buf + m_getpos; }
 
-    /// get the current reading span (from tellg to to tellp)
-    C4_ALWAYS_INLINE cspan_type spang() const { return cspan_type(m_buf + m_getpos, m_putpos - m_getpos); }
     /// get the full resulting span (from 0 to tellp)
     C4_ALWAYS_INLINE cspan_type span() const { return cspan_type(m_buf, m_putpos); }
+    /// get the current reading span (from tellg to to tellp)
+    C4_ALWAYS_INLINE cspan_type spang() const { return cspan_type(m_buf + m_getpos, m_putpos - m_getpos); }
 
 public:
 
@@ -279,7 +279,7 @@ private:
         catsep_(sep, std::forward<MoreArgs>(more)...);
     }
     template <class T, class... MoreArgs>
-    void uncatsep_(T const& arg, MoreArgs&& ...more)
+    void uncatsep_(T & arg, MoreArgs&& ...more)
     {
         char sep;
         *this >> arg >> sep;
@@ -287,22 +287,22 @@ private:
     }
 
     // terminate recursion for variadic templates
-    C4_ALWAYS_INLINE void printp_(const char* fmt)
-    {
-        write(fmt);
-    }
-    C4_ALWAYS_INLINE void scanp_(const char *fmt)
-    {
-        while(*fmt != '\0')
-        {
-            ++m_getpos;
-            ++fmt;
-        }
-    }
     C4_ALWAYS_INLINE void cat() {}
     C4_ALWAYS_INLINE void uncat() {}
     C4_ALWAYS_INLINE void catsep_(char) {}
     C4_ALWAYS_INLINE void uncatsep_() {}
+    C4_ALWAYS_INLINE void printp_(const char* fmt)
+    {
+        write(fmt);
+    }
+    void scanp_(const char *fmt)
+    {
+        while(*fmt != '\0')
+        {
+            ++m_getpos; // skip as many chars as those from the fmt
+            ++fmt;
+        }
+    }
 
 public:
 
@@ -312,21 +312,27 @@ public:
 
 //-----------------------------------------------------------------------------
 template< class T >
-C4_ALWAYS_INLINE
-sstream&
-operator<< (sstream& ss, T const& var)
+C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, T const& var)
 {
     using tag = fmt_tag< typename std::remove_const<T>::type >;
     ss.printf(tag::fmt, var);
     return ss;
 }
-template< class T, C4_REQUIRE_T(std::is_scalar< T >::value) >
-C4_ALWAYS_INLINE
-sstream&
-operator>> (sstream& ss, T & var)
+template< class T >
+C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, T & var)
 {
     using tag = fmt_tag< typename std::remove_const<T>::type >;
     ss.scanf____(tag::fmt_with_num_chars_arg, (void*)&var);
+    return ss;
+}
+C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, char const& var)
+{
+    ss.write(&var, 1);
+    return ss;
+}
+C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, char & var)
+{
+    ss.read(&var, 1);
     return ss;
 }
 
