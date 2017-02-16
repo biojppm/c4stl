@@ -8,11 +8,11 @@
 #ifndef C4_CPP
 #   ifdef _MSC_VER
 #       if _MSC_VER > 1900
-#           define C4_CPP 2017
-#           define C4_CPP_2017
+#           define C4_CPP 17
+#           define C4_CPP17
 #       elif _MSC_VER == 1900
-#           define C4_CPP 2015
-#           define C4_CPP_2015
+#           define C4_CPP 14
+#           define C4_CPP14
 #       else
 #           error C++ lesser than C++11 not supported
 #       endif
@@ -23,34 +23,72 @@
 #       if __cplusplus == 1
 #           error cannot handle __cplusplus==1
 #       elif __cplusplus >= 201700L // what is the macro???
-#           define C4_CPP 2017
-#           define C4_CPP_2017
+#           define C4_CPP 17
+#           define C4_CPP17
 #       elif __cplusplus >= 201402L
-#           define C4_CPP 2014
-#           define C4_CPP_2014
+#           define C4_CPP 14
+#           define C4_CPP14
 #       elif __cplusplus >= 201103L
-#           define C4_CPP 2011
-#           define C4_CPP_2011
+#           define C4_CPP 11
+#           define C4_CPP11
 #       elif __cplusplus >= 199711L
-#           define C4_CPP 1998
-#           define C4_CPP_1998
+#           define C4_CPP 98
+#           define C4_CPP98
 #           error C++ lesser than C++11 not supported
 #       endif
 #   endif
 #else
-#   ifdef C4_CPP == 2017
-#       define C4_CPP_2017
-#   elif defined(C4_CPP_2014)
-#       define C4_CPP_2014
-#   elif defined(C4_CPP_2011)
-#       define C4_CPP_2011
-#   elif defined(C4_CPP_1998)
-#       define C4_CPP_1998
+#   ifdef C4_CPP == 17
+#       define C4_CPP17
+#   elif C4_CPP == 14
+#       define C4_CPP14
+#   elif C4_CPP == 11
+#       define C4_CPP11
+#   elif C4_CPP == 98
+#       define C4_CPP98
 #       error C++ lesser than C++11 not supported
 #   else
-#       error C4_CPP must be one of 2017, 2014, 2011, 1998
+#       error C4_CPP must be one of 17, 14, 11, 98
 #   endif
 #endif
+
+#ifdef C4_CPP17
+#   define C4_CPP14
+#   define C4_CPP11
+#elif defined(C4_CPP14)
+#   define C4_CPP11
+#endif
+
+/** lifted from this answer: http://stackoverflow.com/a/20170989/5875572 */
+#ifndef _MSC_VER
+#  if __cplusplus < 201103
+#    define C4_CONSTEXPR11
+#    define C4_CONSTEXPR14
+//#    define C4_NOEXCEPT
+#  elif __cplusplus < 201402
+#    define C4_CONSTEXPR11 constexpr
+#    define C4_CONSTEXPR14
+//#    define C4_NOEXCEPT noexcept
+#  else
+#    define C4_CONSTEXPR11 constexpr
+#    define C4_CONSTEXPR14 constexpr
+//#    define C4_NOEXCEPT noexcept
+#  endif
+#else  // _MSC_VER
+#  if _MSC_VER < 1900
+#    define C4_CONSTEXPR11
+#    define C4_CONSTEXPR14
+//#    define C4_NOEXCEPT
+#  elif _MSC_VER < 2000
+#    define C4_CONSTEXPR11 constexpr
+#    define C4_CONSTEXPR14
+//#    define C4_NOEXCEPT noexcept
+#  else
+#    define C4_CONSTEXPR11 constexpr
+#    define C4_CONSTEXPR14 constexpr
+//#    define C4_NOEXCEPT noexcept
+#  endif
+#endif  // _MSC_VER
 
 //------------------------------------------------------------
 

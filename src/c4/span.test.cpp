@@ -51,6 +51,58 @@ TEST(spanrs, empty_init)
 }
 
 //-----------------------------------------------------------------------------
+template< class SpanClass >
+void test_fromArray()
+{
+    using T = SpanClass::value_type;
+    T arr1[10];
+    T arr2[20];
+
+    T a = 0;
+    for(auto &v : arr1) { v = a; a += T(1); }
+    for(auto &v : arr2) { v = a; a += T(1); }
+
+    {
+        SpanClass s(arr1);
+        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
+        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
+        EXPECT_EQ(s.data(), arr1);
+    }
+
+    {
+        SpanClass s = arr1;
+        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
+        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
+        EXPECT_EQ(s.data(), arr1);
+    }
+
+    {
+        SpanClass s = arr1;
+        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
+        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
+        EXPECT_EQ(s.data(), arr1);
+        s = arr2;
+        EXPECT_EQ(s.size(), C4_COUNTOF(arr2));
+        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr2));
+        EXPECT_EQ(s.data(), arr2);
+    }
+}
+
+TEST(span, fromArray)
+{
+    test_fromArray< span<char> >();
+    test_fromArray< span<int> >();
+    test_fromArray< span<uint32_t> >();
+}
+
+TEST(spanrs, fromArray)
+{
+    test_fromArray< span<char> >();
+    test_fromArray< span<int> >();
+    test_fromArray< span<uint32_t> >();
+}
+
+//-----------------------------------------------------------------------------
 TEST(span, subspan)
 {
     int arr[10];
@@ -153,72 +205,153 @@ TEST(spanrs, last)
 }
 
 //-----------------------------------------------------------------------------
-template< class T >
-void test_fromArray()
+TEST(span, rtrim)
 {
-    T arr1[10];
-    T arr2[20];
+    int arr[10];
+    span< int > s(arr);
+    auto ss = s;
 
-    T a = 0;
-    for(auto &v : arr1) { v = a; a += T(1); }
-    for(auto &v : arr2) { v = a; a += T(1); }
+    ss.rtrim(0);
+    EXPECT_EQ(ss.size(), s.size());
+    EXPECT_EQ(ss.capacity(), s.capacity());
+    EXPECT_EQ(ss.data(), arr);
 
-    {
-        span<T> s(arr1);
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.data(), arr1);
-    }
+    ss.rtrim(5);
+    EXPECT_EQ(ss.size(), s.size() - 5);
+    EXPECT_EQ(ss.capacity(), s.capacity() - 5);
+    EXPECT_EQ(ss.data(), arr);
+}
+TEST(spanrs, rtrim)
+{
+    int arr[10];
+    span< int > s(arr);
+    auto ss = s;
 
-    {
-        spanrs<T> s(arr1);
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.data(), arr1);
-    }
+    ss.rtrim(0);
+    EXPECT_EQ(ss.size(), s.size());
+    EXPECT_EQ(ss.capacity(), s.capacity());
+    EXPECT_EQ(ss.data(), arr);
 
-    {
-        span<T> s = arr1;
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.data(), arr1);
-    }
-
-    {
-        spanrs<T> s = arr1;
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.data(), arr1);
-    }
-
-    {
-        span<T> s = arr1;
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.data(), arr1);
-        s = arr2;
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr2));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr2));
-        EXPECT_EQ(s.data(), arr2);
-    }
-
-    {
-        spanrs<T> s = arr1;
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr1));
-        EXPECT_EQ(s.data(), arr1);
-        s = arr2;
-        EXPECT_EQ(s.size(), C4_COUNTOF(arr2));
-        EXPECT_EQ(s.capacity(), C4_COUNTOF(arr2));
-        EXPECT_EQ(s.data(), arr2);
-    }
+    ss.rtrim(5);
+    EXPECT_EQ(ss.size(), s.size() - 5);
+    EXPECT_EQ(ss.capacity(), s.capacity() - 5);
+    EXPECT_EQ(ss.data(), arr);
 }
 
-TEST(span, fromArray)
+//-----------------------------------------------------------------------------
+TEST(span, ltrim)
 {
-    test_fromArray< char >();
-    test_fromArray< int >();
-    test_fromArray< uint32_t >();
+    int arr[10];
+    span< int > s(arr);
+    auto ss = s;
+
+    ss.ltrim(0);
+    EXPECT_EQ(ss.size(), s.size());
+    EXPECT_EQ(ss.capacity(), s.capacity());
+    EXPECT_EQ(ss.data(), arr);
+
+    ss.ltrim(5);
+    EXPECT_EQ(ss.size(), s.size() - 5);
+    EXPECT_EQ(ss.capacity(), s.capacity() - 5);
+    EXPECT_EQ(ss.data(), arr + 5);
+}
+TEST(spanrs, ltrim)
+{
+    int arr[10];
+    span< int > s(arr);
+    auto ss = s;
+
+    ss.ltrim(0);
+    EXPECT_EQ(ss.size(), s.size());
+    EXPECT_EQ(ss.capacity(), ss.capacity());
+    EXPECT_EQ(ss.data(), arr);
+
+    ss.ltrim(5);
+    EXPECT_EQ(ss.size(), s.size() - 5);
+    EXPECT_EQ(ss.capacity(), s.size() - 5);
+    EXPECT_EQ(ss.data(), arr + 5);
+}
+
+//-----------------------------------------------------------------------------
+const char larrc[11] = "0123456789";
+const char rarrc[11] = "1234567890";
+const int larri[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+const int rarri[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+TEST(span_impl, eq)
+{
+    EXPECT_EQ(cspan  <char>(larrc), cspan  <char>(larrc));
+    EXPECT_EQ(cspanrs<char>(larrc), cspan  <char>(larrc));
+    EXPECT_EQ(cspan  <char>(larrc), cspanrs<char>(larrc));
+    EXPECT_EQ(cspanrs<char>(larrc), cspanrs<char>(larrc));
+
+    EXPECT_EQ(cspan  <int>(larri), cspan  <int>(larri));
+    EXPECT_EQ(cspanrs<int>(larri), cspan  <int>(larri));
+    EXPECT_EQ(cspan  <int>(larri), cspanrs<int>(larri));
+    EXPECT_EQ(cspanrs<int>(larri), cspanrs<int>(larri));
+}
+
+TEST(span_impl, lt)
+{
+    EXPECT_LT(cspan  <char>(larrc), cspan  <char>(rarrc));
+    EXPECT_LT(cspanrs<char>(larrc), cspan  <char>(rarrc));
+    EXPECT_LT(cspan  <char>(larrc), cspanrs<char>(rarrc));
+    EXPECT_LT(cspanrs<char>(larrc), cspanrs<char>(rarrc));
+
+    EXPECT_LT(cspan  <int>(larri), cspan  <int>(rarri));
+    EXPECT_LT(cspanrs<int>(larri), cspan  <int>(rarri));
+    EXPECT_LT(cspan  <int>(larri), cspanrs<int>(rarri));
+    EXPECT_LT(cspanrs<int>(larri), cspanrs<int>(rarri));
+}
+TEST(span_impl, gt)
+{
+    EXPECT_GT(cspan  <char>(rarrc), cspan  <char>(larrc));
+    EXPECT_GT(cspan  <char>(rarrc), cspanrs<char>(larrc));
+    EXPECT_GT(cspanrs<char>(rarrc), cspan  <char>(larrc));
+    EXPECT_GT(cspanrs<char>(rarrc), cspanrs<char>(larrc));
+
+    EXPECT_GT(cspan  <int>(rarri), cspan  <int>(larri));
+    EXPECT_GT(cspan  <int>(rarri), cspanrs<int>(larri));
+    EXPECT_GT(cspanrs<int>(rarri), cspan  <int>(larri));
+    EXPECT_GT(cspanrs<int>(rarri), cspanrs<int>(larri));
+}
+
+TEST(span_impl, ge)
+{
+    EXPECT_GE(cspan  <char>(rarrc), cspan  <char>(larrc));
+    EXPECT_GE(cspan  <char>(rarrc), cspanrs<char>(larrc));
+    EXPECT_GE(cspanrs<char>(rarrc), cspan  <char>(larrc));
+    EXPECT_GE(cspanrs<char>(rarrc), cspanrs<char>(larrc));
+    EXPECT_GE(cspan  <char>(larrc), cspan  <char>(larrc));
+    EXPECT_GE(cspan  <char>(larrc), cspanrs<char>(larrc));
+    EXPECT_GE(cspanrs<char>(larrc), cspan  <char>(larrc));
+    EXPECT_GE(cspanrs<char>(larrc), cspanrs<char>(larrc));
+    EXPECT_GE(cspan  <int >(rarri), cspan  <int >(larri));
+    EXPECT_GE(cspan  <int >(rarri), cspanrs<int >(larri));
+    EXPECT_GE(cspanrs<int >(rarri), cspan  <int >(larri));
+    EXPECT_GE(cspanrs<int >(rarri), cspanrs<int >(larri));
+    EXPECT_GE(cspan  <int >(larri), cspan  <int >(larri));
+    EXPECT_GE(cspan  <int >(larri), cspanrs<int >(larri));
+    EXPECT_GE(cspanrs<int >(larri), cspan  <int >(larri));
+    EXPECT_GE(cspanrs<int >(larri), cspanrs<int >(larri));
+}
+TEST(span_impl, le)
+{
+    EXPECT_LE(cspan  <char>(larrc), cspan  <char>(rarrc));
+    EXPECT_LE(cspanrs<char>(larrc), cspan  <char>(rarrc));
+    EXPECT_LE(cspan  <char>(larrc), cspanrs<char>(rarrc));
+    EXPECT_LE(cspanrs<char>(larrc), cspanrs<char>(rarrc));
+    EXPECT_LE(cspan  <char>(larrc), cspan  <char>(larrc));
+    EXPECT_LE(cspanrs<char>(larrc), cspan  <char>(larrc));
+    EXPECT_LE(cspan  <char>(larrc), cspanrs<char>(larrc));
+    EXPECT_LE(cspanrs<char>(larrc), cspanrs<char>(larrc));
+    EXPECT_LE(cspan  <int >(larri), cspan  <int >(rarri));
+    EXPECT_LE(cspanrs<int >(larri), cspan  <int >(rarri));
+    EXPECT_LE(cspan  <int >(larri), cspanrs<int >(rarri));
+    EXPECT_LE(cspanrs<int >(larri), cspanrs<int >(rarri));
+    EXPECT_LE(cspan  <int >(larri), cspan  <int >(larri));
+    EXPECT_LE(cspanrs<int >(larri), cspan  <int >(larri));
+    EXPECT_LE(cspan  <int >(larri), cspanrs<int >(larri));
+    EXPECT_LE(cspanrs<int >(larri), cspanrs<int >(larri));
 }
 
 C4_END_NAMESPACE(c4)

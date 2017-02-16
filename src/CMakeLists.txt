@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(src
     c4/allocator.hpp
+	c4/char_traits.hpp
     c4/common.hpp
     c4/compiler.hpp
     c4/config.hpp
@@ -11,6 +12,7 @@ set(src
     c4/ctor_dtor.hpp
     c4/error.cpp
     c4/error.hpp
+	c4/hash.hpp
     c4/language.hpp
     c4/language.cpp
     c4/log.cpp
@@ -25,6 +27,11 @@ set(src
     c4/sstream.hpp
     c4/sstream.def.hpp
     c4/sstream.cpp
+	c4/static_string.hpp
+	c4/string.cpp
+	c4/string.hpp
+	c4/string_fwd.hpp
+	c4/szconv.hpp
     c4/time.hpp
     c4/time.cpp
     c4/types.hpp
@@ -59,17 +66,21 @@ if(C4STL_BUILD_TESTS)
 
     add_executable(c4stl-test
         ../test/main.cpp
+		../test/c4/test.hpp
         c4/log.test.cpp
         c4/error.test.cpp
         c4/memory_util.test.cpp
         c4/preprocessor.test.cpp
         c4/span.test.cpp
         c4/sstream.test.cpp
+		c4/string.test.cpp c4/string.test.hpp
         c4/types.test.cpp
         )
 
     target_link_libraries(c4stl-test c4stl ${gtest_LIBRARIES})
-    target_include_directories(c4stl-test PUBLIC "${gtest_INCLUDE_DIRS}")
+    target_include_directories(c4stl-test PUBLIC
+		"${gtest_INCLUDE_DIRS}"
+		${CMAKE_CURRENT_SOURCE_DIR}/../test)
 endif(C4STL_BUILD_TESTS)
 
 #------------------------------------------------------------------------------
@@ -79,6 +90,4 @@ if(C4STL_BUILD_BENCHMARKS)
         PREFIX ${C4STL_EXTERN_DIR}
         INCLUDES benchmark/benchmark.h
         LIBRARIES benchmark)
-    message(STATUS "gbenchmark_LIBRARIES=${gbenchmark_LIBRARIES}")
-    message(STATUS "gbenchmark_INCLUDE_DIRS=${gbenchmark_INCLUDE_DIRS}")
 endif(C4STL_BUILD_BENCHMARKS)

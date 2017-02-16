@@ -2,7 +2,6 @@
 #define _C4_SPAN_HPP_
 
 #include "c4/config.hpp"
-#include "c4/storage/base.hpp"
 #include "c4/error.hpp"
 
 /** @todo add a paged_span */
@@ -12,8 +11,8 @@ C4_BEGIN_NAMESPACE(c4)
 template< class T, class I = uint32_t > class span;
 template< class T, class I = uint32_t > class spanrs;
 
-template< class T, class I > using cspan   = span< const T, I >;
-template< class T, class I > using cspanrs = spanrs< const T, I >;
+template< class T, class I = uint32_t > using cspan   = span< const T, I >;
+template< class T, class I = uint32_t > using cspanrs = spanrs< const T, I >;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -63,9 +62,6 @@ public:
     C4_ALWAYS_INLINE T&          operator[] (I i)       C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
     C4_ALWAYS_INLINE fastcref<T> operator[] (I i) const C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
 
-    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); _c4ptr += n; }
-    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); _c4sz -= n; }
-
     C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT
     {
         C4_XASSERT(first >= 0 && first < _c4sz);
@@ -76,6 +72,12 @@ public:
         C4_XASSERT(first >= 0 && first < _c4sz);
         C4_XASSERT(first + num >= 0 && first + num < _c4sz);
         return _c4this->_select(_c4ptr + first, num);
+    }
+    C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT
+    {
+        C4_XASSERT(first >= 0 && first < _c4sz);
+        C4_XASSERT(last >= 0 && last < _c4sz);
+        return _c4this->_select(_c4ptr + first, last - first);
     }
 
     C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT
@@ -89,10 +91,88 @@ public:
         return _c4this->_select(_c4ptr + _c4sz - num, num);
     }
 
+    C4_ALWAYS_INLINE bool same_span(_span_crtp const& that) const noexcept
+    {
+        return size() == that.size() && data() == that.data();
+    }
+    template< class I2, class Impl2 >
+    C4_ALWAYS_INLINE bool same_span(_span_crtp< T, I2, Impl2 > const& that) const C4_NOEXCEPT
+    {
+        return size() == that.size() && data() == that.data();
+    }
+
 #undef _c4this
 #undef _c4ptr
 #undef _c4sz
 };
+
+//-----------------------------------------------------------------------------
+template <class T, class Il, class Ir, class _Impll, class _Implr>
+inline constexpr bool operator==
+(
+    const _span_crtp<T, Il, _Impll>& l,
+    const _span_crtp<T, Ir, _Implr>& r
+)
+{
+#if C4_CPP >= 14
+    return std::equal(l.begin(), l.end(), r.begin(), r.end());
+#else
+    return l.same_span(r) && std::equal(l.begin(), l.end(), r.begin());
+#endif
+}
+
+template <class T, class Il, class Ir, class _Impll, class _Implr>
+inline constexpr bool operator!=
+(
+    const _span_crtp<T, Il, _Impll>& l,
+    const _span_crtp<T, Ir, _Implr>& r
+)
+{
+    return ! (l == r);
+}
+
+//-----------------------------------------------------------------------------
+template <class T, class Il, class Ir, class _Impll, class _Implr>
+inline constexpr bool operator<
+(
+    const _span_crtp<T, Il, _Impll>& l,
+    const _span_crtp<T, Ir, _Implr>& r
+)
+{
+    return std::lexicographical_compare(l.begin(), l.end(), r.begin(), r.end());
+}
+
+template <class T, class Il, class Ir, class _Impll, class _Implr>
+inline constexpr bool operator<=
+(
+    const _span_crtp<T, Il, _Impll>& l,
+    const _span_crtp<T, Ir, _Implr>& r
+)
+{
+    return ! (l > r);
+}
+
+//-----------------------------------------------------------------------------
+template <class T, class Il, class Ir, class _Impll, class _Implr>
+inline constexpr bool operator>
+(
+    const _span_crtp<T, Il, _Impll>& l,
+    const _span_crtp<T, Ir, _Implr>& r
+)
+{
+    return r < l;
+}
+
+//-----------------------------------------------------------------------------
+template <class T, class Il, class Ir, class _Impll, class _Implr>
+inline constexpr bool operator>=
+(
+    const _span_crtp<T, Il, _Impll>& l,
+    const _span_crtp<T, Ir, _Implr>& r
+)
+{
+    return !(l < r);
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -105,6 +185,8 @@ class span : public _span_crtp<T, I, span<T, I>>
 
     T *m_ptr;
     I m_size;
+
+    C4_ALWAYS_INLINE span _select(T *p, I sz) const { return span(p, sz); }
 
 public:
 
@@ -125,8 +207,6 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE span _select(T *p, I sz) const { return span(p, sz); }
-
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_size; }
 
     C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT
@@ -134,6 +214,10 @@ public:
         C4_XASSERT(sz <= m_size);
         m_size = sz;
     }
+
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; m_ptr += n; }
+
 };
 
 //-----------------------------------------------------------------------------
@@ -148,6 +232,8 @@ class spanrs : public _span_crtp<T, I, spanrs<T, I>>
     T *m_ptr;
     I m_size;
     I m_capacity;
+    
+    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const { return spanrs(p, sz, m_capacity - (p - m_ptr)); }
 
 public:
 
@@ -155,7 +241,6 @@ public:
 
     C4_ALWAYS_INLINE operator spanrs< const T, I > () const { return spanrs< const T, I >((T const*)m_ptr, m_size, m_capacity); }
     C4_ALWAYS_INLINE operator span< T, I > () const { return span< T, I >(m_ptr, m_size); }
-    C4_ALWAYS_INLINE operator span< const T, I > () const { return span< const T, I >((T const*)m_ptr, m_size); }
 
 public:
 
@@ -173,15 +258,16 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const { return spanrs(p, sz, m_capacity - (p - m_ptr)); }
-
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
     C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT
     {
-        C4_XASSERT(sz <= m_capacity);
+        C4_ASSERT(sz <= m_capacity);
         m_size = sz;
     }
+
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; m_ptr += n; m_capacity -= n; }
 
 };
 

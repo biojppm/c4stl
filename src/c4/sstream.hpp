@@ -270,7 +270,7 @@ private:
     template <class T, class... MoreArgs>
     void scanp_(const char* fmt, T & arg, MoreArgs&& ...more);
 
-    size_t nextarg_(const char *fmt);
+    static size_t nextarg_(const char *fmt) ;
 
     template <class T, class... MoreArgs>
     void catsep_(char sep, T const& arg, MoreArgs&& ...more)
@@ -311,14 +311,14 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-template< class T >
+template< class T, C4_REQUIRE_T(std::is_scalar< T >::value) >
 C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, T const& var)
 {
     using tag = fmt_tag< typename std::remove_const<T>::type >;
     ss.printf(tag::fmt, var);
     return ss;
 }
-template< class T >
+template< class T, C4_REQUIRE_T(std::is_scalar< T >::value) >
 C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, T & var)
 {
     using tag = fmt_tag< typename std::remove_const<T>::type >;

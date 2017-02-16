@@ -8,6 +8,14 @@
 //#define C4_ERROR_THROWS_EXCEPTION
 //#define C4_NO_ALLOC_DEFAULTS
 //#define C4_REDEFINE_CPPNEW
+
+#ifndef C4_STR_SIZE_TYPE
+#   define C4_STR_SIZE_TYPE size_t
+#endif
+
+/** Define this to disable string expression templates. */
+//#define C4_STR_DISABLE_EXPR_TPL
+
 #define C4_LOG_THREAD_SAFE
 #ifndef C4_LOG_MAX_CHANNELS
 #   define C4_LOG_MAX_CHANNELS 16
@@ -18,6 +26,7 @@
 #ifndef C4_LOG_BUFFER_REF_SIZE
 #   define C4_LOG_BUFFER_REF_SIZE 256
 #endif
+
 #ifndef C4_TIME_TYPE
 #   define C4_TIME_TYPE double
 #endif
