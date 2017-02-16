@@ -1,9 +1,8 @@
 #include "c4/error.hpp"
+#include "c4/sstream.hpp"
 #include "c4/log.hpp"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 
 #if defined(C4_XBOX) || (defined(C4_WIN) && defined(C4_MSVC))
 #   include "c4/windows.hpp"
@@ -33,6 +32,117 @@ void _handle_error()
 }
 
 static error_callback_type _error_callback = &_handle_error;
+
+//-----------------------------------------------------------------------------
+
+/** Defaults to abort() */
+error_callback_type get_error_callback()
+{
+    return _error_callback;
+}
+/** Set the function which is called when an error occurs. */
+void set_error_callback(error_callback_type cb)
+{
+    _error_callback = cb;
+}
+
+//-----------------------------------------------------------------------------
+void _log_errwarn(const char *what, const char *file, int line, const char* func,
+                  const char *fmt, va_list args)
+{
+    sstream ss;
+    ss.vprintf(fmt, args);
+    C4_LOGF_ERR("\n");
+    if(file == nullptr && line == 0 && func == nullptr)
+    {
+        C4_LOGF_ERR("%s: %s\n", what, ss.c_str());
+    }
+    else if(file != nullptr && line != 0 && func == nullptr)
+    {
+        C4_LOGF_ERR("%s: %s:%d: %s\n", what, file, line, ss.c_str());
+    }
+    else
+    {
+        C4_LOGF_ERR("%s: %s:%d: %s\n", what, file, line, ss.c_str());
+        C4_LOGF_ERR("%s: %s:%d: here: %s\n", what, file, line, func);
+    }
+    c4::log.flush();
+}
+
+//-----------------------------------------------------------------------------
+/** Raise an error, and report a printf-formatted message.
+ * If an error callback was set, it will be called.
+ * @see set_error_callback() */
+void report_error(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    _log_errwarn("ERROR", nullptr, 0, nullptr, fmt, args);
+    va_end(args);
+    auto fn = get_error_callback();
+    if(fn)
+    {
+        fn();
+    }
+}
+
+void report_warning(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    _log_errwarn("WARNING", nullptr, 0, nullptr, fmt, args);
+    va_end(args);
+}
+
+/** Raise an error, and report a printf-formatted message.
+ * If an error callback was set, it will be called.
+ * @see set_error_callback() */
+void report_error_fl(const char *file, int line, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    _log_errwarn("ERROR", file, line, nullptr, fmt, args);
+    va_end(args);
+    auto fn = get_error_callback();
+    if(fn)
+    {
+        fn();
+    }
+}
+
+/** Report a printf-formatted warning message. */
+void report_warning_fl(const char *file, int line, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    _log_errwarn("WARNING", file, line, nullptr, fmt, args);
+    va_end(args);
+}
+
+/** Raise an error, and report a printf-formatted message.
+ * If an error callback was set, it will be called.
+ * @see set_error_callback() */
+void report_error_flf(const char *file, int line, const char *func, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    _log_errwarn("ERROR", file, line, func, fmt, args);
+    va_end(args);
+    auto fn = get_error_callback();
+    if(fn)
+    {
+        fn();
+    }
+}
+
+/** Report a printf-formatted warning message. */
+void report_warning_flf(const char *file, int line, const char *func, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    _log_errwarn("ERROR", file, line, func, fmt, args);
+    va_end(args);
+}
 
 //-----------------------------------------------------------------------------
 bool is_debugger_attached()
@@ -77,138 +187,6 @@ bool is_debugger_attached()
     C4_NOT_IMPLEMENTED();
     return false;
 #endif
-}
-
-//-----------------------------------------------------------------------------
-
-/** Defaults to abort() */
-error_callback_type get_error_callback()
-{
-    return _error_callback;
-}
-/** Set the function which is called when an error occurs. */
-void set_error_callback(error_callback_type cb)
-{
-    _error_callback = cb;
-}
-
-//-----------------------------------------------------------------------------
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
-void report_error(const char *fmt, ...)
-{
-    char msg[256];
-    va_list args;
-    va_start(args, fmt);
-    int num = vsnprintf(msg, sizeof(msg), fmt, args);
-    va_end(args);
-    if(num > 0)
-    {
-        C4_LOGF_ERR("\nERROR: %s\n", msg);
-    }
-    C4_LOGF_ERR("\nERROR: ABORTING...\n");
-    c4::log.flush();
-    auto fn = get_error_callback();
-    if(fn)
-    {
-        fn();
-    }
-}
-
-void report_warning(const char *fmt, ...)
-{
-    char msg[256];
-    va_list args;
-    va_start(args, fmt);
-    int num = vsnprintf(msg, sizeof(msg), fmt, args);
-    va_end(args);
-    if(num > 0)
-    {
-        C4_LOGF_WARN("\nWARNING: %s\n", msg);
-    }
-    C4_LOGF_WARN("\nWARNING: ABORTING...\n");
-    c4::log.flush();
-}
-
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
-void report_error_fl(const char *file, int line, const char *fmt, ...)
-{
-    char msg[256];
-    va_list args;
-    va_start(args, fmt);
-    int num = vsnprintf(msg, sizeof(msg), fmt, args);
-    va_end(args);
-    if(num > 0)
-    {
-        C4_LOGF_ERR("\n%s:%d: ERROR: %s\n", file, line, msg);
-    }
-    C4_LOGF_ERR("\n%s:%d: ERROR: ABORTING...\n", file, line);
-    c4::log.flush();
-    auto fn = get_error_callback();
-    if(fn)
-    {
-        fn();
-    }
-}
-
-/** Report a printf-formatted warning message. */
-void report_warning_fl(const char *file, int line, const char *fmt, ...)
-{
-    char msg[256];
-    va_list args;
-    va_start(args, fmt);
-    int num = vsnprintf(msg, sizeof(msg), fmt, args);
-    va_end(args);
-    if(num > 0)
-    {
-        C4_LOGF_WARN("\n%s:%d: WARNING: %s\n", file, line, msg);
-    }
-    C4_LOGF_WARN("\n%s:%d: WARNING: ABORTING...\n", file, line);
-    c4::log.flush();
-}
-
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
-void report_error_flf(const char *file, int line, const char *func, const char *fmt, ...)
-{
-    char msg[256];
-    va_list args;
-    va_start(args, fmt);
-    int num = vsnprintf(msg, sizeof(msg), fmt, args);
-    va_end(args);
-    if(num > 0)
-    {
-        C4_LOGF_ERR("\n%s:%d: ERROR: %s\n", file, line, msg);
-    }
-    C4_LOGF_ERR("\n%s:%d: ERROR: %s\n", file, line, func);
-    C4_LOGF_ERR("\n%s:%d: ERROR: ABORTING...\n", file, line);
-    c4::log.flush();
-    auto fn = get_error_callback();
-    if(fn)
-    {
-        fn();
-    }
-}
-
-/** Report a printf-formatted warning message. */
-void report_warning_flf(const char *file, int line, const char *func, const char *fmt, ...)
-{
-    char msg[256];
-    va_list args;
-    va_start(args, fmt);
-    int num = vsnprintf(msg, sizeof(msg), fmt, args);
-    va_end(args);
-    if(num > 0)
-    {
-        C4_LOGF_WARN("\n%s:%d: WARNING: %s\n", file, line, msg);
-    }
-    C4_LOGF_WARN("\n%s:%d: WARNING: %s\n", file, line, func);
-    C4_LOGF_WARN("\n%s:%d: WARNING: ABORTING...\n", file, line);
-    c4::log.flush();
 }
 
 C4_END_NAMESPACE(c4)
