@@ -10,24 +10,20 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
-#ifdef C4_WIN
-C4_BEGIN_HIDDEN_NAMESPACE
-C4_END_HIDDEN_NAMESPACE
-#endif
-
 //-----------------------------------------------------------------------------
 /** a general-use time stamp in microseconds (usecs).
  * Although this is timed precisely, there may be some issues.
  * Eg, concurrent or heavy use may cause penalties.
+ * @see http://stackoverflow.com/questions/2414359/microsecond-resolution-timestamps-on-windows
  * @see https://www.strchr.com/performance_measurements_with_rdtsc
  * @see https://msdn.microsoft.com/en-us/library/windows/desktop/ee417693(v=vs.85).aspx */
 time_type currtime()
 {
 #ifdef C4_WIN
-    time_type ifreq = 0.;
-    LARGE_INTEGER freq = {};
+    time_type ifreq;
+    LARGE_INTEGER freq;
     QueryPerformanceFrequency(&freq);
-    ifreq = time_type(1.e9) / time_type(freq.QuadPart);
+    ifreq = time_type(1.e6) / time_type(freq.QuadPart);
     LARGE_INTEGER ts;
     QueryPerformanceCounter(&ts);
     time_type usecs = time_type(ts.QuadPart) * ifreq;
