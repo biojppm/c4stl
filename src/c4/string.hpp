@@ -114,15 +114,20 @@ C4_BEGIN_NAMESPACE(c4)
 //-----------------------------------------------------------------------------
 // string assignment operations valid irrespective of expression templates enabled
 
+C4_ALWAYS_INLINE size_t strsz(const char* s)
+{
+    return ::strlen(s);
+}
+C4_ALWAYS_INLINE size_t strsz(char* s)
+{
+    return ::strlen(s);
+}
 template< class StrType >
 C4_ALWAYS_INLINE size_t strsz(StrType const& s)
 {
     return s.size();
 }
-C4_ALWAYS_INLINE size_t strsz(const char* s)
-{
-    return ::strlen(s);
-}
+
 // what about wchar_t?
 
 //-----------------------------------------------------------------------------
@@ -396,7 +401,7 @@ struct _strWrapCharPtr : public _strExpr< C, _strWrapCharPtr< C > >
     }
 
     _strWrapCharPtr(const C* s)
-        : str(s), len(strlen(s))
+        : str(s), len(strsz(s))
     {
     }
 
@@ -851,67 +856,68 @@ protected:
 
 public:
 
-    C4_ALWAYS_INLINE const C* data () const { return _c4cthisSTR; }
-    C4_ALWAYS_INLINE       C* data ()       { return _c4thisSTR; }
+    C4_ALWAYS_INLINE const C* data () const noexcept { return _c4cthisSTR; }
+    C4_ALWAYS_INLINE       C* data ()       noexcept { return _c4thisSTR; }
 
-    C4_ALWAYS_INLINE bool       empty() const { return _c4cthisSZ == 0; }
-    C4_ALWAYS_INLINE size_type  size () const { return _c4cthisSZ; }
-    C4_ALWAYS_INLINE ssize_type ssize() const { return szconv< ssize_type >(_c4cthisSZ); }
+    C4_ALWAYS_INLINE bool       empty() const noexcept { return _c4cthisSZ == 0; }
+    C4_ALWAYS_INLINE size_type  size () const noexcept { return _c4cthisSZ; }
+    C4_ALWAYS_INLINE ssize_type ssize() const noexcept { return szconv< ssize_type >(_c4cthisSZ); }
 
-    C4_ALWAYS_INLINE C  front() const { C4_XASSERT(!empty()); return *_c4cthisSTR; }
-    C4_ALWAYS_INLINE C& front()       { C4_XASSERT(!empty()); return *_c4thisSTR; }
+    C4_ALWAYS_INLINE C  front() const C4_NOEXCEPT { C4_XASSERT(!empty()); return *_c4cthisSTR; }
+    C4_ALWAYS_INLINE C& front()       C4_NOEXCEPT { C4_XASSERT(!empty()); return *_c4thisSTR; }
 
-    C4_ALWAYS_INLINE C  back() const { C4_XASSERT(!empty()); return *(_c4cthisSTR + _c4thisSZ - 1); }
-    C4_ALWAYS_INLINE C& back()       { C4_XASSERT(!empty()); return *(_c4thisSTR + _c4thisSZ - 1); }
+    C4_ALWAYS_INLINE C  back() const C4_NOEXCEPT { C4_XASSERT(!empty()); return *(_c4cthisSTR + _c4thisSZ - 1); }
+    C4_ALWAYS_INLINE C& back()       C4_NOEXCEPT { C4_XASSERT(!empty()); return *(_c4thisSTR + _c4thisSZ - 1); }
 
 public:
 
     typedef C      *       iterator;
     typedef C const* const_iterator;
 
-    C4_ALWAYS_INLINE iterator begin() { return _c4thisSTR; }
-    C4_ALWAYS_INLINE iterator end()   { return _c4thisSTR + _c4thisSZ; }
+    C4_ALWAYS_INLINE iterator begin() noexcept { return _c4thisSTR; }
+    C4_ALWAYS_INLINE iterator end()   noexcept { return _c4thisSTR + _c4thisSZ; }
 
-    C4_ALWAYS_INLINE const_iterator begin() const { return _c4cthisSTR; }
-    C4_ALWAYS_INLINE const_iterator end()   const { return _c4cthisSTR + _c4cthisSZ; }
+    C4_ALWAYS_INLINE const_iterator begin() const noexcept { return _c4cthisSTR; }
+    C4_ALWAYS_INLINE const_iterator end()   const noexcept { return _c4cthisSTR + _c4cthisSZ; }
 
 public:
 
     C4_ALWAYS_INLINE bool nullterminated() const
     {
+        C4_ASSERT(_c4thisSZ < _c4this->capacity());
         return (_c4cthisSTR[_c4cthisSZ] == '\0');
     }
     /** @todo make this private */
     C4_ALWAYS_INLINE void __nullterminate()
     {
-        //C4_ASSERT(_c4thisSZ < _c4this->capacity());
+        C4_ASSERT(_c4thisSZ < _c4this->capacity());
         _c4thisSTR[_c4thisSZ] = '\0';
     }
 
 public:
 
-    C4_ALWAYS_INLINE C operator[] ( int8_t  i) const { C4_XASSERT(i >= 0 && i < ( int8_t )_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] ( int16_t i) const { C4_XASSERT(i >= 0 && i < ( int16_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] ( int32_t i) const { C4_XASSERT(i >= 0 && i < ( int32_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] ( int64_t i) const { C4_XASSERT(i >= 0 && i < ( int64_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] (uint8_t  i) const { C4_XASSERT(          i < (uint8_t )_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] (uint16_t i) const { C4_XASSERT(          i < (uint16_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] (uint32_t i) const { C4_XASSERT(          i < (uint32_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
-    C4_ALWAYS_INLINE C operator[] (uint64_t i) const { C4_XASSERT(          i < (uint64_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] ( int8_t  i) const C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int8_t )_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] ( int16_t i) const C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int16_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] ( int32_t i) const C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int32_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] ( int64_t i) const C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int64_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] (uint8_t  i) const C4_NOEXCEPT { C4_XASSERT(          i < (uint8_t )_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] (uint16_t i) const C4_NOEXCEPT { C4_XASSERT(          i < (uint16_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] (uint32_t i) const C4_NOEXCEPT { C4_XASSERT(          i < (uint32_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
+    C4_ALWAYS_INLINE C operator[] (uint64_t i) const C4_NOEXCEPT { C4_XASSERT(          i < (uint64_t)_c4cthisSZ); return *(_c4cthisSTR + i); }
 
-    C4_ALWAYS_INLINE C& operator[] ( int8_t  i) { C4_XASSERT(i >= 0 && i < ( int8_t )_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] ( int16_t i) { C4_XASSERT(i >= 0 && i < ( int16_t)_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] ( int32_t i) { C4_XASSERT(i >= 0 && i < ( int32_t)_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] ( int64_t i) { C4_XASSERT(i >= 0 && i < ( int64_t)_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] (uint8_t  i) { C4_XASSERT(          i < (uint8_t )_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] (uint16_t i) { C4_XASSERT(          i < (uint16_t)_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] (uint32_t i) { C4_XASSERT(          i < (uint32_t)_c4thisSZ); return *(_c4thisSTR + i); }
-    C4_ALWAYS_INLINE C& operator[] (uint64_t i) { C4_XASSERT(          i < (uint64_t)_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] ( int8_t  i) C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int8_t )_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] ( int16_t i) C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int16_t)_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] ( int32_t i) C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int32_t)_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] ( int64_t i) C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < ( int64_t)_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] (uint8_t  i) C4_NOEXCEPT { C4_XASSERT(          i < (uint8_t )_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] (uint16_t i) C4_NOEXCEPT { C4_XASSERT(          i < (uint16_t)_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] (uint32_t i) C4_NOEXCEPT { C4_XASSERT(          i < (uint32_t)_c4thisSZ); return *(_c4thisSTR + i); }
+    C4_ALWAYS_INLINE C& operator[] (uint64_t i) C4_NOEXCEPT { C4_XASSERT(          i < (uint64_t)_c4thisSZ); return *(_c4thisSTR + i); }
 
 public:
 
     /** count the number of characters whose value is C */
-    size_type count(C val) const
+    size_type count(C val) const noexcept
     {
         size_type num = 0, sz = _c4cthisSZ;
         for(size_type i = 0; i != sz; ++i)
@@ -924,7 +930,7 @@ public:
         return num;
     }
     /** count the number of characters whose value is C */
-    size_type count(C val, size_type first_char, size_type num_chars = npos) const
+    size_type count(C val, size_type first_char, size_type num_chars = npos) const C4_NOEXCEPT
     {
         size_type num = 0;
         C4_XASSERT(first_char >= 0 && first_char < sz);
@@ -1043,7 +1049,7 @@ public:
     size_type C4_ALWAYS_INLINE find(const C (&pat)[N], size_type pos = 0) const { return find(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find(C c, size_type pos = 0) const { return find(&c, 1, pos); }
     size_type C4_ALWAYS_INLINE find(string_impl const& that, size_type pos = 0) const { return find(_c4cthatSTR, _c4cthatSZ, pos); }
-    size_type C4_ALWAYS_INLINE find(const C *pat, size_type pos = 0) const { return find(pat, (size_type)strlen(pat), pos); }
+    size_type C4_ALWAYS_INLINE find(const C *pat, size_type pos = 0) const { return find(pat, (size_type)strsz(pat), pos); }
     size_type find(const C *pat, size_type len, size_type pos) const
     {
         if(empty()) return StrType::npos;
@@ -1075,7 +1081,7 @@ public:
     size_type C4_ALWAYS_INLINE find_first_of(const C (&pat)[N], size_type pos = 0) const { return find_first_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_first_of(C c, size_type pos = 0) const { return find_first_of(&c, 1, pos); }
     size_type C4_ALWAYS_INLINE find_first_of(string_impl const& that, size_type pos = 0) const { return find_first_of(_c4cthatSTR, _c4cthatSZ, pos); }
-    size_type C4_ALWAYS_INLINE find_first_of(const C *pat, size_type pos = 0) const { return find_first_of(pat, (size_type)strlen(pat), pos); }
+    size_type C4_ALWAYS_INLINE find_first_of(const C *pat, size_type pos = 0) const { return find_first_of(pat, (size_type)strsz(pat), pos); }
     size_type find_first_of(const C *pat, size_type len, size_type pos) const
     {
         if(empty()) return StrType::npos;
@@ -1097,7 +1103,7 @@ public:
     size_type C4_ALWAYS_INLINE find_first_not_of(const C (&pat)[N], size_type pos = 0) const { return find_first_not_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_first_not_of(C c, size_type pos = 0) const { return find_first_not_of(&c, 1, pos); }
     size_type C4_ALWAYS_INLINE find_first_not_of(string_impl const& that, size_type pos = 0) const { return find_first_not_of(_c4cthatSTR, _c4cthatSZ, pos); }
-    size_type C4_ALWAYS_INLINE find_first_not_of(const C *pat, size_type pos = 0) const { return find_first_not_of(pat, (size_type)strlen(pat), pos); }
+    size_type C4_ALWAYS_INLINE find_first_not_of(const C *pat, size_type pos = 0) const { return find_first_not_of(pat, (size_type)strsz(pat), pos); }
     size_type find_first_not_of(const C *pat, size_type len, size_type pos) const
     {
         if(empty()) return StrType::npos;
@@ -1126,7 +1132,7 @@ public:
     size_type C4_ALWAYS_INLINE find_last_of(const C (&pat)[N], size_type pos = StrType::npos) const { return find_last_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_last_of(C c, size_type pos = StrType::npos) const { return find_last_of(&c, 1, pos); }
     size_type C4_ALWAYS_INLINE find_last_of(string_impl const& that, size_type pos = StrType::npos) const { return find_last_of(_c4cthatSTR, _c4cthatSZ, pos); }
-    size_type C4_ALWAYS_INLINE find_last_of(const C *pat, size_type pos = StrType::npos) const { return find_last_of(pat, (size_type)strlen(pat), pos); }
+    size_type C4_ALWAYS_INLINE find_last_of(const C *pat, size_type pos = StrType::npos) const { return find_last_of(pat, (size_type)strsz(pat), pos); }
     size_type find_last_of(const C *pat, size_type len, size_type pos) const
     {
         if(empty()) return StrType::npos;
@@ -1152,7 +1158,7 @@ public:
     size_type C4_ALWAYS_INLINE find_last_not_of(const C (&pat)[N], size_type pos = StrType::npos) const { return find_last_not_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_last_not_of(C c, size_type pos = StrType::npos) const { return find_last_not_of(&c, 1, pos); }
     size_type C4_ALWAYS_INLINE find_last_not_of(string_impl const& that, size_type pos = StrType::npos) const { return find_last_not_of(_c4cthatSTR, _c4cthatSZ, pos); }
-    size_type C4_ALWAYS_INLINE find_last_not_of(const C *pat, size_type pos = StrType::npos) const { return find_last_not_of(pat, (size_type)strlen(pat), pos); }
+    size_type C4_ALWAYS_INLINE find_last_not_of(const C *pat, size_type pos = StrType::npos) const { return find_last_not_of(pat, (size_type)strsz(pat), pos); }
     size_type find_last_not_of(const C *pat, size_type len, size_type pos) const
     {
         if(empty()) return StrType::npos;
@@ -1185,7 +1191,7 @@ public:
     bool C4_ALWAYS_INLINE begins_with(const C (&pat)[N]) const { return begins_with(pat, N-1); }
     bool C4_ALWAYS_INLINE begins_with(C c) const { return begins_with(&c, 1); }
     bool C4_ALWAYS_INLINE begins_with(string_impl const& that) const { return begins_with(_c4cthatSTR, _c4cthatSZ); }
-    bool C4_ALWAYS_INLINE begins_with(const C *pat) const { return begins_with(pat, (size_type)strlen(pat)); }
+    bool C4_ALWAYS_INLINE begins_with(const C *pat) const { return begins_with(pat, (size_type)strsz(pat)); }
     bool begins_with(const C *pat, size_type len) const
     {
         if(len == 0 || len > _c4cthisSZ)
@@ -1206,7 +1212,7 @@ public:
     bool C4_ALWAYS_INLINE ends_with(const C (&pat)[N]) const { return ends_with(pat, N-1); }
     bool C4_ALWAYS_INLINE ends_with(C c) const { return ends_with(&c, 1); }
     bool C4_ALWAYS_INLINE ends_with(string_impl const& that) const { return ends_with(_c4cthatSTR, _c4cthatSZ); }
-    bool C4_ALWAYS_INLINE ends_with(const C *pat) const { return ends_with(pat, (size_type)strlen(pat)); }
+    bool C4_ALWAYS_INLINE ends_with(const C *pat) const { return ends_with(pat, (size_type)strsz(pat)); }
     bool ends_with(const C *pat, size_type len) const
     {
         if(len == 0 || len > _c4cthisSZ)
@@ -1418,7 +1424,7 @@ public:
     SubStrType C4_ALWAYS_INLINE triml(const C (&pat)[N]) const { return triml(pat, N-1); }
     SubStrType C4_ALWAYS_INLINE triml(C c) const { return triml(&c, 1); }
     SubStrType C4_ALWAYS_INLINE triml(string_impl const& that) const { return triml(_c4cthatSTR, _c4cthatSZ); }
-    SubStrType C4_ALWAYS_INLINE triml(const C *pat) const { return triml(pat, (size_type)strlen(pat)); }
+    SubStrType C4_ALWAYS_INLINE triml(const C *pat) const { return triml(pat, (size_type)strsz(pat)); }
     /** trim the given characters from the left of the string, return resulting trimmed substring. */
     SubStrType triml(const C* str, size_type len) const
     {
@@ -1435,7 +1441,7 @@ public:
     SubStrType C4_ALWAYS_INLINE trimr(const C (&pat)[N]) const { return trimr(pat, N-1); }
     SubStrType C4_ALWAYS_INLINE trimr(C c) const { return trimr(&c, 1); }
     SubStrType C4_ALWAYS_INLINE trimr(string_impl const& that) const { return trimr(_c4cthatSTR, _c4cthatSZ); }
-    SubStrType C4_ALWAYS_INLINE trimr(const C *pat) const { return trimr(pat, (size_type)strlen(pat)); }
+    SubStrType C4_ALWAYS_INLINE trimr(const C *pat) const { return trimr(pat, (size_type)strsz(pat)); }
     /** trim the given characters from the right of the string, return resulting trimmed substring. */
     SubStrType trimr(const C* str, size_type len) const
     {
@@ -1452,7 +1458,7 @@ public:
     SubStrType C4_ALWAYS_INLINE trim(const C (&pat)[N]) const { return trim(pat, N-1); }
     SubStrType C4_ALWAYS_INLINE trim(C c) const { return trim(&c, 1); }
     SubStrType C4_ALWAYS_INLINE trim(string_impl const& that) const { return trim(_c4cthatSTR, _c4cthatSZ); }
-    SubStrType C4_ALWAYS_INLINE trim(const C *pat) const { return trim(pat, (size_type)strlen(pat)); }
+    SubStrType C4_ALWAYS_INLINE trim(const C *pat) const { return trim(pat, (size_type)strsz(pat)); }
     /** trim the given characters from the right and left of the string, return resulting trimmed substring. */
     SubStrType trim(const C* str, size_type len) const
     {
@@ -1726,7 +1732,7 @@ public:
 
     bool operator== (const C *a) const
     {
-        size_type m = (size_type)strlen(a);
+        size_type m = (size_type)strsz(a);
         if(m != _c4cthisSZ) return false;
         return strncmp(_c4cthisSTR, a, _c4cthisSZ) == 0;
     }
@@ -1765,7 +1771,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE void append(C const* str) { append(str, strlen(str)); }
+    C4_ALWAYS_INLINE void append(C const* str) { append(str, strsz(str)); }
     template< size_t N >
     C4_ALWAYS_INLINE void append(C const (&str)[N]) { append(&str[0], N-1); }
     C4_ALWAYS_INLINE void append(string_impl const& that) { append(_c4cthatSTR, _c4cthatSZ); }
@@ -1793,7 +1799,7 @@ public:
         __nullterminate();
     }
 
-    C4_ALWAYS_INLINE void prepend(C const* str) { prepend(str, strlen(str)); }
+    C4_ALWAYS_INLINE void prepend(C const* str) { prepend(str, strsz(str)); }
     template< size_t N >
     C4_ALWAYS_INLINE void prepend(C const (&str)[N]) { prepend(&str[0], N-1); }
     C4_ALWAYS_INLINE void prepend(string_impl const& that) { prepend(_c4cthatSTR, _c4cthatSZ); }
@@ -1823,7 +1829,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE void pushr(C const* str, C sep=C('/')) { pushr(str, strlen(str), sep); }
+    C4_ALWAYS_INLINE void pushr(C const* str, C sep=C('/')) { pushr(str, strsz(str), sep); }
     template< size_t N >
     C4_ALWAYS_INLINE void pushr(C const (&str)[N], C sep=C('/')) { pushr(&str[0], N-1, sep); }
     C4_ALWAYS_INLINE void pushr(string_impl const& that, C sep=C('/')) { pushr(_c4cthatSTR, _c4cthatSZ, sep); }
@@ -1859,7 +1865,7 @@ public:
         __nullterminate();
     }
 
-    C4_ALWAYS_INLINE void pushl(C const* str, C sep=C('/')) { size_type sz = szconv< size_type >(strlen(str)); pushl(str, sz, sep); }
+    C4_ALWAYS_INLINE void pushl(C const* str, C sep=C('/')) { size_type sz = szconv< size_type >(strsz(str)); pushl(str, sz, sep); }
     template< size_t N >
     C4_ALWAYS_INLINE void pushl(C const (&str)[N], C sep=C('/')) { pushl(&str[0], N-1, sep); }
     C4_ALWAYS_INLINE void pushl(string_impl const& that, C sep=C('/')) { pushl(_c4cthatSTR, _c4cthatSZ, sep); }
@@ -1914,7 +1920,7 @@ public:
 
     template< size_t N >
     C4_ALWAYS_INLINE void erase(C const (&str)[N]) { erase(&str[0], N-1); }
-    C4_ALWAYS_INLINE void erase(const char *chars) { erase(chars, strlen(chars)); }
+    C4_ALWAYS_INLINE void erase(const char *chars) { erase(chars, strsz(chars)); }
     C4_ALWAYS_INLINE void erase(string_impl const& that) { erase(_c4cthatSTR, _c4cthatSZ); }
     template< typename OSize, class OStrType, class OSub >
     C4_ALWAYS_INLINE void erase(string_impl< C, OSize, OStrType, OSub > const& that)
@@ -2051,7 +2057,6 @@ c4::sstream& operator>> (c4::sstream& is, string_impl< C, Size, Str, Sub > & n)
     Str& ncast = static_cast< Str& >(n);
     ncast.resize(pos);
     is.read(ncast.data(), ncast.size());
-    ncast.__nullterminate();
     return is;
 }
 
@@ -2096,27 +2101,13 @@ public:
     C4_ALWAYS_INLINE basic_substring(C* p, SizeType sz) : m_str(p), m_size(sz) {}
     C4_ALWAYS_INLINE void assign(C *p, SizeType sz) { m_str = p; m_size = sz; }
 
-    // BAD, REMOVE and use basic_substr< const C > instead
-    C4_ALWAYS_INLINE basic_substring(const C* p, SizeType sz) : m_str((C*)p), m_size(sz) {}
-    C4_ALWAYS_INLINE void assign(const C *p, SizeType sz) { m_str = (C*)p; m_size = sz; }
-
-    C4_ALWAYS_INLINE basic_substring(C* p) : m_str(p), m_size(szconv< size_type >(strlen(p))) {}
-    C4_ALWAYS_INLINE void assign(C *p) { m_str = p; m_size = szconv< size_type >(strlen(p)); }
-    C4_ALWAYS_INLINE basic_substring& operator= (C *p) { m_str = p; m_size = szconv< size_type >(strlen(p)); return *this; }
-
-    // BAD, REMOVE and use basic_substr< const C > instead
-    C4_ALWAYS_INLINE basic_substring(const C* p) : m_str((C*)p), m_size(strlen(p)) {}
-    C4_ALWAYS_INLINE void assign(const C *p) { m_str = (C*)p; m_size = strlen(p); }
-    C4_ALWAYS_INLINE basic_substring& operator= (const C *p) { m_str = (C*)p; m_size = strlen(p); return *this; }
+    C4_ALWAYS_INLINE basic_substring(C* p) : m_str(p), m_size(szconv< size_type >(strsz(p))) {}
+    C4_ALWAYS_INLINE void assign(C *p) { m_str = p; m_size = szconv< size_type >(strsz(p)); }
+    C4_ALWAYS_INLINE basic_substring& operator= (C *p) { m_str = p; m_size = szconv< size_type >(strsz(p)); return *this; }
     
     template< SizeType N > C4_ALWAYS_INLINE basic_substring(C (&a)[N]) : m_str(a), m_size(N-1) {} //< the size of C arrays includes the \0, so take off one
     template< SizeType N > C4_ALWAYS_INLINE void assign(C (&a)[N]) { m_str = &a[0]; m_size = N-1; } //< the size of C arrays includes the \0, so take off one
     template< SizeType N > C4_ALWAYS_INLINE basic_substring& operator= (C (&a)[N]) { m_str = &a[0]; m_size = N-1; return *this; } //< the size of C arrays includes the \0, so take off one
-
-    // BAD, REMOVE and use basic_substr< const C > instead
-    template< SizeType N > C4_ALWAYS_INLINE basic_substring(const C (&a)[N]) : m_str((C*)a), m_size(N-1) {} //< the size of C arrays includes the \0, so take off one
-    template< SizeType N > C4_ALWAYS_INLINE void assign(const C (&a)[N]) { m_str = (C*)&a[0]; m_size = N-1; } //< the size of C arrays includes the \0, so take off one
-    template< SizeType N > C4_ALWAYS_INLINE basic_substring& operator= (const C (&a)[N]) { m_str = (C*)&a[0]; m_size = N-1; return *this; } //< the size of C arrays includes the \0, so take off one
 
     C4_ALWAYS_INLINE basic_substring(std::nullptr_t) : m_str(nullptr), m_size(0) {}
     C4_ALWAYS_INLINE void assign(std::nullptr_t) { m_str = nullptr; m_size = 0; }
@@ -2202,27 +2193,13 @@ public:
     C4_ALWAYS_INLINE basic_substringrs(C* p, SizeType sz, SizeType cap) : m_str(p), m_size(sz), m_capacity(cap) {}
     C4_ALWAYS_INLINE void assign(C *p, SizeType sz, SizeType cap) { m_str = p; m_size = sz; m_capacity = cap; }
 
-    C4_ALWAYS_INLINE basic_substringrs(const C* p, SizeType sz) : m_str((C*)p), m_size(sz), m_capacity(sz) {}
-    C4_ALWAYS_INLINE void assign(const C *p, SizeType sz) { m_str = (C*)p; m_size = sz; m_capacity = sz; }
-
-    C4_ALWAYS_INLINE basic_substringrs(const C* p, SizeType sz, SizeType cap) : m_str((C*)p), m_size(sz), m_capacity(cap) {}
-    C4_ALWAYS_INLINE void assign(const C *p, SizeType sz, SizeType cap) { m_str = (C*)p; m_size = sz; m_capacity = cap; }
-
-    C4_ALWAYS_INLINE basic_substringrs(C* p) : m_str(p), m_size(strlen(p)), m_capacity(m_size+1) {}
-    C4_ALWAYS_INLINE void assign(C *p) { m_str = p; m_size = strlen(p); m_capacity = m_size+1; }
-    C4_ALWAYS_INLINE basic_substringrs& operator= (C *p) { m_str = p; m_size = strlen(p); m_capacity = m_size+1; return *this; }
-
-    C4_ALWAYS_INLINE basic_substringrs(const C* p) : m_str((C*)p), m_size(strlen(p)), m_capacity(m_size+1) {}
-    C4_ALWAYS_INLINE void assign(const C *p) { m_str = (C*)p; m_size = strlen(p); m_capacity = m_size+1; }
-    C4_ALWAYS_INLINE basic_substringrs& operator= (const C *p) { m_str = (C*)p; m_size = strlen(p); m_capacity = m_size+1; return *this; }
+    C4_ALWAYS_INLINE basic_substringrs(C* p) : m_str(p), m_size(strsz(p)), m_capacity(m_size+1) {}
+    C4_ALWAYS_INLINE void assign(C *p) { m_str = p; m_size = strsz(p); m_capacity = m_size+1; }
+    C4_ALWAYS_INLINE basic_substringrs& operator= (C *p) { m_str = p; m_size = strsz(p); m_capacity = m_size+1; return *this; }
 
     template< SizeType N > C4_ALWAYS_INLINE basic_substringrs(C (&a)[N]) : m_str(a), m_size(N-1), m_capacity(N) {} //< the size of C arrays includes the \0, so take off one
     template< SizeType N > C4_ALWAYS_INLINE void assign(C (&a)[N]) { m_str = &a[0]; m_size = N-1; m_capacity = N; } //< the size of C arrays includes the \0, so take off one
     template< SizeType N > C4_ALWAYS_INLINE basic_substringrs& operator= (C (&a)[N]) { m_str = &a[0]; m_size = N-1; m_capacity = N; return *this; } // the size of C arrays includes the \0, so take off one
-
-    template< SizeType N > C4_ALWAYS_INLINE basic_substringrs(const C (&a)[N]) : m_str((C*)a), m_size(N-1), m_capacity(N) {} //< the size of C arrays includes the \0, so take off one
-    template< SizeType N > C4_ALWAYS_INLINE void assign(const C (&a)[N]) { m_str = (C*)&a[0]; m_size = N-1; m_capacity = N; } //< the size of C arrays includes the \0, so take off one
-    template< SizeType N > C4_ALWAYS_INLINE basic_substringrs& operator= (const C (&a)[N]) { m_str = (C*)&a[0]; m_size = N-1; m_capacity = N; return *this; } //< the size of C arrays includes the \0, so take off one
 
     C4_ALWAYS_INLINE basic_substringrs(std::nullptr_t) : m_str(nullptr), m_size(0), m_capacity(0) {}
     C4_ALWAYS_INLINE void assign(std::nullptr_t) { m_str = nullptr; m_size = 0; m_capacity = 0;  }
@@ -2233,11 +2210,6 @@ public:
     C4_ALWAYS_INLINE basic_substringrs& operator= (basic_substringrs const& that) { m_str = (that.m_str); m_size = (that.m_size); m_capacity = that.m_capacity; return *this; }
     C4_ALWAYS_INLINE basic_substringrs& operator= (basic_substringrs     && that) { m_str = (that.m_str); m_size = (that.m_size); that.m_str = nullptr; that.m_size = 0; that.m_capacity = 0; return *this; }
 
-    C4_ALWAYS_INLINE basic_substringrs(std::string const& s) : m_str((C*)&s[0]), m_size(s.size()), m_capacity(s.capacity()) {}
-    C4_ALWAYS_INLINE basic_substringrs(std::string      & s) : m_str((C*)&s[0]), m_size(s.size()), m_capacity(s.capacity()) {}
-    C4_ALWAYS_INLINE basic_substringrs& operator= (std::string const& s) { m_str = (C*)&s[0]; m_size = s.size(); m_capacity = s.capacity(); return *this; }
-    C4_ALWAYS_INLINE basic_substringrs& operator= (std::string      & s) { m_str = &s[0]; m_size = s.size(); m_capacity = s.capacity(); return *this; }
-
     template< class OtherSize >
     C4_ALWAYS_INLINE basic_substringrs(basic_substringrs< C, OtherSize > const& that) : m_str(that.m_str), m_size(szconv< size_type >(that.m_size)), m_capacity(szconv< size_type >(that.m_capacity)) {}
     template< class OtherSize >
@@ -2247,7 +2219,7 @@ public:
 
     C4_ALWAYS_INLINE void clear() { m_size = 0; }
 
-    C4_ALWAYS_INLINE void resize(SizeType sz) { C4_ASSERT(m_str != nullptr); C4_ASSERT(sz < m_capacity); m_size = sz; }
+    C4_ALWAYS_INLINE void resize(SizeType sz) { C4_CHECK(m_str != nullptr || sz == 0); C4_ASSERT(sz <= m_capacity); m_size = sz; }
 
     C4_ALWAYS_INLINE SizeType capacity() const { return m_capacity; }
 
@@ -2272,7 +2244,7 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substringrs< C C4_COMMA SizeType >, typ
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-template< class C, class SizeType, class Allocator/* = mallocator */>
+template< class C, class SizeType, class Allocator >
 class basic_string : public string_impl< C, SizeType, basic_string< C, SizeType, Allocator >, basic_substring< C, SizeType > >
 {
 public:
@@ -2342,13 +2314,13 @@ public:
     C4_ALWAYS_INLINE void assign(substring const& s) { assign(s.data(), s.size()); }
 
     /** @warning assumes the string is null-terminated */
-    C4_ALWAYS_INLINE basic_string(const C *s) : basic_string() { assign(s, strlen(s)); }
+    C4_ALWAYS_INLINE basic_string(const C *s) : basic_string() { assign(s, strsz(s)); }
     /** @warning assumes the string is null-terminated */
-    C4_ALWAYS_INLINE basic_string(const C *s, Allocator const& a) : basic_string(a) { assign(s, strlen(s)); }
+    C4_ALWAYS_INLINE basic_string(const C *s, Allocator const& a) : basic_string(a) { assign(s, strsz(s)); }
     /** @warning assumes the string is null-terminated */
-    C4_ALWAYS_INLINE basic_string& operator= (const C  *s) { assign(s, strlen(s)); return *this; }
+    C4_ALWAYS_INLINE basic_string& operator= (const C  *s) { assign(s, strsz(s)); return *this; }
     /** @warning assumes the string is null-terminated */
-    void assign(const C *s) { assign(s, strlen(s)); }
+    void assign(const C *s) { assign(s, strsz(s)); }
 
     C4_ALWAYS_INLINE basic_string(const C *s, SizeType n) : basic_string() { assign(s, n); }
     C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, Allocator const& a) : basic_string(a) { assign(s, n); }

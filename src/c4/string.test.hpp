@@ -22,13 +22,13 @@ TEST(classname, template_ctor_and_init)                         \
 {                                                               \
     test_stringbase_template_ctor_and_init< classname >();      \
 }                                                               \
-TEST(classname, const_char)                                     \
+TEST(classname, charbuf)                                        \
 {                                                               \
-    test_stringbase_const_char< classname >();                  \
+    test_stringbase_char< classname >();                        \
 }                                                               \
-TEST(classname, const_char_and_size)                            \
+TEST(classname, charbuf_and_size)                               \
 {                                                               \
-    test_stringbase_const_char_and_size< classname >();         \
+    test_stringbase_char_and_size< classname >();               \
 }                                                               \
 TEST(classname, eq)                                             \
 {                                                               \
@@ -274,10 +274,10 @@ void test_stringbase_template_ctor_and_init()
 
 }
 template< typename S >
-void test_stringbase_const_char()
+void test_stringbase_char()
 {
-    const char *cn = "akjasdkja", *cm = "98trkjjdffgyi";
-    const char *cn3 = "akj", *cm3 = "98t";
+    typename S::char_type *cn = "akjasdkja", *cm = "98trkjjdffgyi";
+    typename S::char_type *cn3 = "akj", *cm3 = "98t";
 
     // const char* version
     S n(cn);
@@ -302,10 +302,10 @@ void test_stringbase_const_char()
     C4_EXPECT_EQ(n, cn);
 }
 template< typename S >
-void test_stringbase_const_char_and_size()
+void test_stringbase_char_and_size()
 {
-    const char *cn = "akjasdkja", *cm = "98trkjjdffgyi";
-    const char *cn3 = "akj", *cm3 = "98t";
+    typename S::char_type *cn = "akjasdkja", *cm = "98trkjjdffgyi";
+    typename S::char_type *cn3 = "akj", *cm3 = "98t";
 
     // const char* + size version
     S n(cn, 3);
@@ -827,7 +827,7 @@ void test_stringbase_trimwsl()
     C4_EXPECT_EQ(S("   \t\t\t\n\n\n\r\r\raaabbb  ").trimwsl(), "aaabbb  ");
 
     using C = typename S::char_type;
-    auto must_be_same = [](C const* str){
+    auto must_be_same = [](C * str){
         C4_EXPECT_EQ(S(str).trimwsl(), str) << "not ok:" << str;
     };
 
@@ -879,7 +879,7 @@ void test_stringbase_trimwsr()
     C4_EXPECT_EQ(S("  aaabbb   \t\t\t\n\n\n\r\r\r").trimwsr(), "  aaabbb");
 
     using C = typename S::char_type;
-    auto must_be_same = [](C const* str){
+    auto must_be_same = [](C * str){
         C4_EXPECT_EQ(S(str).trimwsr(), str) << "not ok:" << str;
     };
 
@@ -932,7 +932,7 @@ void test_stringbase_trimws()
     C4_EXPECT_EQ(S("  aaabbb   \t\t\t\n\n\n\r\r\r").trimws(), "aaabbb");
 
     using C = typename S::char_type;
-    auto must_be_same = [](C const* str){
+    auto must_be_same = [](C * str){
         C4_EXPECT_EQ(S(str).trimws(), str) << "not ok:" << str;
     };
 
@@ -2537,10 +2537,10 @@ void test_stringbase_stream()
     // (otherwise, we'd have a segmentation fault)
     // it cannot be a static string a la substring n1("buf1")
     // because these are not writeable
-    char buf1[5] = {"buf1"};
-    char buf2[5] = {"buf2"};
-    char buf3[5] = {"buf3"};
-    char buf4[5] = {"buf4"};
+    typename S::char_type buf1[5] = {"buf1"};
+    typename S::char_type buf2[5] = {"buf2"};
+    typename S::char_type buf3[5] = {"buf3"};
+    typename S::char_type buf4[5] = {"buf4"};
     S n1(buf1), n2(buf2), n3(buf3), n4(buf4);
 
     ss >> n1;
@@ -2570,7 +2570,7 @@ void test_stringbase_stream()
 template< class S >
 void test_stringbase_hash()
 {
-    const char *cn = "adfkusdfkjsdf2ekjsdfkjh";
+    S::char_type *cn = "adfkusdfkjsdf2ekjsdfkjh";
     S r("adfkusdfkjsdf2ekjsdfkjh");
     S n(cn);
     std::hash< S > H;
