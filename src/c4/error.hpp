@@ -9,10 +9,19 @@
  /** @def C4_NOEXCEPT evaluates to noexcept when C4_ERROR might be called
  * and exceptions are disabled. */
 
-#ifdef C4_ERROR_THROWS_EXCEPTION
+#if defined(C4_EXCEPTIONS_ENABLED) && defined(C4_ERROR_THROWS_EXCEPTION)
 #   define C4_NOEXCEPT
 #else
 #   define C4_NOEXCEPT noexcept
+#endif
+
+//-----------------------------------------------------------------------------
+
+#ifdef NDEBUG
+#   define C4_DEBUG_BREAK()
+#else
+#   include <debugbreak/debugbreak.h>
+#   define C4_DEBUG_BREAK() if(c4::is_debugger_attached()) { ::debug_break(); }
 #endif
 
 //-----------------------------------------------------------------------------
@@ -38,83 +47,104 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
-using error_callback_type = void (*)();
+bool is_debugger_attached();
 
+
+typedef enum {
+    /** when an error happens and the debugger is attached, call C4_DEBUG_BREAK().
+     * Without effect otherwise. */
+    ON_ERROR_DEBUGBREAK = 0x01 << 0,
+    /** when an error happens log a message. */
+    ON_ERROR_LOG = 0x01 << 1,
+    /** when an error happens invoke a callback if it was set with
+     * set_error_callback(). */
+    ON_ERROR_CALLBACK = 0x01 << 2,
+    /** when an error happens call std::terminate(). */
+    ON_ERROR_ABORT = 0x01 << 3,
+    /** when an error happens and exceptions are enabled throw an exception.
+     * Without effect otherwise. */
+    ON_ERROR_THROW = 0x01 << 4,
+    /** the default flags. */
+    ON_ERROR_DEFAULTS = ON_ERROR_DEBUGBREAK|ON_ERROR_LOG|ON_ERROR_CALLBACK|ON_ERROR_ABORT
+} ErrorFlags_e;
+using error_flags = int;
+void set_error_flags(error_flags f);
+error_flags get_error_flags();
+
+
+using error_callback_type = void (*)(const char* msg, size_t msg_size);
 void set_error_callback(error_callback_type cb);
 error_callback_type get_error_callback();
 
 
-void report_error    (                                              const char *fmt, ...);
-void report_error_fl (const char *file, int line,                   const char *fmt, ...);
-void report_error_flf(const char *file, int line, const char *func, const char *fmt, ...);
-
-
-void report_warning    (                                              const char *fmt, ...);
-void report_warning_fl (const char *file, int line,                   const char *fmt, ...);
-void report_warning_flf(const char *file, int line, const char *func, const char *fmt, ...);
-
-
 //-----------------------------------------------------------------------------
-/** RAII sets the error callback inside a scope. */
-struct ScopedErrorCallback
+/** RAII to control the behaviour on error inside a scope. */
+struct ScopedErrorSettings
 {
-    error_callback_type m_original;
+    error_flags m_flags;
+    error_callback_type m_callback;
 
-    explicit ScopedErrorCallback(error_callback_type cb)
-        : m_original(get_error_callback())
+    explicit ScopedErrorSettings(error_callback_type cb)
+    :   m_flags(get_error_flags()),
+        m_callback(get_error_callback())
     {
         set_error_callback(cb);
     }
-    ~ScopedErrorCallback()
+    explicit ScopedErrorSettings(error_flags flags, error_callback_type cb)
+    :   m_flags(get_error_flags()),
+        m_callback(get_error_callback())
     {
-        set_error_callback(m_original);
+        set_error_flags(flags);
+        set_error_callback(cb);
+    }
+    ~ScopedErrorSettings()
+    {
+        set_error_flags(m_flags);
+        set_error_callback(m_callback);
     }
 };
 
-
 //-----------------------------------------------------------------------------
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
+
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
 
-#   define C4_ERROR(msg, ...)                                           \
-    c4::report_error_flf(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
+void handle_error(const char *file, int line, const char *func, const char *fmt, ...);
+void handle_warning(const char *file, int line, const char *func, const char *fmt, ...);
 
-#elif defined(C4_ERROR_SHOWS_FILELINE)
-
-#   define C4_ERROR(msg, ...)                                       \
-    c4::report_error_fl(__FILE__, __LINE__, msg, ## __VA_ARGS__)
-
-#elif ! defined(C4_ERROR_SHOWS_FUNC)
-
-#   define C4_ERROR(msg, ...)                   \
-    c4::report_error(msg, ## __VA_ARGS__)
-
-#else
-#   error not implemented
-#endif
-
-
-//-----------------------------------------------------------------------------
-/** Report a warning with a printf-formatted message. */
-#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+#   define C4_ERROR(msg, ...)                             \
+    if(c4::get_error_flags() & ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
+    c4::handle_error(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
 
 #   define C4_WARNING(msg, ...)                                         \
-    c4::report_warning_flf(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
+    c4::handle_warning(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
 
 #elif defined(C4_ERROR_SHOWS_FILELINE)
+
+void handle_error(const char *file, int line, const char *fmt, ...);
+void handle_warning(const char *file, int line, const char *fmt, ...);
+
+#   define C4_ERROR(msg, ...)                             \
+    if(c4::get_error_flags() & ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
+    c4::handle_error(__FILE__, __LINE__, msg, ## __VA_ARGS__)
+
 #   define C4_WARNING(msg, ...)                                 \
-    c4::report_warning_fl(__FILE__, __LINE__, msg, ## __VA_ARGS__)
+    c4::handle_warning(__FILE__, __LINE__, msg, ## __VA_ARGS__)
 
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
+
+void handle_error(const char *fmt, ...);
+void handle_warning(const char *fmt, ...);
+
+#   define C4_ERROR(msg, ...)                             \
+    if(c4::get_error_flags() & ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
+    c4::handle_error(msg, ## __VA_ARGS__)
+
 #   define C4_WARNING(msg, ...)                 \
-    c4::report_warning(msg, ## __VA_ARGS__)
+    c4::handle_warning(msg, ## __VA_ARGS__)
 
 #else
 #   error not implemented
 #endif
-
 
 //-----------------------------------------------------------------------------
 // assertions - only in debug builds

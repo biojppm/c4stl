@@ -45,7 +45,9 @@ if(MSVC)
 endif()
 
 add_library(c4stl ${src})
-target_include_directories(c4stl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(c4stl PUBLIC
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/../extern)
 
 #------------------------------------------------------------------------------
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")

@@ -15,133 +15,112 @@
 #   include <unistd.h>
 #endif
 
-#ifdef C4_ERROR_THROWS_EXCEPTION
+#if defined(C4_EXCEPTIONS_ENABLED) && defined(C4_ERROR_THROWS_EXCEPTION)
 #   include <exception>
 #endif
 
 //-----------------------------------------------------------------------------
 C4_BEGIN_NAMESPACE(c4)
 
-void _handle_error()
-{
-#ifdef C4_ERROR_THROWS_EXCEPTION
-    throw Exception();
-#else
-    std::terminate();
-#endif
-}
-
-static error_callback_type _error_callback = &_handle_error;
+static error_flags         s_error_flags = ON_ERROR_DEFAULTS;
+static error_callback_type s_error_callback = nullptr;
 
 //-----------------------------------------------------------------------------
 
-/** Defaults to abort() */
+error_flags get_error_flags()
+{
+    return s_error_flags;
+}
+void set_error_flags(error_flags flags)
+{
+    s_error_flags = flags;
+}
+
 error_callback_type get_error_callback()
 {
-    return _error_callback;
+    return s_error_callback;
 }
 /** Set the function which is called when an error occurs. */
 void set_error_callback(error_callback_type cb)
 {
-    _error_callback = cb;
+    s_error_callback = cb;
 }
 
 //-----------------------------------------------------------------------------
-void _log_errwarn(const char *what, const char *file, int line, const char* func,
-                  const char *fmt, va_list args)
+
+#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+void handle_error(const char *file, int line, const char *func, const char *fmt, ...)
+#elif defined(C4_ERROR_SHOWS_FILELINE)
+void handle_error(const char *file, int line, const char *fmt, ...)
+#elif ! defined(C4_ERROR_SHOWS_FUNC)
+void handle_error(const char *fmt, ...)
+#endif
 {
+    va_list args;
+    sstream ss;
+    if(s_error_flags & (ON_ERROR_LOG|ON_ERROR_CALLBACK))
+    {
+        va_start(args, fmt);
+        ss.vprintf(fmt, args);
+        va_end(args);
+    }
+    if(s_error_flags & ON_ERROR_LOG)
+    {
+        C4_LOGF_ERR("\n");
+#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_str());
+        C4_LOGF_ERR("ERROR: %s:%d: here: %s\n", file, line, func);
+#elif defined(C4_ERROR_SHOWS_FILELINE)
+        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_str());
+#elif ! defined(C4_ERROR_SHOWS_FUNC)
+        C4_LOGF_ERR("ERROR: %s\n", ss.c_str());
+#endif
+        c4::log.flush();
+    }
+    if(s_error_flags & ON_ERROR_CALLBACK)
+    {
+        if(s_error_callback)
+        {
+            s_error_callback(ss.c_str(), ss.tellp());
+        }
+    }
+    if(s_error_flags & ON_ERROR_ABORT)
+    {
+        abort();
+    }
+    if(s_error_flags & ON_ERROR_THROW)
+    {
+#if defined(C4_EXCEPTIONS_ENABLED) && defined(C4_ERROR_THROWS_EXCEPTION)
+        throw Exception(ss.c_str());
+#endif
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+void handle_warning(const char *file, int line, const char *func, const char *fmt, ...)
+#elif defined(C4_ERROR_SHOWS_FILELINE)
+void handle_warning(const char *file, int line, const char *fmt, ...)
+#elif ! defined(C4_ERROR_SHOWS_FUNC)
+void handle_warning(const char *fmt, ...)
+#endif
+{
+    va_list args;
+    va_start(args, fmt);
     sstream ss;
     ss.vprintf(fmt, args);
-    C4_LOGF_ERR("\n");
-    if(file == nullptr && line == 0 && func == nullptr)
-    {
-        C4_LOGF_ERR("%s: %s\n", what, ss.c_str());
-    }
-    else if(file != nullptr && line != 0 && func == nullptr)
-    {
-        C4_LOGF_ERR("%s: %s:%d: %s\n", what, file, line, ss.c_str());
-    }
-    else
-    {
-        C4_LOGF_ERR("%s: %s:%d: %s\n", what, file, line, ss.c_str());
-        C4_LOGF_ERR("%s: %s:%d: here: %s\n", what, file, line, func);
-    }
+    va_end(args);
+    C4_LOGF_WARN("\n");
+#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_str());
+    C4_LOGF_WARN("WARNING: %s:%d: here: %s\n", file, line, func);
+#elif defined(C4_ERROR_SHOWS_FILELINE)
+    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_str());
+#elif ! defined(C4_ERROR_SHOWS_FUNC)
+    C4_LOGF_WARN("WARNING: %s\n", ss.c_str());
+#endif
     c4::log.flush();
-}
-
-//-----------------------------------------------------------------------------
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
-void report_error(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _log_errwarn("ERROR", nullptr, 0, nullptr, fmt, args);
-    va_end(args);
-    auto fn = get_error_callback();
-    if(fn)
-    {
-        fn();
-    }
-}
-
-void report_warning(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _log_errwarn("WARNING", nullptr, 0, nullptr, fmt, args);
-    va_end(args);
-}
-
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
-void report_error_fl(const char *file, int line, const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _log_errwarn("ERROR", file, line, nullptr, fmt, args);
-    va_end(args);
-    auto fn = get_error_callback();
-    if(fn)
-    {
-        fn();
-    }
-}
-
-/** Report a printf-formatted warning message. */
-void report_warning_fl(const char *file, int line, const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _log_errwarn("WARNING", file, line, nullptr, fmt, args);
-    va_end(args);
-}
-
-/** Raise an error, and report a printf-formatted message.
- * If an error callback was set, it will be called.
- * @see set_error_callback() */
-void report_error_flf(const char *file, int line, const char *func, const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _log_errwarn("ERROR", file, line, func, fmt, args);
-    va_end(args);
-    auto fn = get_error_callback();
-    if(fn)
-    {
-        fn();
-    }
-}
-
-/** Report a printf-formatted warning message. */
-void report_warning_flf(const char *file, int line, const char *func, const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _log_errwarn("ERROR", file, line, func, fmt, args);
-    va_end(args);
 }
 
 //-----------------------------------------------------------------------------
