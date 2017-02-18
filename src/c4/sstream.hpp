@@ -10,31 +10,6 @@
 C4_BEGIN_NAMESPACE(c4)
 
 //-----------------------------------------------------------------------------
-template< class T > struct fmt_tag {};
-
-#define _C4_DEFINE_FMT_TAG(_ty, fmtstr) \
-template<>\
-struct fmt_tag< _ty >\
-{\
-    static constexpr const char fmt[] = fmtstr;\
-    static constexpr const char fmt_with_num_chars_arg[] = fmtstr "%n";\
-}
-
-_C4_DEFINE_FMT_TAG(void *  , "%p"               );
-_C4_DEFINE_FMT_TAG(char    , "%c"               );
-_C4_DEFINE_FMT_TAG(char *  , "%s"               );
-_C4_DEFINE_FMT_TAG(double  , "%lg"              );
-_C4_DEFINE_FMT_TAG(float   , "%g"               );
-_C4_DEFINE_FMT_TAG( int64_t, /*"%lld"*/"%"PRId64);
-_C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
-_C4_DEFINE_FMT_TAG( int32_t, /*"%d"  */"%"PRId32);
-_C4_DEFINE_FMT_TAG(uint32_t, /*"%u"  */"%"PRIu32);
-_C4_DEFINE_FMT_TAG( int16_t, /*"%hd" */"%"PRId16);
-_C4_DEFINE_FMT_TAG(uint16_t, /*"%hu" */"%"PRIu16);
-_C4_DEFINE_FMT_TAG( int8_t , /*"%hhd"*/"%"PRId8 );
-_C4_DEFINE_FMT_TAG(uint8_t , /*"%hhu"*/"%"PRIu8 );
-
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 class sstream
@@ -316,30 +291,49 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-template< class T, C4_REQUIRE_T(std::is_scalar< T >::value) >
-C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, T const& var)
-{
-    using tag = fmt_tag< typename std::remove_const<T>::type >;
-    ss.printf(tag::fmt, var);
-    return ss;
+template< class T > struct fmt_tag {};
+
+#define _C4_DEFINE_FMT_TAG(_ty, fmtstr) \
+template<>\
+struct fmt_tag< _ty >\
+{\
+    static constexpr const char fmt[] = fmtstr;\
+    static constexpr const char fmtn[] = fmtstr "%n";\
 }
-template< class T, C4_REQUIRE_T(std::is_scalar< T >::value) >
-C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, T & var)
-{
-    using tag = fmt_tag< typename std::remove_const<T>::type >;
-    ss.scanf____(tag::fmt_with_num_chars_arg, (void*)&var);
-    return ss;
-}
-C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, char const& var)
-{
-    ss.write(&var, 1);
-    return ss;
-}
-C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, char & var)
-{
-    ss.read(&var, 1);
-    return ss;
-}
+
+#define _C4_DEFINE_SCALAR_IO_OPERATOR(ty) \
+C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, ty  var) { ss.printf   (fmt_tag< ty >::fmt ,  var); return ss; }\
+C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, ty& var) { ss.scanf____(fmt_tag< ty >::fmtn, &var); return ss; }
+
+_C4_DEFINE_FMT_TAG(void *  , "%p"               );
+_C4_DEFINE_FMT_TAG(char    , "%c"               );
+_C4_DEFINE_FMT_TAG(char *  , "%s"               );
+_C4_DEFINE_FMT_TAG(double  , "%lg"              );
+_C4_DEFINE_FMT_TAG(float   , "%g"               );
+_C4_DEFINE_FMT_TAG( int64_t, /*"%lld"*/"%"PRId64);
+_C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
+_C4_DEFINE_FMT_TAG( int32_t, /*"%d"  */"%"PRId32);
+_C4_DEFINE_FMT_TAG(uint32_t, /*"%u"  */"%"PRIu32);
+_C4_DEFINE_FMT_TAG( int16_t, /*"%hd" */"%"PRId16);
+_C4_DEFINE_FMT_TAG(uint16_t, /*"%hu" */"%"PRIu16);
+_C4_DEFINE_FMT_TAG( int8_t , /*"%hhd"*/"%"PRId8 );
+_C4_DEFINE_FMT_TAG(uint8_t , /*"%hhu"*/"%"PRIu8 );
+
+_C4_DEFINE_SCALAR_IO_OPERATOR(void*   )
+_C4_DEFINE_SCALAR_IO_OPERATOR(char*   )
+_C4_DEFINE_SCALAR_IO_OPERATOR( int8_t )
+_C4_DEFINE_SCALAR_IO_OPERATOR(uint8_t )
+_C4_DEFINE_SCALAR_IO_OPERATOR( int16_t)
+_C4_DEFINE_SCALAR_IO_OPERATOR(uint16_t)
+_C4_DEFINE_SCALAR_IO_OPERATOR( int32_t)
+_C4_DEFINE_SCALAR_IO_OPERATOR(uint32_t)
+_C4_DEFINE_SCALAR_IO_OPERATOR( int64_t)
+_C4_DEFINE_SCALAR_IO_OPERATOR(uint64_t)
+_C4_DEFINE_SCALAR_IO_OPERATOR(float   )
+_C4_DEFINE_SCALAR_IO_OPERATOR(double  )
+
+C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, char  var) { ss.write(&var, 1); return ss; }\
+C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, char& var) { ss.read(&var, 1); return ss; }
 
 template< size_t N >
 C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, const char (&var)[N])
