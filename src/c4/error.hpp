@@ -78,7 +78,7 @@ error_callback_type get_error_callback();
 
 
 //-----------------------------------------------------------------------------
-/** RAII to control the behaviour on error inside a scope. */
+/** RAII to control the error settings inside a scope. */
 struct ScopedErrorSettings
 {
     error_flags m_flags;
@@ -89,6 +89,12 @@ struct ScopedErrorSettings
         m_callback(get_error_callback())
     {
         set_error_callback(cb);
+    }
+    explicit ScopedErrorSettings(error_flags flags)
+    :   m_flags(get_error_flags()),
+        m_callback(get_error_callback())
+    {
+        set_error_flags(flags);
     }
     explicit ScopedErrorSettings(error_flags flags, error_callback_type cb)
     :   m_flags(get_error_flags()),
