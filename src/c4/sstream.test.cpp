@@ -1,4 +1,5 @@
 #include "sstream.hpp"
+#include "c4/string.hpp"
 
 #include <gtest/gtest.h>
 #include <iostream>
@@ -14,46 +15,52 @@ struct exvec3
         return x == that.x && y == that.y && z == that.z;
     }
 };
-template< class T >
-sstream& operator<< (sstream& ss, exvec3<T> const& v)
+template< class String, class T >
+sstream< String >& operator<< (sstream< String >& ss, exvec3<T> const& v)
 {
     ss.printp("({},{},{})", v.x, v.y, v.z);
     return ss;
 }
-template< class T >
-sstream& operator>> (sstream& ss, exvec3<T> & v)
+template< class String, class T >
+sstream< String >& operator>> (sstream< String >& ss, exvec3<T> & v)
 {
     ss.scanp("({},{},{})", v.x, v.y, v.z);
     return ss;
 }
 
 //-----------------------------------------------------------------------------
-using ScalarTypes = ::testing::Types<char, i8, u8, i16, u16, i32, u32, i64, u64, float, double>;
 template <class T>
-struct RoundTripTest : public ::testing::Test
+struct RoundTripTest_c4string : public ::testing::Test
 {
-    sstream ss;
+    sstream< c4::string > ss;
 };
-TYPED_TEST_CASE_P(RoundTripTest);
+template <class T>
+struct RoundTripTest_stdstring : public ::testing::Test
+{
+    sstream< std::string > ss;
+};
+TYPED_TEST_CASE_P(RoundTripTest_c4string);
+TYPED_TEST_CASE_P(RoundTripTest_stdstring);
 
 //-----------------------------------------------------------------------------
-#define _testrtrip3(which)                                  \
-    which<TypeParam>(ss, 0, 10, 20);                        \
-    ss.reset();                                             \
-                                                            \
-    which<TypeParam>(ss, 21, 22, 23);                       \
-    ss.reset();                                             \
-                                                            \
-    which<TypeParam>(ss, 123, 124, 125);                    \
-    ss.reset();                                             \
-                                                            \
-    which<exvec3<TypeParam>>(ss, {1,2,3},{4,5,6},{7,8,9});  \
+#define _testrtrip3(which, strtype)                                 \
+                                                                    \
+    which<strtype, TypeParam>(ss, 0, 10, 20);                       \
+    ss.reset();                                                     \
+                                                                    \
+    which<strtype, TypeParam>(ss, 21, 22, 23);                      \
+    ss.reset();                                                     \
+                                                                    \
+    which<strtype, TypeParam>(ss, 123, 124, 125);                   \
+    ss.reset();                                                     \
+                                                                    \
+    which<strtype, exvec3<TypeParam>>(ss, {1,2,3},{4,5,6},{7,8,9}); \
     ss.reset();
 
 //-----------------------------------------------------------------------------
 
-template< class T >
-void do_round_trip_chevron(sstream &ss, T const& val1, T const& val2, T const& val3)
+template< class String, class T >
+void do_round_trip_chevron(sstream<String> &ss, T const& val1, T const& val2, T const& val3)
 {
     T v1, v2, v3;
     ss << val1 << ' ' << val2 << ' '<< val3;
@@ -63,14 +70,18 @@ void do_round_trip_chevron(sstream &ss, T const& val1, T const& val2, T const& v
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);
 }
-TYPED_TEST_P(RoundTripTest, chevron)
+TYPED_TEST_P(RoundTripTest_c4string, chevron)
 {
-    _testrtrip3(do_round_trip_chevron);
+    _testrtrip3(do_round_trip_chevron, c4::string);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, chevron)
+{
+    _testrtrip3(do_round_trip_chevron, std::string);
 }
 
 //-----------------------------------------------------------------------------
-template< class T >
-void do_round_trip_printp(sstream &ss, T const& val1, T const& val2, T const& val3)
+template< class String, class T >
+void do_round_trip_printp(sstream<String> &ss, T const& val1, T const& val2, T const& val3)
 {
     T v1, v2, v3;
     ss.printp("{} {} {}", val1, val2, val3);
@@ -93,14 +104,18 @@ void do_round_trip_printp(sstream &ss, T const& val1, T const& val2, T const& va
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);
 }
-TYPED_TEST_P(RoundTripTest, printp)
+TYPED_TEST_P(RoundTripTest_c4string, printp)
 {
-    _testrtrip3(do_round_trip_printp);
+    _testrtrip3(do_round_trip_printp, c4::string);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, printp)
+{
+    _testrtrip3(do_round_trip_printp, std::string);
 }
 
 //-----------------------------------------------------------------------------
-template< class T >
-void do_round_trip_cat(sstream &ss, T const& val1, T const& val2, T const& val3)
+template< class String, class T >
+void do_round_trip_cat(sstream<String> &ss, T const& val1, T const& val2, T const& val3)
 {
     T v1, v2, v3;
     ss.cat(val1, ' ', val2, ' ', val3);
@@ -110,14 +125,18 @@ void do_round_trip_cat(sstream &ss, T const& val1, T const& val2, T const& val3)
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);
 }
-TYPED_TEST_P(RoundTripTest, cat)
+TYPED_TEST_P(RoundTripTest_c4string, cat)
 {
-    _testrtrip3(do_round_trip_cat);
+    _testrtrip3(do_round_trip_cat, c4::string);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, cat)
+{
+    _testrtrip3(do_round_trip_cat, std::string);
 }
 
 //-----------------------------------------------------------------------------
-template< class T >
-void do_round_trip_catsep(sstream &ss, T const& val1, T const& val2, T const& val3)
+template< class String, class T >
+void do_round_trip_catsep(sstream<String> &ss, T const& val1, T const& val2, T const& val3)
 {
     T v1, v2, v3;
     ss.catsep(' ', val1, val2, val3);
@@ -126,13 +145,20 @@ void do_round_trip_catsep(sstream &ss, T const& val1, T const& val2, T const& va
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);
 }
-TYPED_TEST_P(RoundTripTest, catsep)
+TYPED_TEST_P(RoundTripTest_c4string, catsep)
 {
-    _testrtrip3(do_round_trip_catsep);
+    _testrtrip3(do_round_trip_catsep, c4::string);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, catsep)
+{
+    _testrtrip3(do_round_trip_catsep, std::string);
 }
 
-REGISTER_TYPED_TEST_CASE_P(RoundTripTest, chevron, printp, cat, catsep);
+REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4string, chevron, printp, cat, catsep);
+REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdstring, chevron, printp, cat, catsep);
 
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest, ScalarTypes);
+using ScalarTypes = ::testing::Types<char, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4string, ScalarTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring, ScalarTypes);
 
 C4_END_NAMESPACE(c4)

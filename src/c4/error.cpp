@@ -1,4 +1,5 @@
 #include "c4/error.hpp"
+#include "c4/string.hpp"
 #include "c4/sstream.hpp"
 #include "c4/log.hpp"
 
@@ -57,7 +58,7 @@ void handle_error(const char *fmt, ...)
 #endif
 {
     va_list args;
-    sstream ss;
+    sstream< c4::string > ss;
     if(s_error_flags & (ON_ERROR_LOG|ON_ERROR_CALLBACK))
     {
         va_start(args, fmt);
@@ -108,7 +109,7 @@ void handle_warning(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    sstream ss;
+    sstream<c4::string> ss;
     ss.vprintf(fmt, args);
     va_end(args);
     C4_LOGF_WARN("\n");

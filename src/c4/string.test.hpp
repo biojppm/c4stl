@@ -160,7 +160,7 @@ TEST(classname, basename)                                       \
 }                                                               \
 TEST(classname, sstream)                                        \
 {                                                               \
-    test_stringbase_stream< classname, c4::sstream >();         \
+    test_stringbase_stream< classname, c4::sstream<c4::string> >();         \
 }                                                               \
 TEST(classname, hash)                                           \
 {                                                               \

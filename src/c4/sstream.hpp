@@ -3,50 +3,79 @@
 
 #include "c4/config.hpp"
 #include "c4/span.hpp"
+#include "c4/string_fwd.hpp"
 
-#include <limits>
 #include <inttypes.h>
 
 C4_BEGIN_NAMESPACE(c4)
 
+template< class StringType = c4::string >
+class sstream;
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** a string stream.
+ *
+ * @todo implement the wchar_t calls.
+ */
+template< class StringType >
 class sstream
 {
+    static_assert(std::is_same< typename StringType::value_type, char >::value, "for now only char is implemented");
 private:
 
-    char* m_buf;
-    size_t m_size;
+    union {
+        StringType m_string;
+        struct {
+            typename StringType::value_type * m_buf;
+            typename StringType::size_type    m_capacity;
+        };
+    };
 
-    size_t m_putpos;
-    size_t m_getpos;
-
-    size_t m_status;
+    typename StringType::size_type m_putpos;
+    typename StringType::size_type m_getpos;
+    typename StringType::size_type m_status;
 
 public:
 
-    static constexpr const size_t npos = size_t(-1);
+    static constexpr const size_t npos = typename StringType::size_type(-1);
 
-    using  char_type = char;
-    using  size_type = size_t;
-    using  span_type =  span<char, size_t>;
-    using cspan_type = cspan<char, size_t>;
+    using string_type = StringType;
+    using value_type  = typename StringType::value_type;
+    using  size_type  = typename StringType::size_type;
+    using  span_type  =  span<typename StringType::value_type, typename StringType::size_type>;
+    using cspan_type  = cspan<typename StringType::value_type, typename StringType::size_type>;
+
+    typedef enum {
+        /** marks when m_string is set and this object is responsible for its lifetime */
+        OWNER = 0x01,
+        /** The write buffer has been exhausted and cannot be further increased.
+         * Trying to write again will cause a C4_ERROR unless IGNORE_ERR is set. */
+        EOFP = 0x01 << 1,
+        /** The read buffer has been exhausted (ie, it has reached the end of the write buffer).
+         * Trying to read again will cause a C4_ERROR unless IGNORE_ERR is set. */
+        EOFG = 0x01 << 2,
+        /** a reading error has occurred: could not convert the string to the argument's
+         * intrinsic type. Trying to read further will cause a C4_ERROR unless IGNORE_ERR is set. */
+        FAIL = 0x01 << 3,
+        /** do not call C4_ERROR when errors occur; silently continue. Actions which
+         * would overflow the buffer are silently skippedd. */
+        IGNORE_ERR = 0x01 << 4,
+    } Status_e;
 
 public:
 
     sstream();
+    sstream(value_type *s, size_type sz);
     ~sstream();
 
-    sstream(sstream const&) = delete;
-    sstream(sstream     &&) = default;
-    sstream& operator=(sstream const&) = delete;
-    sstream& operator=(sstream     &&) = default;
+    sstream(sstream const& that);
+    sstream(sstream     && that);
+    sstream& operator=(sstream const& that);
+    sstream& operator=(sstream     && that);
 
-    constexpr size_t max_size() const
-    {
-        return std::numeric_limits< size_t >::max() - 1;
-    }
+    constexpr size_type max_size() const { return StringType::max_size() - 1; }
 
     void reset()
     {
@@ -55,28 +84,35 @@ public:
         clear_err();
     }
 
+    void reserve(size_type cap);
+    size_type capacity() const { return owned() ? m_string.capacity : m_capacity; }
+
+    /** true when this sstream object owns and is responsible for the string's lifetime. */
+    C4_ALWAYS_INLINE bool owner() { return m_status & OWNER; }
+
+    StringType&& move_out();
+
 public:
 
-    // conversion to/from string
+    /// get the full resulting span (from 0 to tellp)
+    C4_ALWAYS_INLINE cspan_type span() const { return cspan_type(m_buf, m_putpos); }
+    /// get the current reading span (from tellg to to tellp)
+    C4_ALWAYS_INLINE cspan_type spang() const { return cspan_type(m_buf + m_getpos, m_putpos - m_getpos); }
 
-    /* COMING UP
-
-    template< class T >
-    const char* to_string(T const& v);
-
-    template< class T >
-    void from_string(const char *s, size_t size, T& v);
-    */
+    /// get the full resulting string (from 0 to tellp)
+    C4_ALWAYS_INLINE const char* c_str() const { C4_XASSERT(m_buf[m_putpos] == '\0'); return m_buf; }
+    /// get the current reading string (from tellg to tellp)
+    C4_ALWAYS_INLINE const char* c_strg() const { C4_XASSERT(m_getpos < m_putpos && m_buf[m_putpos] == '\0'); return m_buf + m_getpos; }
 
 public:
 
     // Raw writing of characters
 
-    void write(const char *str, size_t sz); ///< write a sequence of characters
-    void read (char *str, size_t sz); ///< read a sequence of characters
+    void write(const char *str, size_type sz); ///< write a sequence of characters
+    void read (char *str, size_type sz); ///< read a sequence of characters
 
     ///< write a null-terminated sequence of characters
-    void write(const char *cstr);
+    void write(const char *c_str);
 
     ///< write a sequence of characters
     C4_ALWAYS_INLINE void write(cspan_type const& s) { write(s.data(), s.size()); }
@@ -162,71 +198,44 @@ public:
 
 public:
 
-    /// get the full resulting string (from 0 to tellp)
-    C4_ALWAYS_INLINE const char* c_str() const { C4_XASSERT(m_buf[m_putpos] == '\0'); return m_buf; }
-    /// get the current reading string (from tellg to tellp)
-    C4_ALWAYS_INLINE const char* c_strg() const { C4_XASSERT(m_getpos < m_putpos && m_buf[m_putpos] == '\0'); return m_buf + m_getpos; }
-
-    /// get the full resulting span (from 0 to tellp)
-    C4_ALWAYS_INLINE cspan_type span() const { return cspan_type(m_buf, m_putpos); }
-    /// get the current reading span (from tellg to to tellp)
-    C4_ALWAYS_INLINE cspan_type spang() const { return cspan_type(m_buf + m_getpos, m_putpos - m_getpos); }
-
-public:
-
     /// get the current write (ie, put) position
-    C4_ALWAYS_INLINE size_t tellp() const { return m_putpos; }
+    C4_ALWAYS_INLINE size_type tellp() const { return m_putpos; }
     /// get the current read (ie, get) position
-    C4_ALWAYS_INLINE size_t tellg() const { return m_getpos; }
+    C4_ALWAYS_INLINE size_type tellg() const { return m_getpos; }
 
     /// set the current write (ie, put) position
-    C4_ALWAYS_INLINE void seekp(size_t p) { C4_CHECK(p <= m_size); m_putpos = p; }
+    C4_ALWAYS_INLINE void seekp(size_type p) { C4_CHECK(p <= m_capacity); m_putpos = p; }
     /// set the current read (ie, get) position
-    C4_ALWAYS_INLINE void seekg(size_t g) { C4_CHECK(g <= m_size && g <= m_putpos); m_getpos = g; }
+    C4_ALWAYS_INLINE void seekg(size_type g) { C4_CHECK(g <= m_capacity && g <= m_putpos); m_getpos = g; }
 
     /// advance the current write (ie, put) position
-    C4_ALWAYS_INLINE void advp(size_t p) { C4_CHECK(m_size - m_putpos >= p); m_putpos += p; }
+    C4_ALWAYS_INLINE void advp(size_type p) { C4_CHECK(m_capacity - m_putpos >= p); m_putpos += p; }
     /// advance the current read (ie, get) position
-    C4_ALWAYS_INLINE void advg(size_t g) { C4_CHECK(m_putpos - m_getpos >= g); m_getpos += g; }
+    C4_ALWAYS_INLINE void advg(size_type g) { C4_CHECK(m_putpos - m_getpos >= g); m_getpos += g; }
 
     /// remaining size for writing (ie, put), WITHOUT terminating null character
-    C4_ALWAYS_INLINE size_t remp() const { C4_XASSERT(m_putpos <= m_size); return m_size - m_putpos; }
+    C4_ALWAYS_INLINE size_type remp() const { C4_XASSERT(m_putpos <= m_capacity); return m_capacity - m_putpos; }
     /// remaining size for reading (ie, get)
-    C4_ALWAYS_INLINE size_t remg() const { C4_XASSERT(m_getpos <= m_putpos); return m_putpos - m_getpos; }
+    C4_ALWAYS_INLINE size_type remg() const { C4_XASSERT(m_getpos <= m_putpos); return m_putpos - m_getpos; }
 
     /// true if sz chars can be written (from tellp to the current max_size())
-    C4_ALWAYS_INLINE bool okp(size_t sz) const { return sz <= (max_size() - m_putpos); }
-    /// true if sz chars can be read (from tellg to the current tellp)
-    C4_ALWAYS_INLINE bool okg(size_t sz) const { return sz <= remg(); }
+    C4_ALWAYS_INLINE bool okp(size_type sz) const { return sz <= (max_size() - m_putpos); }
+    /// true if sz chars can be read
+    C4_ALWAYS_INLINE bool okg(size_type sz) const { return sz <= remg(); }
 
 public:
 
-    C4_ALWAYS_INLINE char     get()        { char c; read(&c, 1); return c; }
-    C4_ALWAYS_INLINE sstream& get(char &c) { read(&c, 1); return *this; }
-    C4_ALWAYS_INLINE sstream& put(char c)  { write(&c, 1); return *this; }
+    C4_ALWAYS_INLINE char get()       { char c; read(&c, 1); return c; }
+    C4_ALWAYS_INLINE void put(char c) { write(&c, 1); return *this; }
 
     C4_ALWAYS_INLINE char peek() { return peek(1); }
-    char peek(size_t ahead);
+    char peek(size_type ahead);
 
 public:
 
     // error handling and recovery
 
-    typedef enum {
-        /** The write buffer has been exhausted and cannot be further increased.
-         * Trying to write again will cause a C4_ERROR unless IGNORE_ERR is set. */
-        EOFP = 0x01,
-        /** The read buffer has been exhausted (ie, it has reached the end of the write buffer).
-         * Trying to read again will cause a C4_ERROR unless IGNORE_ERR is set. */
-        EOFG = 0x01 << 1,
-        /** a reading error has occurred: could not convert the string to the argument's
-         * intrinsic type. Trying to read further will cause a C4_ERROR unless IGNORE_ERR is set. */
-        FAIL = 0x01 << 2,
-        /** do not call C4_ERROR when errors occur; silently continue. */
-        IGNORE_ERR = 0x01 << 3
-    } Status_e;
-
-    C4_ALWAYS_INLINE size_t    stat() const { return m_status; }
+    C4_ALWAYS_INLINE size_type stat() const { return m_status; }
     C4_ALWAYS_INLINE void clear_err() { m_status &= ~(EOFG|EOFP|FAIL); }
 
     C4_ALWAYS_INLINE void ignore_err(bool yes) { if(yes) m_status |= IGNORE_ERR; else m_status &= ~IGNORE_ERR; }
@@ -240,9 +249,9 @@ private:
 
     void errp_();
     void errg_();
+    void errf_();
 
-    void resize_(size_t sz);
-    bool growto_(size_t sz);
+    void growto_(size_type sz);
 
     template <class T, class... MoreArgs>
     void printp_(const char* fmt, T const& arg, MoreArgs&& ...more);
@@ -250,7 +259,7 @@ private:
     template <class T, class... MoreArgs>
     void scanp_(const char* fmt, T & arg, MoreArgs&& ...more);
 
-    static size_t nextarg_(const char *fmt) ;
+    static size_type nextarg_(const char *fmt) ;
 
     template <class T, class... MoreArgs>
     void catsep_(char sep, T const& arg, MoreArgs&& ...more)
@@ -284,6 +293,8 @@ private:
         }
     }
 
+    C4_ALWAYS_INLINE char      * buf_()       { return m_status & OWNER ? &m_string[0] : m_buf; }
+    C4_ALWAYS_INLINE const char* buf_() const { return m_status & OWNER ? &m_string[0] : m_buf; }
 public:
 
     void scanf____(const char *fmt, void *arg);
@@ -302,8 +313,8 @@ struct fmt_tag< _ty >\
 }
 
 #define _C4_DEFINE_SCALAR_IO_OPERATOR(ty) \
-C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, ty  var) { ss.printf   (fmt_tag< ty >::fmt ,  var); return ss; }\
-C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, ty& var) { ss.scanf____(fmt_tag< ty >::fmtn, &var); return ss; }
+template<class StringType> C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, ty  var) { ss.printf   (fmt_tag< ty >::fmt ,  var); return ss; }\
+template<class StringType> C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var) { ss.scanf____(fmt_tag< ty >::fmtn, &var); return ss; }
 
 _C4_DEFINE_FMT_TAG(void *  , "%p"               );
 _C4_DEFINE_FMT_TAG(char    , "%c"               );
@@ -332,17 +343,18 @@ _C4_DEFINE_SCALAR_IO_OPERATOR(uint64_t)
 _C4_DEFINE_SCALAR_IO_OPERATOR(float   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(double  )
 
-C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, char  var) { ss.write(&var, 1); return ss; }\
-C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, char& var) { ss.read(&var, 1); return ss; }
 
-template< size_t N >
-C4_ALWAYS_INLINE sstream& operator<< (sstream& ss, const char (&var)[N])
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, char  var) { ss.write(&var, 1); return ss; }\
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char& var) { ss.read(&var, 1); return ss; }
+
+template< class StringType, size_t N >
+C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, const char (&var)[N])
 {
     ss.printf("%.*s", (int)(N-1), &var[0]);
     return ss;
 }
-template< size_t N >
-C4_ALWAYS_INLINE sstream& operator>> (sstream& ss, char (&var)[N])
+template< class StringType, size_t N >
+C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char (&var)[N])
 {
     ss.scanf("%.*s", (int)(N-1), &var[0]);
     return ss;

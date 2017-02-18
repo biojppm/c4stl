@@ -2027,16 +2027,16 @@ template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_
 //-----------------------------------------------------------------------------
 // stream io
 
-template< typename C, typename Size, class Str, class Sub >
+template< class StringType, typename C, typename Size, class Str, class Sub >
 C4_ALWAYS_INLINE
-c4::sstream& operator<< (c4::sstream& os, string_impl< C, Size, Str, Sub > const& n)
+c4::sstream< StringType >& operator<< (c4::sstream< StringType >& os, string_impl< C, Size, Str, Sub > const& n)
 {
     os.write(n.data(), n.size());
     return is;
 }
 
-template< typename C, typename Size, class Str, class Sub >
-c4::sstream& operator>> (c4::sstream& is, string_impl< C, Size, Str, Sub > & n)
+template< class StringType, typename C, typename Size, class Str, class Sub >
+c4::sstream< StringType >& operator>> (c4::sstream< StringType >& is, string_impl< C, Size, Str, Sub > & n)
 {
     Str::size_type pos = 0;
     // skip leading whitespace

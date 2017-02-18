@@ -32,7 +32,6 @@ TEST(StringTrimOverflow, trim)
     using tstring = basic_string< char, uint8_t >;
     // assign a 255 char 
     tstring s(' ', 254); // (+1 for the null character)
-
 }
 
 TEST(StringInterop, StringVsSubstring)

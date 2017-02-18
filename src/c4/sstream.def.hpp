@@ -5,13 +5,16 @@
 #include "c4/sstream.hpp"
 #endif
 
+#include "c4/sstream.cpp" // FIXME
+
 C4_BEGIN_NAMESPACE(c4)
 
 //-----------------------------------------------------------------------------
+template <class StringType>
 template <class T, class... MoreArgs>
-void sstream::printp_(const char* fmt, T const& arg, MoreArgs&& ...more)
+void sstream<StringType>::printp_(const char* fmt, T const& arg, MoreArgs&& ...more)
 {
-    size_t next = nextarg_(fmt); // where does the next argument token start?
+    size_type next = nextarg_(fmt); // where does the next argument token start?
     if(C4_UNLIKELY(next == npos)) // no more tokens were found
     {
         printp_(fmt); // write everything
@@ -24,10 +27,11 @@ void sstream::printp_(const char* fmt, T const& arg, MoreArgs&& ...more)
 }
 
 //-----------------------------------------------------------------------------
+template <class StringType>
 template <class T, class... MoreArgs>
-void sstream::scanp_(const char* fmt, T & arg, MoreArgs&& ...more)
+void sstream<StringType>::scanp_(const char* fmt, T & arg, MoreArgs&& ...more)
 {
-    size_t next = nextarg_(fmt); // where does the next argument token start?
+    size_type next = nextarg_(fmt); // where does the next argument token start?
     if(C4_UNLIKELY(next == npos)) // no more tokens were found
     {
         scanp_(fmt);
