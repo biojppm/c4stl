@@ -26,7 +26,6 @@ set(src
     c4/span.hpp
     c4/sstream.hpp
     c4/sstream.def.hpp
-    #c4/sstream.cpp
     c4/string.cpp
     c4/string.hpp
     c4/string_fwd.hpp
@@ -81,8 +80,8 @@ if(C4STL_BUILD_TESTS)
 
     target_link_libraries(c4stl-test c4stl ${gtest_LIBRARIES})
     target_include_directories(c4stl-test PUBLIC
-		"${gtest_INCLUDE_DIRS}"
-		${CMAKE_CURRENT_SOURCE_DIR}/../test)
+        "${gtest_INCLUDE_DIRS}"
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test)
 endif(C4STL_BUILD_TESTS)
 
 #------------------------------------------------------------------------------

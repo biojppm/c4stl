@@ -67,7 +67,7 @@ public:
     sstream& operator=(sstream const& that) = default;
     sstream& operator=(sstream     && that) = default;
 
-    size_type max_size() const { return m_string.max_size() - 1; }
+    StringType&& move_out();
 
     void reset()
     {
@@ -78,8 +78,8 @@ public:
 
     void reserve(size_type cap);
     C4_ALWAYS_INLINE size_type capacity() const { return m_string.capacity(); }
-
-    StringType&& move_out();
+    
+    size_type max_size() const { return m_string.max_size() - 1; }
 
 public:
 
@@ -292,33 +292,51 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-template< class T > struct fmt_tag {};
+template< class C, class T > struct fmt_tag {};
 
 #define _C4_DEFINE_FMT_TAG(_ty, fmtstr) \
 template<>\
-struct fmt_tag< _ty >\
+struct fmt_tag< char, _ty >\
 {\
     static constexpr const char fmt[] = fmtstr;\
     static constexpr const char fmtn[] = fmtstr "%n";\
+};\
+template<>\
+struct fmt_tag< wchar_t, _ty >\
+{\
+    static constexpr const wchar_t fmt[] = C4_XCAT(L, fmtstr);\
+    static constexpr const wchar_t fmtn[] = C4_XCAT(C4_XCAT(L, fmtstr), "%n");\
 }
 
 #define _C4_DEFINE_SCALAR_IO_OPERATOR(ty) \
-template<class StringType> C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, ty  var) { ss.printf   (fmt_tag< ty >::fmt ,  var); return ss; }\
-template<class StringType> C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var) { ss.scanf____(fmt_tag< ty >::fmtn, &var); return ss; }
+template<class StringType>\
+C4_ALWAYS_INLINE \
+sstream<StringType>& operator<< (sstream<StringType>& ss, ty  var)\
+{\
+    ss.printf(fmt_tag< typename StringType::value_type, ty >::fmt, var);\
+    return ss;\
+}\
+template<class StringType>\
+C4_ALWAYS_INLINE \
+sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var) \
+{\
+    ss.scanf____(fmt_tag< typename StringType::value_type, ty >::fmtn, &var);\
+    return ss;\
+}
 
 _C4_DEFINE_FMT_TAG(void *  , "%p"               );
 _C4_DEFINE_FMT_TAG(char    , "%c"               );
 _C4_DEFINE_FMT_TAG(char *  , "%s"               );
 _C4_DEFINE_FMT_TAG(double  , "%lg"              );
 _C4_DEFINE_FMT_TAG(float   , "%g"               );
-_C4_DEFINE_FMT_TAG( int64_t, /*"%lld"*/"%"PRId64);
-_C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
-_C4_DEFINE_FMT_TAG( int32_t, /*"%d"  */"%"PRId32);
-_C4_DEFINE_FMT_TAG(uint32_t, /*"%u"  */"%"PRIu32);
-_C4_DEFINE_FMT_TAG( int16_t, /*"%hd" */"%"PRId16);
-_C4_DEFINE_FMT_TAG(uint16_t, /*"%hu" */"%"PRIu16);
 _C4_DEFINE_FMT_TAG( int8_t , /*"%hhd"*/"%"PRId8 );
 _C4_DEFINE_FMT_TAG(uint8_t , /*"%hhu"*/"%"PRIu8 );
+_C4_DEFINE_FMT_TAG( int16_t, /*"%hd" */"%"PRId16);
+_C4_DEFINE_FMT_TAG(uint16_t, /*"%hu" */"%"PRIu16);
+_C4_DEFINE_FMT_TAG( int32_t, /*"%d"  */"%"PRId32);
+_C4_DEFINE_FMT_TAG(uint32_t, /*"%u"  */"%"PRIu32);
+_C4_DEFINE_FMT_TAG( int64_t, /*"%lld"*/"%"PRId64);
+_C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
 
 _C4_DEFINE_SCALAR_IO_OPERATOR(void*   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(char*   )

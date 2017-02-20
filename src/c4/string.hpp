@@ -2283,7 +2283,6 @@ public:
     C4_ALWAYS_INLINE basic_string(Allocator const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) {}
     C4_ALWAYS_INLINE ~basic_string()
     {
-        C4_LOGP("string: dtor: this={} m_str={}\n", (void*)this, (void*)m_str);
         free();
     }
 
@@ -2388,10 +2387,7 @@ public:
         //if(C4_UNLIKELY(sz == 0)) return;
         if((sz + 1) > m_capacity)
         {
-auto prev = m_str;
-auto prev_sz = m_capacity;
             _resizebuf(sz + 1);
-C4_LOGP("string: reserve this={} sz={}--->{} m_str={}--->{}\n", (void*)this, m_size, sz+1, (void*)prev, (void*)m_str);
         }
     }
     void grow(SizeType more)
