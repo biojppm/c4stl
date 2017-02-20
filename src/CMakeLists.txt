@@ -67,14 +67,15 @@ if(C4STL_BUILD_TESTS)
 
     add_executable(c4stl-test
         ../test/main.cpp
-		../test/c4/test.hpp
+        ../test/c4/test.hpp
         c4/log.test.cpp
         c4/error.test.cpp
+        c4/memory_resource.test.cpp
         c4/memory_util.test.cpp
         c4/preprocessor.test.cpp
         c4/span.test.cpp
         c4/sstream.test.cpp
-		c4/string.test.cpp c4/string.test.hpp
+        c4/string.test.cpp c4/string.test.hpp
         c4/types.test.cpp
         )
 

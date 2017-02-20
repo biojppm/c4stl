@@ -1,11 +1,11 @@
 #include "c4/memory_resource.hpp"
-#include "c4/error.hpp"
-#include "c4/platform.hpp"
 
 #include <stdlib.h>
 #include <string.h>
 
 C4_BEGIN_NAMESPACE(c4)
+
+thread_local AllocationCounts MemoryResourceCounts::s_counts = AllocationCounts();
 C4_BEGIN_NAMESPACE(detail)
 
 #ifdef C4_NO_ALLOC_DEFAULTS
@@ -212,15 +212,17 @@ C4_END_NAMESPACE(c4)
 #include <new>
 void* operator new(size_t size)
 {
-    return ::c4::alloc(size);
+    auto *mr = ::c4::get_memory_resource();
+    return mr->allocate(size);
 }
 void operator delete(void *p) noexcept
 {
-    ::c4::free(p);
+    C4_NEVER_REACH();
 }
-void operator delete(void *p, size_t)
+void operator delete(void *p, size_t size)
 {
-    ::c4::free(p);
+    auto *mr = ::c4::get_memory_resource();
+    mr->deallocate(p, size);
 }
 void* operator new[](size_t size)
 {
@@ -230,9 +232,9 @@ void operator delete[](void *p) noexcept
 {
     operator delete(p);
 }
-void operator delete[](void *p, size_t)
+void operator delete[](void *p, size_t size)
 {
-    operator delete(p);
+    operator delete(p, size);
 }
 void* operator new(size_t size, std::nothrow_t)
 {
@@ -242,9 +244,9 @@ void operator delete(void *p, std::nothrow_t)
 {
     operator delete(p);
 }
-void operator delete(void *p, size_t, std::nothrow_t)
+void operator delete(void *p, size_t size, std::nothrow_t)
 {
-    operator delete(p);
+    operator delete(p, size);
 }
 void* operator new[](size_t size, std::nothrow_t)
 {
@@ -256,6 +258,6 @@ void operator delete[](void *p, std::nothrow_t)
 }
 void operator delete[](void *p, size_t, std::nothrow_t)
 {
-    operator delete(p);
+    operator delete(p, size);
 }
 #endif // C4_REDEFINE_CPPNEW
