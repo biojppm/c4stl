@@ -2,6 +2,7 @@
 #define _C4_TYPES_HPP_
 
 #include <stdint.h>
+#include <stddef.h>
 #include <type_traits>
 
 //! @file types.hpp basic types, and utility macros and traits for types.
@@ -19,6 +20,8 @@ using u64 = uint64_t;
 
 using f32 = float;
 using f64 = double;
+
+using ssize_t = std::make_signed< size_t >::type;
 
 //--------------------------------------------------
 
