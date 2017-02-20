@@ -12,158 +12,26 @@ C4_BEGIN_NAMESPACE(c4)
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-sstream< StringType >::~sstream()
-{
-    if(owner())
-    {
-        C4_LOGP("sstream: deallocating m_string({}) ---> data={}\n", (void*)&m_string, (void*)m_string.data());
-        m_string.~StringType();
-    }
-}
-
-//-----------------------------------------------------------------------------
-/** will own a string object */
-template< class StringType >
-sstream< StringType >::sstream()
+template< class... Args >
+sstream< StringType >::sstream(Args&& ...string_ctor_args)
 :
-    m_string(),
-    m_putpos(0),
-    m_getpos(0),
-    m_status(OWNER)
-{
-    m_string.resize(m_string.capacity());
-}
-
-//-----------------------------------------------------------------------------
-/** will map the given memory as the stream buffer. The string object
- * will be inactive. The caller needs to ensure that the lifetime of the
- * given memory will exceed that of this sstream object. */
-template< class StringType >
-sstream< StringType >::sstream(value_type *s, size_type sz)
-:
-    m_buf(s),
-    m_capacity(sz),
+    m_string(std::forward< Args >(string_ctor_args)...),
     m_putpos(0),
     m_getpos(0),
     m_status(0)
 {
-}
-
-//-----------------------------------------------------------------------------
-template< class StringType >
-sstream< StringType >::sstream(sstream const& that)
-:
-    m_putpos(that.m_putpos),
-    m_getpos(that.m_getpos),
-    m_status(that.m_status)
-{
-    if(that.owner())
-    {
-        new (m_string) StringType(that.m_string);
-    }
-    else
-    {
-        m_buf = that.m_buf;
-        m_capacity = that.m_capacity;
-    }
-}
-
-//-----------------------------------------------------------------------------
-template< class StringType >
-sstream< StringType >::sstream(sstream && that)
-:
-    m_putpos(that.m_putpos),
-    m_getpos(that.m_getpos),
-    m_status(that.m_status)
-{
-    if(that.owner())
-    {
-        new (m_string) StringType(std::move(that.m_string));
-        that &= ~OWNER;
-    }
-    else
-    {
-        m_buf = that.m_buf;
-        m_capacity = that.m_capacity;
-    }
-}
-
-//-----------------------------------------------------------------------------
-template< class StringType >
-sstream< StringType >& sstream< StringType >::operator= (sstream const& that)
-{
-    if(that.owner())
-    {
-        if(owner())
-        {
-            m_string.operator=(that.m_string);
-        }
-        else
-        {
-            new (m_string) StringType(that.m_string);
-            m_status |= OWNER;
-        }
-    }
-    else
-    {
-        if(owner())
-        {
-            m_string.~StringType();
-        }
-        m_status &= ~OWNER;
-        m_buf = that.m_buf;
-        m_capacity = that.m_capacity;
-    }
-    m_putpos = that.m_putpos;
-    m_getpos = that.m_getpos;
-    m_status &= that.m_status & (~OWNER);
-    m_status |= that.m_status & (~OWNER);
-}
-
-//-----------------------------------------------------------------------------
-template< class StringType >
-sstream< StringType >& sstream< StringType >::operator= (sstream && that)
-{
-    if(that.owner())
-    {
-        if(owner())
-        {
-             m_string.operator=(std::move(that.m_string));
-        }
-        else
-        {
-            new (m_string) StringType(std::move(that.m_string));
-            m_status |= OWNER;
-        }
-        that.m_status &= ~OWNER;
-    }
-    else
-    {
-        if(owner())
-        {
-            m_string.~StringType();
-        }
-        m_status &= ~OWNER;
-        m_buf = that.m_buf;
-        m_capacity = that.m_capacity;
-    }
-    m_putpos = that.m_putpos;
-    m_getpos = that.m_getpos;
-    m_status &= that.m_status & (~OWNER);
-    m_status |= that.m_status & (~OWNER);
+    reserve(m_string.capacity()); // HACK for std::string
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
 StringType&& sstream< StringType >::move_out()
 {
-    C4_CHECK(owned());
     m_string.resize(m_putpos);
-    m_status &= ~OWNED;
-    m_buf = nullptr;
-    m_capacity = 0;
+    StringType&& mv = std::move(m_string);
     reset();
-    return std::move(m_string);
+    m_string.~StringType(); // not sure about this
+    return mv;
 }
 
 //-----------------------------------------------------------------------------
@@ -197,17 +65,10 @@ void sstream< StringType >::errf_()
 template< class StringType >
 void sstream< StringType >::reserve(size_type cap)
 {
-    if(owner())
+    if(cap >= m_string.size())
     {
-        if(cap >= m_string.size())
-        {
-            m_string.reserve(cap);
-            m_string.resize(cap);
-        }
-    }
-    else
-    {
-        C4_CHECK(cap <= m_capacity);
+        m_string.reserve(cap);
+        m_string.resize(cap);
     }
 }
 
@@ -215,20 +76,10 @@ void sstream< StringType >::reserve(size_type cap)
 template< class StringType >
 void sstream< StringType >::growto_(size_type sz)
 {
-    if(owner())
+    if(sz >= m_string.size())
     {
-        if(sz >= m_string.size())
-        {
-            m_string.reserve(sz);
-            m_string.resize(sz);
-        }
-    }
-    else
-    {
-        if(sz >= m_capacity)
-        {
-            errp_();
-        }
+        m_string.reserve(sz);
+        m_string.resize(sz);
     }
 }
 
@@ -262,7 +113,7 @@ void sstream< StringType >::write(const char *str, size_type sz)
 {
     if(C4_UNLIKELY( ! okp(sz + 1)))
     {
-        growto_(m_putpos + sz + 1); // this reserves and will allocate when needed (and crash if impossible)
+        growto_(m_putpos + sz + 1); // this reserves and will allocate when needed
     }
 
     if(C4_UNLIKELY(m_status & EOFP))

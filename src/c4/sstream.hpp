@@ -25,14 +25,7 @@ class sstream
     static_assert(std::is_same< typename StringType::value_type, char >::value, "for now only char is implemented");
 private:
 
-    union {
-        StringType m_string;
-        struct {
-            typename StringType::value_type * m_buf;
-            typename StringType::size_type    m_capacity;
-        };
-    };
-
+    StringType                     m_string;
     typename StringType::size_type m_putpos;
     typename StringType::size_type m_getpos;
     typename StringType::size_type m_status;
@@ -42,38 +35,37 @@ public:
     static constexpr const size_t npos = typename StringType::size_type(-1);
 
     using string_type = StringType;
+    using traits_type = typename StringType::traits_type;
     using value_type  = typename StringType::value_type;
     using  size_type  = typename StringType::size_type;
     using  span_type  =  span<typename StringType::value_type, typename StringType::size_type>;
     using cspan_type  = cspan<typename StringType::value_type, typename StringType::size_type>;
 
     typedef enum {
-        /** marks when m_string is set and this object is responsible for its lifetime */
-        OWNER = 0x01,
         /** The write buffer has been exhausted and cannot be further increased.
          * Trying to write again will cause a C4_ERROR unless IGNORE_ERR is set. */
-        EOFP = 0x01 << 1,
+        EOFP = 0x01 << 0,
         /** The read buffer has been exhausted (ie, it has reached the end of the write buffer).
          * Trying to read again will cause a C4_ERROR unless IGNORE_ERR is set. */
-        EOFG = 0x01 << 2,
+        EOFG = 0x01 << 1,
         /** a reading error has occurred: could not convert the string to the argument's
          * intrinsic type. Trying to read further will cause a C4_ERROR unless IGNORE_ERR is set. */
-        FAIL = 0x01 << 3,
+        FAIL = 0x01 << 2,
         /** do not call C4_ERROR when errors occur; silently continue. Actions which
          * would overflow the buffer are silently skippedd. */
-        IGNORE_ERR = 0x01 << 4,
+        IGNORE_ERR = 0x01 << 3,
     } Status_e;
 
 public:
 
-    sstream();
-    sstream(value_type *s, size_type sz);
-    ~sstream();
+    template< class... Args >
+    sstream(Args&&... string_ctor_args);
+    ~sstream() = default;
 
-    sstream(sstream const& that);
-    sstream(sstream     && that);
-    sstream& operator=(sstream const& that);
-    sstream& operator=(sstream     && that);
+    sstream(sstream const& that) = default;
+    sstream(sstream     && that) = default;
+    sstream& operator=(sstream const& that) = default;
+    sstream& operator=(sstream     && that) = default;
 
     size_type max_size() const { return m_string.max_size() - 1; }
 
@@ -85,24 +77,21 @@ public:
     }
 
     void reserve(size_type cap);
-    C4_ALWAYS_INLINE size_type capacity() const { return owner() ? m_string.capacity() : m_capacity; }
-
-    /** true when this sstream object owns and is responsible for the string's lifetime. */
-    C4_ALWAYS_INLINE bool owner() const { return m_status & OWNER; }
+    C4_ALWAYS_INLINE size_type capacity() const { return m_string.capacity(); }
 
     StringType&& move_out();
 
 public:
 
     /// get the full resulting span (from 0 to tellp)
-    C4_ALWAYS_INLINE cspan_type span() const { return cspan_type(m_buf, m_putpos); }
+    C4_ALWAYS_INLINE cspan_type span() const noexcept { return cspan_type(m_string.data(), m_putpos); }
     /// get the current reading span (from tellg to to tellp)
-    C4_ALWAYS_INLINE cspan_type spang() const { return cspan_type(m_buf + m_getpos, m_putpos - m_getpos); }
+    C4_ALWAYS_INLINE cspan_type spang() const C4_NOEXCEPT_X { C4_XASSERT(m_putpos >= m_getpos); return cspan_type(m_string.data() + m_getpos, m_putpos - m_getpos); }
 
     /// get the full resulting string (from 0 to tellp)
-    C4_ALWAYS_INLINE const char* c_str() const { C4_XASSERT(m_buf[m_putpos] == '\0'); return m_buf; }
+    C4_ALWAYS_INLINE const char* c_str() const { C4_XASSERT(m_string[m_putpos] == '\0'); return m_string.data(); }
     /// get the current reading string (from tellg to tellp)
-    C4_ALWAYS_INLINE const char* c_strg() const { C4_XASSERT(m_getpos < m_putpos && m_buf[m_putpos] == '\0'); return m_buf + m_getpos; }
+    C4_ALWAYS_INLINE const char* c_strg() const { C4_XASSERT(m_getpos < m_putpos && m_string[m_putpos] == '\0'); return m_string.data() + m_getpos; }
 
 public:
 
@@ -293,8 +282,9 @@ private:
         }
     }
 
-    C4_ALWAYS_INLINE char      * buf_()       { return m_status & OWNER ? (char*)m_string.data() : m_buf; }
-    C4_ALWAYS_INLINE const char* buf_() const { return m_status & OWNER ?        m_string.data() : m_buf; }
+    C4_ALWAYS_INLINE char      * buf_()       { return const_cast< char* >(m_string.data()); }
+    C4_ALWAYS_INLINE const char* buf_() const { return                     m_string.data(); }
+
 public:
 
     void scanf____(const char *fmt, void *arg);
