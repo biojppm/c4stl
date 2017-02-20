@@ -6,8 +6,14 @@
 /** @def C4_ERROR_THROWS_EXCEPTION if this is defined and exceptions are
  * enabled, then calls to C4_ERROR() will throw an exception */
 
- /** @def C4_NOEXCEPT evaluates to noexcept when C4_ERROR might be called
- * and exceptions are disabled. */
+/** @def C4_NOEXCEPT evaluates to noexcept when C4_ERROR might be called
+ * and exceptions are disabled. Otherwise, defaults to nothing. */
+
+/** @def C4_NOEXCEPT_A evaluates to noexcept when C4_ASSERT is disabled.
+ * Otherwise, defaults to nothing. */
+
+/** @def C4_NOEXCEPT_X evaluates to noexcept when C4_XASSERT is disabled.
+ * Otherwise, defaults to nothing.  */
 
 #if defined(C4_EXCEPTIONS_ENABLED) && defined(C4_ERROR_THROWS_EXCEPTION)
 #   define C4_NOEXCEPT
@@ -157,9 +163,11 @@ void handle_warning(const char *fmt, ...);
 #ifdef NDEBUG // turn off assertions
 #   define C4_ASSERT(cond)
 #   define C4_ASSERT_MSG(cond, fmt, ...)
+#   define C4_NOEXCEPT_A noexcept
 #else
 #   define C4_ASSERT(cond) C4_CHECK(cond)
 #   define C4_ASSERT_MSG(cond, fmt, ...) C4_CHECK_MSG(cond, fmt, ## __VA_ARGS__)
+#   define C4_NOEXCEPT_A C4_NOEXCEPT
 #endif
 
 // Extreme assertion: can be switched off independently of the regular assertion.
@@ -167,9 +175,11 @@ void handle_warning(const char *fmt, ...);
 #ifdef C4_USE_XASSERT
 #   define C4_XASSERT(cond) C4_CHECK(cond)
 #   define C4_XASSERT_MSG(cond, fmt, ...) C4_CHECK_MSG(cond, fmt, ## __VA_ARGS__)
+#   define C4_NOEXCEPT_X C4_NOEXCEPT
 #else
 #   define C4_XASSERT(cond)
-#   define C4_XASSERT_MSG(cond, fmt, ...)
+#   define C4_XASSERT_MSG(cond, fmt, ...))
+#   define C4_NOEXCEPT_X noexcept
 #endif
 
 

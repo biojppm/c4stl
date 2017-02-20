@@ -53,39 +53,39 @@ public:
     C4_ALWAYS_INLINE const_iterator  end() const noexcept { return _c4ptr + _c4sz; }
     C4_ALWAYS_INLINE const_iterator cend() const noexcept { return _c4ptr + _c4sz; }
 
-    C4_ALWAYS_INLINE T&          front()       C4_NOEXCEPT { C4_XASSERT(!empty()); return _c4ptr[0]; }
-    C4_ALWAYS_INLINE fastcref<T> front() const C4_NOEXCEPT { C4_XASSERT(!empty()); return _c4ptr[0]; }
+    C4_ALWAYS_INLINE T&          front()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[0]; }
+    C4_ALWAYS_INLINE fastcref<T> front() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[0]; }
 
-    C4_ALWAYS_INLINE T&          back()       C4_NOEXCEPT { C4_XASSERT(!empty()); return _c4ptr[_c4sz - 1]; }
-    C4_ALWAYS_INLINE fastcref<T> back() const C4_NOEXCEPT { C4_XASSERT(!empty()); return _c4ptr[_c4sz - 1]; }
+    C4_ALWAYS_INLINE T&          back()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[_c4sz - 1]; }
+    C4_ALWAYS_INLINE fastcref<T> back() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[_c4sz - 1]; }
 
-    C4_ALWAYS_INLINE T&          operator[] (I i)       C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
-    C4_ALWAYS_INLINE fastcref<T> operator[] (I i) const C4_NOEXCEPT { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
+    C4_ALWAYS_INLINE T&          operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
+    C4_ALWAYS_INLINE fastcref<T> operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
 
-    C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT_X
     {
         C4_XASSERT(first >= 0 && first < _c4sz);
         return _c4this->_select(_c4ptr + first, _c4sz - first);
     }
-    C4_ALWAYS_INLINE SpanImpl subspan(I first, I num) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE SpanImpl subspan(I first, I num) const C4_NOEXCEPT_X
     {
         C4_XASSERT(first >= 0 && first < _c4sz);
         C4_XASSERT(first + num >= 0 && first + num < _c4sz);
         return _c4this->_select(_c4ptr + first, num);
     }
-    C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT_X
     {
         C4_XASSERT(first >= 0 && first < _c4sz);
         C4_XASSERT(last >= 0 && last < _c4sz);
         return _c4this->_select(_c4ptr + first, last - first);
     }
 
-    C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT_X
     {
         C4_XASSERT(num >= 0 && num < _c4sz);
         return _c4this->_select(_c4ptr, num);
     }
-    C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT_X
     {
         C4_XASSERT(num >= 0 && num < _c4sz);
         return _c4this->_select(_c4ptr + _c4sz - num, num);
@@ -96,7 +96,7 @@ public:
         return size() == that.size() && data() == that.data();
     }
     template< class I2, class Impl2 >
-    C4_ALWAYS_INLINE bool same_span(_span_crtp< T, I2, Impl2 > const& that) const C4_NOEXCEPT
+    C4_ALWAYS_INLINE bool same_span(_span_crtp< T, I2, Impl2 > const& that) const noexcept
     {
         return size() == that.size() && data() == that.data();
     }
@@ -192,12 +192,14 @@ public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
 
-    C4_ALWAYS_INLINE operator span< const T, I > () const { return span< const T, I >((T const*)m_ptr, m_size); }
+    C4_ALWAYS_INLINE operator span< const T, I > () const noexcept { return span< const T, I >((T const*)m_ptr, m_size); }
 
-    C4_ALWAYS_INLINE span() : m_ptr{nullptr}, m_size{0} {}
-    C4_ALWAYS_INLINE span(T *p, I sz) : m_ptr{p}, m_size{sz} {}
+public:
+
+    C4_ALWAYS_INLINE span() noexcept : m_ptr{nullptr}, m_size{0} {}
+    C4_ALWAYS_INLINE span(T *p, I sz) noexcept : m_ptr{p}, m_size{sz} {}
     template< size_t N >
-    C4_ALWAYS_INLINE span(T (&arr)[N]) : m_ptr{arr}, m_size{N} {}
+    C4_ALWAYS_INLINE span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N} {}
 
     span(span const&) = default;
     span(span     &&) = default;
@@ -209,14 +211,14 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_size; }
 
-    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT
+    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A
     {
         C4_XASSERT(sz <= m_size);
         m_size = sz;
     }
 
-    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; }
-    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; m_ptr += n; }
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; }
 
 };
 
@@ -233,22 +235,22 @@ class spanrs : public _span_crtp<T, I, spanrs<T, I>>
     I m_size;
     I m_capacity;
     
-    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const { return spanrs(p, sz, m_capacity - (p - m_ptr)); }
+    C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const noexcept { return spanrs(p, sz, m_capacity - (p - m_ptr)); }
 
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
 
-    C4_ALWAYS_INLINE operator spanrs< const T, I > () const { return spanrs< const T, I >((T const*)m_ptr, m_size, m_capacity); }
-    C4_ALWAYS_INLINE operator span< T, I > () const { return span< T, I >(m_ptr, m_size); }
+    C4_ALWAYS_INLINE operator spanrs< const T, I > () const noexcept { return spanrs< const T, I >((T const*)m_ptr, m_size, m_capacity); }
+    C4_ALWAYS_INLINE operator span< T, I > () const noexcept { return span< T, I >(m_ptr, m_size); }
 
 public:
 
-    C4_ALWAYS_INLINE spanrs() : m_ptr{nullptr}, m_size{0}, m_capacity{0} {}
-    C4_ALWAYS_INLINE spanrs(T *p, I sz) : m_ptr{p}, m_size{sz}, m_capacity{sz} {}
-    C4_ALWAYS_INLINE spanrs(T *p, I sz, I cap) : m_ptr{p}, m_size{sz}, m_capacity{cap} {}
+    C4_ALWAYS_INLINE spanrs() noexcept : m_ptr{nullptr}, m_size{0}, m_capacity{0} {}
+    C4_ALWAYS_INLINE spanrs(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz} {}
+    C4_ALWAYS_INLINE spanrs(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap} {}
     template< size_t N >
-    C4_ALWAYS_INLINE spanrs(T (&arr)[N]) : m_ptr{arr}, m_size{N}, m_capacity{N} {}
+    C4_ALWAYS_INLINE spanrs(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N} {}
 
     spanrs(spanrs const&) = default;
     spanrs(spanrs     &&) = default;
@@ -260,14 +262,14 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
-    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT
+    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A
     {
         C4_ASSERT(sz <= m_capacity);
         m_size = sz;
     }
 
-    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; }
-    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT { C4_XASSERT(n >= 0 && n < _c4sz); m_size -= n; m_ptr += n; m_capacity -= n; }
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_capacity -= n; }
 
 };
 
