@@ -53,6 +53,75 @@ protected:
     // Objects declared here can be used by all tests in the test case for Foo.
 };
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+struct AllocationCountsChecker : public ScopedMemoryResourceCounts
+{
+    AllocationCounts first;
+
+public:
+
+    AllocationCountsChecker()
+    :
+        ScopedMemoryResourceCounts(),
+        first(mr.counts())
+    {
+    }
+
+    void reset()
+    {
+        first = mr.counts();
+    }
+
+    /** check value of curr allocations and size */
+    void check_curr(ssize_t expected_allocs, ssize_t expected_size) const
+    {
+        EXPECT_EQ(mr.counts().curr.allocs, expected_allocs);
+        EXPECT_EQ(mr.counts().curr.size, expected_size);
+    }
+    /** check delta of curr allocations and size since construction or last reset() */
+    void check_curr_delta(ssize_t expected_allocs, ssize_t expected_size) const
+    {
+        AllocationCounts delta = mr.counts() - first;
+        EXPECT_EQ(delta.curr.allocs, expected_allocs);
+        EXPECT_EQ(delta.curr.size, expected_size);
+    }
+    
+    /** check value of total allocations and size */
+    void check_total(ssize_t expected_allocs, ssize_t expected_size) const
+    {
+        EXPECT_EQ(mr.counts().total.allocs, expected_allocs);
+        EXPECT_EQ(mr.counts().total.size, expected_size);
+    }
+    /** check delta of total allocations and size since construction or last reset() */
+    void check_total_delta(ssize_t expected_allocs, ssize_t expected_size) const
+    {
+        AllocationCounts delta = mr.counts() - first;
+        EXPECT_EQ(delta.total.allocs, expected_allocs);
+        EXPECT_EQ(delta.total.size, expected_size);
+    }
+    
+    /** check value of max allocations and size */
+    void check_max(ssize_t expected_max_allocs, ssize_t expected_max_size) const
+    {
+        EXPECT_EQ(mr.counts().max.allocs, expected_max_allocs);
+        EXPECT_EQ(mr.counts().max.size, expected_max_size);
+    }
+
+    /** check that since construction or the last reset():
+     *    - num_allocs occcurred
+     *    - totaling total_size
+     *    - of which the largest is max_size */
+    void check_all_delta(ssize_t num_allocs, ssize_t total_size, ssize_t max_size) const
+    {
+        check_curr_delta(num_allocs, total_size);
+        check_total_delta(num_allocs, total_size);
+        check_max(num_allocs > mr.counts().max.allocs ? num_allocs : mr.counts().max.allocs,
+                  max_size   > mr.counts().max.size   ? max_size   : mr.counts().max.size);
+    }
+};
+
 C4_END_NAMESPACE(c4)
 
 #endif // _C4_TEST_HPP_
