@@ -45,16 +45,16 @@ TYPED_TEST_CASE_P(RoundTripTest_stdstring);
 //-----------------------------------------------------------------------------
 #define _testrtrip3(which, strtype)                                 \
                                                                     \
-    which<strtype, TypeParam>(ss, 0, 10, 20);                       \
+    which<strtype, TypeParam>(ss, 65, 66, 67);                      \
     ss.reset();                                                     \
                                                                     \
-    which<strtype, TypeParam>(ss, 21, 22, 23);                      \
+    which<strtype, TypeParam>(ss, 97, 98, 99);                      \
     ss.reset();                                                     \
                                                                     \
     which<strtype, TypeParam>(ss, 123, 124, 125);                   \
     ss.reset();                                                     \
                                                                     \
-    which<strtype, exvec3<TypeParam>>(ss, {1,2,3},{4,5,6},{7,8,9}); \
+    which<strtype, exvec3<TypeParam>>(ss, {65,66,67},{68,69,70},{71,72,73}); \
     ss.reset();
 
 //-----------------------------------------------------------------------------
@@ -90,16 +90,16 @@ void do_round_trip_printp(sstream<String> &ss, T const& val1, T const& val2, T c
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);
 
-    ss.reset();
+    ss.reset(); v1 = v2 = v3 = {};
     ss.printp("{} aaaaaaaaa {} bbbb {} ccc", val1, val2, val3);
     ss.scanp("{} aaaaaaaaa {} bbbb {} ccc", v1, v2, v3);
     EXPECT_EQ(v1, val1);
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);
 
-    ss.reset();
-    ss.printp("{}aaaaaaaaa{}bbbb{}ccc", val1, val2, val3);
-    ss.scanp("{}aaaaaaaaa{}bbbb{}ccc", v1, v2, v3);
+    ss.reset(); v1 = v2 = v3 = {};
+    ss.printp("{} aaaaaaaaa_{} bbbb_{} ccc", val1, val2, val3);
+    ss.scanp("{} aaaaaaaaa_{} bbbb_{} ccc", v1, v2, v3);
     EXPECT_EQ(v1, val1);
     EXPECT_EQ(v2, val2);
     EXPECT_EQ(v3, val3);

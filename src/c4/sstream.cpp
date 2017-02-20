@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "c4/log.hpp"
+
 #include "c4/memory_resource.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
@@ -14,6 +16,7 @@ sstream< StringType >::~sstream()
 {
     if(owner())
     {
+        C4_LOGP("sstream: deallocating m_string({}) ---> data={}\n", (void*)&m_string, (void*)m_string.data());
         m_string.~StringType();
     }
 }
@@ -28,6 +31,7 @@ sstream< StringType >::sstream()
     m_getpos(0),
     m_status(OWNER)
 {
+    m_string.resize(m_string.capacity());
 }
 
 //-----------------------------------------------------------------------------
@@ -195,7 +199,11 @@ void sstream< StringType >::reserve(size_type cap)
 {
     if(owner())
     {
-        m_string.reserve(cap);
+        if(cap >= m_string.size())
+        {
+            m_string.reserve(cap);
+            m_string.resize(cap);
+        }
     }
     else
     {
@@ -209,7 +217,11 @@ void sstream< StringType >::growto_(size_type sz)
 {
     if(owner())
     {
-        m_string.reserve(sz);
+        if(sz >= m_string.size())
+        {
+            m_string.reserve(sz);
+            m_string.resize(sz);
+        }
     }
     else
     {
@@ -248,15 +260,16 @@ void sstream< StringType >::write(const char *cstr)
 template< class StringType >
 void sstream< StringType >::write(const char *str, size_type sz)
 {
-    if(C4_UNLIKELY(sz+1 > remp()))
+    if(C4_UNLIKELY( ! okp(sz + 1)))
     {
-        growto_(m_putpos + sz + 1);
+        growto_(m_putpos + sz + 1); // this reserves and will allocate when needed (and crash if impossible)
     }
 
     if(C4_UNLIKELY(m_status & EOFP))
     {
         return;
     }
+
     auto *b = buf_();
     ::memcpy(b + m_putpos, str, sz * sizeof(value_type));
     m_putpos += sz;
@@ -367,8 +380,10 @@ typename sstream< StringType >::size_type sstream< StringType >::nextarg_(const 
     {
         if(fmt[next] == '{' && fmt[next + 1] == '}')
         {
-            if(next)
-            return next;
+            if(next == 0 || fmt[next-1] != '\\')
+            {
+                return next;
+            }
         }
         ++next;
     }

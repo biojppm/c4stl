@@ -1,6 +1,13 @@
 #include "c4/string.hpp"
+#include <cwchar>
 
 C4_BEGIN_NAMESPACE(c4)
+
+void s2ws(char const* mbstr, size_t len, wchar_t *output)
+{
+    std::mbstate_t state = std::mbstate_t();
+    std::mbsrtowcs(&output[0], &mbstr, len, &state);
+}
 
 C4_END_NAMESPACE(c4)
 

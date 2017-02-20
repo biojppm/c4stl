@@ -351,8 +351,8 @@ public:
 public:
 
     Channel* add_channel(const char *name, Level_e lev = INFO);
-    Channel* main_channel() const { return 0; }
-    Channel* channel(const char *name) const;
+    Channel* main_channel() { return m_channels; }
+    Channel* channel(const char *name);
     bool channel_exists(const char *name) const;
     bool channel_exists(Channel* h) const { return h >= &m_channels[0] && h < (&m_channels[0] + m_num_channels); }
 

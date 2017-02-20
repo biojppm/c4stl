@@ -101,6 +101,10 @@ class Allocator : public AllocatorBase
 {
 public:
 
+    using value_type = T;
+
+public:
+
     template< class U > using rebind = Allocator< U >;
     template< class U > Allocator< U > rebound() { return Allocator< U >(*this); }
 

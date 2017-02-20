@@ -109,6 +109,11 @@ TEST(string, appendzz)
     C4_EXPECT_EQ(s1, "s2s3s3s3");
 }
 
+TEST(string, s2ws)
+{
+    string s("áàãâäõê");
+    wstring ws = s2ws(s);
+}
 
 C4_END_HIDDEN_NAMESPACE
 C4_END_NAMESPACE(c4)

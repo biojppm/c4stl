@@ -2,7 +2,7 @@
 #define _C4_UTIL_HPP_
 
 //#define C4_DEBUG
-//#define C4_USE_XASSERT
+#define C4_USE_XASSERT
 #define C4_ERROR_SHOWS_FILELINE
 #define C4_ERROR_SHOWS_FUNC
 //#define C4_ERROR_THROWS_EXCEPTION

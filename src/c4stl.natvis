@@ -83,7 +83,7 @@ See also:
 
   <Type Name="c4::string_impl&lt;*,*,*,*&gt;">
     <DisplayString>{(($T3*)this)->m_str,[(($T3*)this)->m_size]} (sz={(($T3*)this)->m_size})</DisplayString>
-    <StringView>{(($T3*)this)->m_str,[(($T3*)this)->m_size]}</StringView>
+    <StringView>(($T3*)this)->m_str,[(($T3*)this)->m_size]</StringView>
     <Expand>
       <Synthetic Name="m_str">
         <DisplayString>{(($T3*)this)->m_str,[(($T3*)this)->m_size]}</DisplayString>
@@ -124,7 +124,7 @@ See also:
     </Expand>
   </Type>
   <Type Name="c4::basic_string&lt;*,*,*&gt;">
-    <DisplayString>{m_str} (sz={m_size},cap={m_capacity})</DisplayString>
+    <DisplayString>{m_str,[m_size]} (sz={m_size},cap={m_capacity})</DisplayString>
     <StringView>m_str,[m_size]</StringView>
     <Expand>
       <Synthetic Name="[string]">

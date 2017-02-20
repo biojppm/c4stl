@@ -49,7 +49,7 @@ void Log::level(Level_e l)
     }
 }
 
-Log::Channel* Log::channel(const char *name) const
+Log::Channel* Log::channel(const char *name)
 {
     for(uint32_t h = 0; h < m_num_channels; ++h)
     {

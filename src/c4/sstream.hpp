@@ -75,7 +75,7 @@ public:
     sstream& operator=(sstream const& that);
     sstream& operator=(sstream     && that);
 
-    constexpr size_type max_size() const { return StringType::max_size() - 1; }
+    size_type max_size() const { return m_string.max_size() - 1; }
 
     void reset()
     {
@@ -85,10 +85,10 @@ public:
     }
 
     void reserve(size_type cap);
-    size_type capacity() const { return owned() ? m_string.capacity : m_capacity; }
+    C4_ALWAYS_INLINE size_type capacity() const { return owner() ? m_string.capacity() : m_capacity; }
 
     /** true when this sstream object owns and is responsible for the string's lifetime. */
-    C4_ALWAYS_INLINE bool owner() { return m_status & OWNER; }
+    C4_ALWAYS_INLINE bool owner() const { return m_status & OWNER; }
 
     StringType&& move_out();
 
@@ -204,22 +204,22 @@ public:
     C4_ALWAYS_INLINE size_type tellg() const { return m_getpos; }
 
     /// set the current write (ie, put) position
-    C4_ALWAYS_INLINE void seekp(size_type p) { C4_CHECK(p <= m_capacity); m_putpos = p; }
+    C4_ALWAYS_INLINE void seekp(size_type p) { C4_CHECK(p <= capacity()); m_putpos = p; }
     /// set the current read (ie, get) position
-    C4_ALWAYS_INLINE void seekg(size_type g) { C4_CHECK(g <= m_capacity && g <= m_putpos); m_getpos = g; }
+    C4_ALWAYS_INLINE void seekg(size_type g) { C4_CHECK(g <= capacity() && g <= m_putpos); m_getpos = g; }
 
     /// advance the current write (ie, put) position
-    C4_ALWAYS_INLINE void advp(size_type p) { C4_CHECK(m_capacity - m_putpos >= p); m_putpos += p; }
+    C4_ALWAYS_INLINE void advp(size_type p) { C4_CHECK(capacity() - m_putpos >= p); m_putpos += p; }
     /// advance the current read (ie, get) position
     C4_ALWAYS_INLINE void advg(size_type g) { C4_CHECK(m_putpos - m_getpos >= g); m_getpos += g; }
 
     /// remaining size for writing (ie, put), WITHOUT terminating null character
-    C4_ALWAYS_INLINE size_type remp() const { C4_XASSERT(m_putpos <= m_capacity); return m_capacity - m_putpos; }
+    C4_ALWAYS_INLINE size_type remp() const { C4_XASSERT(m_putpos <= capacity()); return capacity() - m_putpos; }
     /// remaining size for reading (ie, get)
     C4_ALWAYS_INLINE size_type remg() const { C4_XASSERT(m_getpos <= m_putpos); return m_putpos - m_getpos; }
 
-    /// true if sz chars can be written (from tellp to the current max_size())
-    C4_ALWAYS_INLINE bool okp(size_type sz) const { return sz <= (max_size() - m_putpos); }
+    /// true if sz chars can be written (from tellp to the current capacity)
+    C4_ALWAYS_INLINE bool okp(size_type sz) const { return sz <= remp(); }
     /// true if sz chars can be read
     C4_ALWAYS_INLINE bool okg(size_type sz) const { return sz <= remg(); }
 
@@ -293,8 +293,8 @@ private:
         }
     }
 
-    C4_ALWAYS_INLINE char      * buf_()       { return m_status & OWNER ? &m_string[0] : m_buf; }
-    C4_ALWAYS_INLINE const char* buf_() const { return m_status & OWNER ? &m_string[0] : m_buf; }
+    C4_ALWAYS_INLINE char      * buf_()       { return m_status & OWNER ? (char*)m_string.data() : m_buf; }
+    C4_ALWAYS_INLINE const char* buf_() const { return m_status & OWNER ?        m_string.data() : m_buf; }
 public:
 
     void scanf____(const char *fmt, void *arg);
