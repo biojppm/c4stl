@@ -51,10 +51,30 @@ struct RoundTripTest_stdwstring : public ::testing::Test
 {
     sstream< std::wstring > ss;
 };
+template <class T>
+struct RoundTripTest_c4substring : public ::testing::Test
+{
+    c4::string str;
+    sstream< c4::substring > ss;
+    RoundTripTest_c4substring() : str(512), ss(str.data(), str.size())
+    {
+    }
+};
+template <class T>
+struct RoundTripTest_c4wsubstring : public ::testing::Test
+{
+    c4::wstring str;
+    sstream< c4::wsubstring > ss;
+    RoundTripTest_c4wsubstring() : str(512), ss(str.data(), str.size())
+    {
+    }
+};
 TYPED_TEST_CASE_P(RoundTripTest_c4string);
 TYPED_TEST_CASE_P(RoundTripTest_stdstring);
 TYPED_TEST_CASE_P(RoundTripTest_c4wstring);
 TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
+TYPED_TEST_CASE_P(RoundTripTest_c4substring);
+TYPED_TEST_CASE_P(RoundTripTest_c4wsubstring);
 
 //-----------------------------------------------------------------------------
 #define _testrtrip3(which, strtype)                                 \
@@ -89,13 +109,21 @@ TYPED_TEST_P(RoundTripTest_c4string, chevron)
 {
     _testrtrip3(do_round_trip_chevron, c4::string);
 }
-TYPED_TEST_P(RoundTripTest_stdstring, chevron)
-{
-    _testrtrip3(do_round_trip_chevron, std::string);
-}
 TYPED_TEST_P(RoundTripTest_c4wstring, chevron)
 {
     _testrtrip3(do_round_trip_chevron, c4::wstring);
+}
+TYPED_TEST_P(RoundTripTest_c4substring, chevron)
+{
+    _testrtrip3(do_round_trip_chevron, c4::substring);
+}
+TYPED_TEST_P(RoundTripTest_c4wsubstring, chevron)
+{
+    _testrtrip3(do_round_trip_chevron, c4::wsubstring);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, chevron)
+{
+    _testrtrip3(do_round_trip_chevron, std::string);
 }
 TYPED_TEST_P(RoundTripTest_stdwstring, chevron)
 {
@@ -133,13 +161,21 @@ TYPED_TEST_P(RoundTripTest_c4string, printp)
 {
     _testrtrip3(do_round_trip_printp, c4::string);
 }
-TYPED_TEST_P(RoundTripTest_stdstring, printp)
-{
-    _testrtrip3(do_round_trip_printp, std::string);
-}
 TYPED_TEST_P(RoundTripTest_c4wstring, printp)
 {
     _testrtrip3(do_round_trip_printp, c4::wstring);
+}
+TYPED_TEST_P(RoundTripTest_c4substring, printp)
+{
+    _testrtrip3(do_round_trip_printp, c4::substring);
+}
+TYPED_TEST_P(RoundTripTest_c4wsubstring, printp)
+{
+    _testrtrip3(do_round_trip_printp, c4::wsubstring);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, printp)
+{
+    _testrtrip3(do_round_trip_printp, std::string);
 }
 TYPED_TEST_P(RoundTripTest_stdwstring, printp)
 {
@@ -163,13 +199,21 @@ TYPED_TEST_P(RoundTripTest_c4string, cat)
 {
     _testrtrip3(do_round_trip_cat, c4::string);
 }
-TYPED_TEST_P(RoundTripTest_stdstring, cat)
-{
-    _testrtrip3(do_round_trip_cat, std::string);
-}
 TYPED_TEST_P(RoundTripTest_c4wstring, cat)
 {
     _testrtrip3(do_round_trip_cat, c4::wstring);
+}
+TYPED_TEST_P(RoundTripTest_c4substring, cat)
+{
+    _testrtrip3(do_round_trip_cat, c4::substring);
+}
+TYPED_TEST_P(RoundTripTest_c4wsubstring, cat)
+{
+    _testrtrip3(do_round_trip_cat, c4::wsubstring);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, cat)
+{
+    _testrtrip3(do_round_trip_cat, std::string);
 }
 TYPED_TEST_P(RoundTripTest_stdwstring, cat)
 {
@@ -193,13 +237,21 @@ TYPED_TEST_P(RoundTripTest_c4string, catsep)
 {
     _testrtrip3(do_round_trip_catsep, c4::string);
 }
-TYPED_TEST_P(RoundTripTest_stdstring, catsep)
-{
-    _testrtrip3(do_round_trip_catsep, std::string);
-}
 TYPED_TEST_P(RoundTripTest_c4wstring, catsep)
 {
     _testrtrip3(do_round_trip_catsep, c4::wstring);
+}
+TYPED_TEST_P(RoundTripTest_c4substring, catsep)
+{
+    _testrtrip3(do_round_trip_catsep, c4::substring);
+}
+TYPED_TEST_P(RoundTripTest_c4wsubstring, catsep)
+{
+    _testrtrip3(do_round_trip_catsep, c4::wsubstring);
+}
+TYPED_TEST_P(RoundTripTest_stdstring, catsep)
+{
+    _testrtrip3(do_round_trip_catsep, std::string);
 }
 TYPED_TEST_P(RoundTripTest_stdwstring, catsep)
 {
@@ -207,14 +259,19 @@ TYPED_TEST_P(RoundTripTest_stdwstring, catsep)
 }
 
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4string, chevron, printp, cat, catsep);
-REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdstring, chevron, printp, cat, catsep);
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4wstring, chevron, printp, cat, catsep);
+REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4substring, chevron, printp, cat, catsep);
+REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4wsubstring, chevron, printp, cat, catsep);
+REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdstring, chevron, printp, cat, catsep);
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdwstring, chevron, printp, cat, catsep);
 
 using ScalarTypes = ::testing::Types<char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
+
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4string, ScalarTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring, ScalarTypes);
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wstring, ScalarTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4substring, ScalarTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wsubstring, ScalarTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring, ScalarTypes);
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdwstring, ScalarTypes);
 
 C4_END_NAMESPACE(c4)

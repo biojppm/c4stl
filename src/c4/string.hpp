@@ -2286,6 +2286,12 @@ public:
         free();
     }
 
+    C4_ALWAYS_INLINE basic_string(SizeType sz) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() { resize(sz); }
+    C4_ALWAYS_INLINE basic_string(SizeType sz, Allocator const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) { resize(sz); }
+
+    C4_ALWAYS_INLINE basic_string(SizeType sz, SizeType cap) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() { reserve(cap); resize(sz); }
+    C4_ALWAYS_INLINE basic_string(SizeType sz, SizeType cap, Allocator const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) { reserve(cap); resize(sz); }
+
     C4_ALWAYS_INLINE basic_string(basic_string const& s) : basic_string() { assign(s); }
     C4_ALWAYS_INLINE basic_string(basic_string     && s) : basic_string() { assign(std::move(s)); }
     C4_ALWAYS_INLINE basic_string(basic_string const& s, Allocator const& a) : basic_string(a) { assign(s); }
