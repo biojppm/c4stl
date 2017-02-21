@@ -42,12 +42,18 @@ struct RoundTripTest_stdstring : public ::testing::Test
     sstream< std::string > ss;
 };
 template <class T>
+struct RoundTripTest_c4wstring : public ::testing::Test
+{
+    sstream< c4::wstring > ss;
+};
+template <class T>
 struct RoundTripTest_stdwstring : public ::testing::Test
 {
     sstream< std::wstring > ss;
 };
 TYPED_TEST_CASE_P(RoundTripTest_c4string);
 TYPED_TEST_CASE_P(RoundTripTest_stdstring);
+TYPED_TEST_CASE_P(RoundTripTest_c4wstring);
 TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
 
 //-----------------------------------------------------------------------------
@@ -86,6 +92,10 @@ TYPED_TEST_P(RoundTripTest_c4string, chevron)
 TYPED_TEST_P(RoundTripTest_stdstring, chevron)
 {
     _testrtrip3(do_round_trip_chevron, std::string);
+}
+TYPED_TEST_P(RoundTripTest_c4wstring, chevron)
+{
+    _testrtrip3(do_round_trip_chevron, c4::wstring);
 }
 TYPED_TEST_P(RoundTripTest_stdwstring, chevron)
 {
@@ -127,6 +137,10 @@ TYPED_TEST_P(RoundTripTest_stdstring, printp)
 {
     _testrtrip3(do_round_trip_printp, std::string);
 }
+TYPED_TEST_P(RoundTripTest_c4wstring, printp)
+{
+    _testrtrip3(do_round_trip_printp, c4::wstring);
+}
 TYPED_TEST_P(RoundTripTest_stdwstring, printp)
 {
     _testrtrip3(do_round_trip_printp, std::wstring);
@@ -152,6 +166,10 @@ TYPED_TEST_P(RoundTripTest_c4string, cat)
 TYPED_TEST_P(RoundTripTest_stdstring, cat)
 {
     _testrtrip3(do_round_trip_cat, std::string);
+}
+TYPED_TEST_P(RoundTripTest_c4wstring, cat)
+{
+    _testrtrip3(do_round_trip_cat, c4::wstring);
 }
 TYPED_TEST_P(RoundTripTest_stdwstring, cat)
 {
@@ -179,6 +197,10 @@ TYPED_TEST_P(RoundTripTest_stdstring, catsep)
 {
     _testrtrip3(do_round_trip_catsep, std::string);
 }
+TYPED_TEST_P(RoundTripTest_c4wstring, catsep)
+{
+    _testrtrip3(do_round_trip_catsep, c4::wstring);
+}
 TYPED_TEST_P(RoundTripTest_stdwstring, catsep)
 {
     _testrtrip3(do_round_trip_catsep, std::wstring);
@@ -186,11 +208,13 @@ TYPED_TEST_P(RoundTripTest_stdwstring, catsep)
 
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4string, chevron, printp, cat, catsep);
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdstring, chevron, printp, cat, catsep);
+REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4wstring, chevron, printp, cat, catsep);
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdwstring, chevron, printp, cat, catsep);
 
 using ScalarTypes = ::testing::Types<char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4string, ScalarTypes);
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring, ScalarTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wstring, ScalarTypes);
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdwstring, ScalarTypes);
 
 C4_END_NAMESPACE(c4)
