@@ -30,6 +30,29 @@ struct char_traits< wchar_t > : public std::char_traits< wchar_t >
     constexpr static const size_t num_whitespace_chars = sizeof(whitespace_chars) - 1;
 };
 
+//-----------------------------------------------------------------------------
+template< typename C >
+struct select_literal;
+
+template<>
+struct select_literal< char >
+{
+    C4_ALWAYS_INLINE static constexpr const char* select(const char* str, const wchar_t *wstr)
+    {
+        return str;
+    }
+};
+template<>
+struct select_literal< wchar_t >
+{
+    C4_ALWAYS_INLINE static constexpr const wchar_t* select(const char* str, const wchar_t *wstr)
+    {
+        return wstr;
+    }
+};
+
+#define C4_TXTTY(txt, ty) c4::select_literal< ty >::select(txt, C4_XCAT(L, txt))
+
 C4_END_NAMESPACE(c4)
 
 #endif /* _C4_CHAR_TRAITS_HPP_ */

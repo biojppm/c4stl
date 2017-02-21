@@ -5,6 +5,7 @@
 #include "c4/span.hpp"
 #include "c4/string_fwd.hpp"
 
+#include "c4/char_traits.hpp"
 #include <inttypes.h>
 #include <stdio.h> // vsnprintf, sscanf
 #include <wchar.h>
@@ -95,14 +96,17 @@ public:
 
     // Raw writing of characters
 
-    void write(const char_type *str, size_type sz); ///< write a sequence of characters
-    void read (char_type *str, size_type sz); ///< read a sequence of characters
-
-    ///< write a null-terminated sequence of characters
-    void write(const char_type *c_str);
-
+    ///< write a sequence of characters
+    void write(const char *str, size_type sz);
+    ///< write a sequence of characters
+    C4_ALWAYS_INLINE void write(const wchar_t *str, size_type sz) { write(reinterpret_cast< const char* >(str), sz * sizeof(wchar_t)); }
     ///< write a sequence of characters
     C4_ALWAYS_INLINE void write(cspan_type const& s) { write(s.data(), s.size()); }
+
+    ///< read a sequence of characters
+    void read(char *str, size_type sz);
+    ///< read a sequence of characters
+    C4_ALWAYS_INLINE void read(wchar_t *str, size_type sz) { read(reinterpret_cast< char* >(str), sz * sizeof(wchar_t)); }
     ///< read a sequence of characters
     C4_ALWAYS_INLINE void read ( span_type & s) { read(s.data(), s.size()); }
 
@@ -255,6 +259,11 @@ private:
         *this << arg << sep;
         catsep_(sep, std::forward<MoreArgs>(more)...);
     }
+    template <class T >
+    void catsep_(char_type sep, T const& arg)
+    {
+        *this << arg;
+    }
     template <class T, class... MoreArgs>
     void uncatsep_(T & arg, MoreArgs&& ...more)
     {
@@ -262,15 +271,18 @@ private:
         *this >> arg >> sep;
         uncatsep_(std::forward<MoreArgs>(more)...);
     }
+    template <class T>
+    void uncatsep_(T & arg)
+    {
+        *this >> arg;
+    }
 
     // terminate recursion for variadic templates
     C4_ALWAYS_INLINE void cat() {}
     C4_ALWAYS_INLINE void uncat() {}
-    C4_ALWAYS_INLINE void catsep_(char_type) {}
-    C4_ALWAYS_INLINE void uncatsep_() {}
     C4_ALWAYS_INLINE void printp_(const char_type* fmt)
     {
-        write(fmt);
+        write(fmt, traits_type::length(fmt));
     }
     void scanp_(const char_type *fmt)
     {
@@ -311,7 +323,7 @@ struct fmt_tag< wchar_t, _ty >\
 #define _C4_DEFINE_SCALAR_IO_OPERATOR(ty) \
 template<class StringType>\
 C4_ALWAYS_INLINE \
-sstream<StringType>& operator<< (sstream<StringType>& ss, ty  var)\
+sstream<StringType>& operator<< (sstream<StringType>& ss, ty var)\
 {\
     ss.printf(fmt_tag< typename StringType::value_type, ty >::fmt, var);\
     return ss;\
@@ -340,6 +352,11 @@ _C4_DEFINE_FMT_TAG(uint32_t, /*"%u"  */"%"PRIu32);
 _C4_DEFINE_FMT_TAG( int64_t, /*"%lld"*/"%"PRId64);
 _C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
 
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, char  var) { ss.write(&var, 1); return ss; }\
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char& var) { ss.read(&var, 1); return ss; }
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, wchar_t  var) { ss.write(&var, 1); return ss; }\
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar_t& var) { ss.read(&var, 1); return ss; }
+
 _C4_DEFINE_SCALAR_IO_OPERATOR(void*   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(char*   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(wchar_t*)
@@ -353,33 +370,33 @@ _C4_DEFINE_SCALAR_IO_OPERATOR( int64_t)
 _C4_DEFINE_SCALAR_IO_OPERATOR(uint64_t)
 _C4_DEFINE_SCALAR_IO_OPERATOR(float   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(double  )
-template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, char  var) { ss.write(&var, 1); return ss; }\
-template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char& var) { ss.read(&var, 1); return ss; }
-template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, wchar_t  var) { ss.write(&var, 1); return ss; }\
-template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar_t& var) { ss.read(&var, 1); return ss; }
 
 template< class StringType, size_t N >
 C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, const char (&var)[N])
 {
-    ss.printf("%.*s", (int)(N-1), &var[0]);
+    using char_type = typename sstream<StringType>::char_type;
+    ss.printf(C4_TXTTY("%.*s", char_type), (int)(N-1), &var[0]);
     return ss;
 }
 template< class StringType, size_t N >
 C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char (&var)[N])
 {
-    ss.scanf("%.*s", (int)(N-1), &var[0]);
+    using char_type = typename sstream<StringType>::char_type;
+    ss.scanf(C4_TXTTY("%.*s", char_type), (int)(N-1), &var[0]);
     return ss;
 }
 template< class StringType, size_t N >
 C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, const wchar_t (&var)[N])
 {
-    ss.printf("%.*s", (int)(N-1), &var[0]);
+    using char_type = typename sstream<StringType>::char_type;
+    ss.printf(C4_TXTTY("%.*s", char_type), (int)(N-1), &var[0]);
     return ss;
 }
 template< class StringType, size_t N >
 C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar_t (&var)[N])
 {
-    ss.scanf("%.*s", (int)(N-1), &var[0]);
+    using char_type = typename sstream<StringType>::char_type;
+    ss.scanf(C4_TXTTY("%.*s", char_type), (int)(N-1), &var[0]);
     return ss;
 }
 

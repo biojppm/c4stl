@@ -100,18 +100,18 @@ typename sstream< StringType >::char_type sstream< StringType >::peek(size_type 
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::write(const char_type *cstr)
+void sstream< StringType >::write(const char *str, size_type sz)
 {
-    write(cstr, traits_type::length(cstr));
-}
-
-//-----------------------------------------------------------------------------
-template< class StringType >
-void sstream< StringType >::write(const char_type *str, size_type sz)
-{
-    if(C4_UNLIKELY( ! okp(sz + 1)))
+    if(C4_UNLIKELY(sz == 0)) return;
+    size_type wsz = sz;
+    if(sizeof(char_type) > 1)
     {
-        growto_(m_putpos + sz + 1); // this reserves and will allocate when needed
+        wsz = 1 + ((sz - 1) >> (sizeof(char_type) - 1));
+    }
+
+    if(C4_UNLIKELY( ! okp(wsz + 1)))
+    {
+        growto_(m_putpos + wsz + 1); // this reserves and will allocate when needed
     }
 
     if(C4_UNLIKELY(m_status & EOFP))
@@ -120,16 +120,22 @@ void sstream< StringType >::write(const char_type *str, size_type sz)
     }
 
     auto *b = buf_();
-    traits_type::copy(b + m_putpos, str, sz);
-    m_putpos += sz;
+    ::memcpy(b + m_putpos, str, sz);
+    m_putpos += wsz;
     b[m_putpos] = '\0';
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::read(char_type *str, size_type sz)
+void sstream< StringType >::read(char *str, size_type sz)
 {
-    if(C4_UNLIKELY( ! okg(sz))) // defend against overflow
+    size_type wsz = sz;
+    if(sizeof(char_type) > 1)
+    {
+        wsz = 1 + ((sz - 1) >> (sizeof(char_type) - 1));
+    }
+
+    if(C4_UNLIKELY( ! okg(wsz))) // defend against overflow
     {
         errg_();
     }
@@ -138,15 +144,17 @@ void sstream< StringType >::read(char_type *str, size_type sz)
     {
         return;
     }
-    traits_type::copy(str, buf_() + m_getpos, sz);
-    m_getpos += sz;
+
+    ::memcpy(str, buf_() + m_getpos, sz);
+    m_getpos += wsz;
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
 void sstream< StringType >::scanf____(const char_type *fmt, void *arg)
 {
-    C4_ASSERT(traits_type::length(fmt)>3 && traits_type::compare(fmt+strlen(fmt)-2, "%n", 2) == 0);
+    C4_XASSERT(traits_type::length(fmt) > 3 &&
+               traits_type::compare(fmt + traits_type::length(fmt)-2, (C4_TXTTY("%n", char_type)), 2) == 0);
     int num_chars = 0, num_conv = 0;
     num_conv = c4::sscanf(buf_() + m_getpos, fmt, arg, &num_chars);
     size_type snum = size_type(num_chars);
@@ -179,25 +187,49 @@ void sstream< StringType >::vprintf(const char_type *fmt, va_list args)
     va_list args_dup;
     va_copy(args_dup, args);
 #endif
+
     auto *b = buf_();
+    
     /* vsnprintf() returns number of characters written if successful or negative
      * value if an error occurred. If the resulting string gets truncated due to
      * buf_size limit, function returns the total number of characters
      * (not including the terminating null-byte) which would have been written,
      * if the limit was not imposed.
-     * @see http://en.cppreference.com/w/cpp/io/c/vfprintf */
+     * @see http://en.cppreference.com/w/cpp/io/c/vfprintf . * 
+     */
     int inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args);
-    size_type snum = size_type(inum > 0 ? inum : 0);
-    if(C4_UNLIKELY(inum < 0)) // bad formatting
+    size_type snum = size_type(inum >= 0 ? inum : -inum);
+    
+    // Please dear sir - kindly allow me the indiscretion of splicing some gotos. Much obliged.
+
+    // bad formatting?
+    if(C4_UNLIKELY(inum < 0))
     {
+#ifdef C4_MSVC
+        if(sizeof(char_type) > 1) // the wchar_t version vswprintf() returns negative even for the
+        {                         // truncated case. So try again.
+            inum = c4::vsnprintf(nullptr, 0, fmt, args);
+            if(C4_LIKELY(inum >= 0))
+            {
+                snum = size_type(inum);
+                goto lack_of_space;    // it was just lack of space.
+            }
+        }
+#endif
+        // yep, bad formatting indeed
         errf_();
+        b[m_putpos] = char_type(0);
+        return;
     }
-    else if(C4_UNLIKELY(snum + 1 > remp())) // not enough space?
+
+    // not enough space? fix it by resizing
+    if(C4_UNLIKELY(snum + 1 > remp()))
     {
+lack_of_space:
         growto_(m_putpos + snum + 1); // don't forget the terminating character
         if(C4_UNLIKELY(m_status & EOFP))
         {
-            goto clear_va_args; // please dear sir - kindly allow me this indiscretion
+            goto clear_va_args;
         }
         b = buf_();
 #ifdef C4_VA_LIST_REUSE_MUST_COPY
@@ -208,8 +240,10 @@ void sstream< StringType >::vprintf(const char_type *fmt, va_list args)
         C4_ASSERT(inum >= 0 && size_type(inum) < remp());
         snum = size_type(inum > 0 ? inum : 0);
     }
+
+    // phew, we're done
     m_putpos += snum;
-    b[m_putpos] = '\0';
+    b[m_putpos] = char_type(0);
 
 clear_va_args:
     va_end(args);
