@@ -6,24 +6,21 @@
 #include "c4/string_fwd.hpp"
 
 #include <inttypes.h>
+#include <stdio.h> // vsnprintf, sscanf
+#include <wchar.h>
+#include <stdarg.h>
 
 C4_BEGIN_NAMESPACE(c4)
 
-template< class StringType = c4::string >
-class sstream;
+template< class StringType = c4::string > class sstream;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** a string stream.
- *
- * @todo implement the wchar_t calls.
- */
+/** a string stream. */
 template< class StringType >
 class sstream
 {
-    static_assert(std::is_same< typename StringType::value_type, char >::value, "for now only char is implemented");
-private:
 
     StringType                     m_string;
     typename StringType::size_type m_putpos;
@@ -36,6 +33,7 @@ public:
 
     using string_type = StringType;
     using traits_type = typename StringType::traits_type;
+    using  char_type  = typename traits_type::char_type;
     using value_type  = typename StringType::value_type;
     using  size_type  = typename StringType::size_type;
     using  span_type  =  span<typename StringType::value_type, typename StringType::size_type>;
@@ -97,11 +95,11 @@ public:
 
     // Raw writing of characters
 
-    void write(const char *str, size_type sz); ///< write a sequence of characters
-    void read (char *str, size_type sz); ///< read a sequence of characters
+    void write(const char_type *str, size_type sz); ///< write a sequence of characters
+    void read (char_type *str, size_type sz); ///< read a sequence of characters
 
     ///< write a null-terminated sequence of characters
-    void write(const char *c_str);
+    void write(const char_type *c_str);
 
     ///< write a sequence of characters
     C4_ALWAYS_INLINE void write(cspan_type const& s) { write(s.data(), s.size()); }
@@ -112,15 +110,16 @@ public:
 
     /* C-style formatted print. */
 
-    void printf(const char *fmt, ...) C4_ATTR_FORMAT(printf, 1, 2);
-    void vprintf(const char *fmt, va_list args);
+    void printf(const char_type *fmt, ...) C4_ATTR_FORMAT(printf, 1, 2);
+    void vprintf(const char_type *fmt, va_list args);
 
     /* Due to how std::*scanf() is implemented, we do not provide public
      * scanf functions, as it is impossible to determine the number
      * of characters read from the buffer unless a %n argument is
      * used as the last format spec. This is something which we have no way
      * of imposing on the clients (and could not act on, either way,
-     * because we're blind to the arguments passed by the client). */
+     * because we're blind to the arguments passed by the client, so we
+     * cannot access them). */
 
 public:
 
@@ -134,7 +133,7 @@ public:
 
     /** python-style type-safe formatted print. Eg: stream.printp("hello I am {} years old", age); */
     template <class... Args>
-    C4_ALWAYS_INLINE void printp(const char* fmt, Args&& ...more)
+    C4_ALWAYS_INLINE void printp(const char_type* fmt, Args&& ...more)
     {
         printp_(fmt, std::forward<Args>(more)...);
     }
@@ -144,7 +143,7 @@ public:
      * merely used for skipping (the same number of) characters until the
      * next argument. */
     template <class... Args>
-    C4_ALWAYS_INLINE void scanp(const char* fmt, Args&& ...more)
+    C4_ALWAYS_INLINE void scanp(const char_type* fmt, Args&& ...more)
     {
         scanp_(fmt, std::forward<Args>(more)...);
     }
@@ -175,12 +174,12 @@ public:
     /** R-style: append several arguments, formatting them each as a string
      * and writing them together separated by the given character */
     template <class... Args>
-    C4_ALWAYS_INLINE void catsep(char sep, Args&& ...args)
+    C4_ALWAYS_INLINE void catsep(char_type sep, Args&& ...args)
     {
         catsep_(sep, std::forward<Args>(args)...);
     }
     template <class... Args>
-    C4_ALWAYS_INLINE void uncatsep(char sep, Args&& ...args)
+    C4_ALWAYS_INLINE void uncatsep(char_type sep, Args&& ...args)
     {
         uncatsep_(std::forward<Args>(args)...);
     }
@@ -214,11 +213,11 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE char get()       { char c; read(&c, 1); return c; }
-    C4_ALWAYS_INLINE void put(char c) { write(&c, 1); return *this; }
+    C4_ALWAYS_INLINE char_type get()       { char_type c; read(&c, 1); return c; }
+    C4_ALWAYS_INLINE void put(char_type c) { write(&c, 1); return *this; }
 
-    C4_ALWAYS_INLINE char peek() { return peek(1); }
-    char peek(size_type ahead);
+    C4_ALWAYS_INLINE char_type peek() { return peek(1); }
+    char_type peek(size_type ahead);
 
 public:
 
@@ -243,15 +242,15 @@ private:
     void growto_(size_type sz);
 
     template <class T, class... MoreArgs>
-    void printp_(const char* fmt, T const& arg, MoreArgs&& ...more);
+    void printp_(const char_type* fmt, T const& arg, MoreArgs&& ...more);
 
     template <class T, class... MoreArgs>
-    void scanp_(const char* fmt, T & arg, MoreArgs&& ...more);
+    void scanp_(const char_type* fmt, T & arg, MoreArgs&& ...more);
 
-    static size_type nextarg_(const char *fmt) ;
+    static size_type nextarg_(const char_type *fmt) ;
 
     template <class T, class... MoreArgs>
-    void catsep_(char sep, T const& arg, MoreArgs&& ...more)
+    void catsep_(char_type sep, T const& arg, MoreArgs&& ...more)
     {
         *this << arg << sep;
         catsep_(sep, std::forward<MoreArgs>(more)...);
@@ -259,7 +258,7 @@ private:
     template <class T, class... MoreArgs>
     void uncatsep_(T & arg, MoreArgs&& ...more)
     {
-        char sep;
+        char_type sep;
         *this >> arg >> sep;
         uncatsep_(std::forward<MoreArgs>(more)...);
     }
@@ -267,32 +266,33 @@ private:
     // terminate recursion for variadic templates
     C4_ALWAYS_INLINE void cat() {}
     C4_ALWAYS_INLINE void uncat() {}
-    C4_ALWAYS_INLINE void catsep_(char) {}
+    C4_ALWAYS_INLINE void catsep_(char_type) {}
     C4_ALWAYS_INLINE void uncatsep_() {}
-    C4_ALWAYS_INLINE void printp_(const char* fmt)
+    C4_ALWAYS_INLINE void printp_(const char_type* fmt)
     {
         write(fmt);
     }
-    void scanp_(const char *fmt)
+    void scanp_(const char_type *fmt)
     {
-        while(*fmt != '\0')
+        while(*fmt != char_type(0))
         {
             ++m_getpos; // skip as many chars as those from the fmt
             ++fmt;
         }
     }
 
-    C4_ALWAYS_INLINE char      * buf_()       { return const_cast< char* >(m_string.data()); }
-    C4_ALWAYS_INLINE const char* buf_() const { return                     m_string.data(); }
+    C4_ALWAYS_INLINE char_type      * buf_()       { return const_cast< char_type* >(m_string.data()); }
+    C4_ALWAYS_INLINE const char_type* buf_() const { return                          m_string.data(); }
 
 public:
 
-    void scanf____(const char *fmt, void *arg);
+    void scanf____(const char_type *fmt, void *arg);
 
 };
 
 //-----------------------------------------------------------------------------
-template< class C, class T > struct fmt_tag {};
+/** a utility class for dispatching template types to their printf/scanf formats */
+template< class CharType, class T > struct fmt_tag {};
 
 #define _C4_DEFINE_FMT_TAG(_ty, fmtstr) \
 template<>\
@@ -324,9 +324,11 @@ sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var) \
     return ss;\
 }
 
-_C4_DEFINE_FMT_TAG(void *  , "%p"               );
+_C4_DEFINE_FMT_TAG(void*   , "%p"               );
 _C4_DEFINE_FMT_TAG(char    , "%c"               );
-_C4_DEFINE_FMT_TAG(char *  , "%s"               );
+_C4_DEFINE_FMT_TAG(wchar_t , "%c"              );
+_C4_DEFINE_FMT_TAG(char*   , "%s"               );
+_C4_DEFINE_FMT_TAG(wchar_t*, "%s"               );
 _C4_DEFINE_FMT_TAG(double  , "%lg"              );
 _C4_DEFINE_FMT_TAG(float   , "%g"               );
 _C4_DEFINE_FMT_TAG( int8_t , /*"%hhd"*/"%"PRId8 );
@@ -340,6 +342,7 @@ _C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
 
 _C4_DEFINE_SCALAR_IO_OPERATOR(void*   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(char*   )
+_C4_DEFINE_SCALAR_IO_OPERATOR(wchar_t*)
 _C4_DEFINE_SCALAR_IO_OPERATOR( int8_t )
 _C4_DEFINE_SCALAR_IO_OPERATOR(uint8_t )
 _C4_DEFINE_SCALAR_IO_OPERATOR( int16_t)
@@ -350,10 +353,10 @@ _C4_DEFINE_SCALAR_IO_OPERATOR( int64_t)
 _C4_DEFINE_SCALAR_IO_OPERATOR(uint64_t)
 _C4_DEFINE_SCALAR_IO_OPERATOR(float   )
 _C4_DEFINE_SCALAR_IO_OPERATOR(double  )
-
-
 template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, char  var) { ss.write(&var, 1); return ss; }\
 template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char& var) { ss.read(&var, 1); return ss; }
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, wchar_t  var) { ss.write(&var, 1); return ss; }\
+template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar_t& var) { ss.read(&var, 1); return ss; }
 
 template< class StringType, size_t N >
 C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, const char (&var)[N])
@@ -366,6 +369,48 @@ C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char 
 {
     ss.scanf("%.*s", (int)(N-1), &var[0]);
     return ss;
+}
+template< class StringType, size_t N >
+C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, const wchar_t (&var)[N])
+{
+    ss.printf("%.*s", (int)(N-1), &var[0]);
+    return ss;
+}
+template< class StringType, size_t N >
+C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar_t (&var)[N])
+{
+    ss.scanf("%.*s", (int)(N-1), &var[0]);
+    return ss;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// utility overloads for char and wchar_t printf/scanf
+
+C4_ALWAYS_INLINE int vsnprintf(char *buffer, size_t buffer_size, const char* format, va_list list)
+{
+    return ::vsnprintf(buffer, buffer_size, format, list);
+}
+C4_ALWAYS_INLINE int vsnprintf(wchar_t *buffer, size_t buffer_size, const wchar_t* format, va_list list)
+{
+    return ::vswprintf(buffer, buffer_size, format, list);
+}
+inline int sscanf(const char* buffer, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int ret = ::vsscanf(buffer, format, args);
+    va_end(args);
+    return ret;
+}
+inline int sscanf(const wchar_t* buffer, const wchar_t* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int ret = ::vswscanf(buffer, format, args);
+    va_end(args);
+    return ret;
 }
 
 C4_END_NAMESPACE(c4)

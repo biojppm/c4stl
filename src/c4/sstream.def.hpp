@@ -5,7 +5,6 @@
 #include "c4/sstream.hpp"
 #endif
 
-#include <stdarg.h>
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -84,7 +83,7 @@ void sstream< StringType >::growto_(size_type sz)
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-char sstream< StringType >::peek(size_type ahead)
+typename sstream< StringType >::char_type sstream< StringType >::peek(size_type ahead)
 {
     if(C4_UNLIKELY(ahead > remg()))
     {
@@ -101,14 +100,14 @@ char sstream< StringType >::peek(size_type ahead)
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::write(const char *cstr)
+void sstream< StringType >::write(const char_type *cstr)
 {
     write(cstr, traits_type::length(cstr));
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::write(const char *str, size_type sz)
+void sstream< StringType >::write(const char_type *str, size_type sz)
 {
     if(C4_UNLIKELY( ! okp(sz + 1)))
     {
@@ -128,7 +127,7 @@ void sstream< StringType >::write(const char *str, size_type sz)
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::read(char *str, size_type sz)
+void sstream< StringType >::read(char_type *str, size_type sz)
 {
     if(C4_UNLIKELY( ! okg(sz))) // defend against overflow
     {
@@ -139,17 +138,17 @@ void sstream< StringType >::read(char *str, size_type sz)
     {
         return;
     }
-    traits_type::copy(str, buf_() + m_getpos, sz * sizeof(value_type));
+    traits_type::copy(str, buf_() + m_getpos, sz);
     m_getpos += sz;
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::scanf____(const char *fmt, void *arg)
+void sstream< StringType >::scanf____(const char_type *fmt, void *arg)
 {
     C4_ASSERT(traits_type::length(fmt)>3 && traits_type::compare(fmt+strlen(fmt)-2, "%n", 2) == 0);
     int num_chars = 0, num_conv = 0;
-    num_conv = ::sscanf(buf_() + m_getpos, fmt, arg, &num_chars);
+    num_conv = c4::sscanf(buf_() + m_getpos, fmt, arg, &num_chars);
     size_type snum = size_type(num_chars);
     if(C4_UNLIKELY(num_conv != 1))
     {
@@ -165,16 +164,16 @@ void sstream< StringType >::scanf____(const char *fmt, void *arg)
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::printf(const char *fmt, ...)
+void sstream< StringType >::printf(const char_type *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    vprintf(fmt, args);
+    this->vprintf(fmt, args);
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::vprintf(const char *fmt, va_list args)
+void sstream< StringType >::vprintf(const char_type *fmt, va_list args)
 {
 #ifdef C4_VA_LIST_REUSE_MUST_COPY
     va_list args_dup;
@@ -187,7 +186,7 @@ void sstream< StringType >::vprintf(const char *fmt, va_list args)
      * (not including the terminating null-byte) which would have been written,
      * if the limit was not imposed.
      * @see http://en.cppreference.com/w/cpp/io/c/vfprintf */
-    int inum = ::vsnprintf(b + m_putpos, remp(), fmt, args);
+    int inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args);
     size_type snum = size_type(inum > 0 ? inum : 0);
     if(C4_UNLIKELY(inum < 0)) // bad formatting
     {
@@ -202,9 +201,9 @@ void sstream< StringType >::vprintf(const char *fmt, va_list args)
         }
         b = buf_();
 #ifdef C4_VA_LIST_REUSE_MUST_COPY
-        inum = ::vsnprintf(b + m_putpos, remp(), fmt, args_dup);
+        inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args_dup);
 #else
-        inum = ::vsnprintf(b + m_putpos, remp(), fmt, args);
+        inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args);
 #endif
         C4_ASSERT(inum >= 0 && size_type(inum) < remp());
         snum = size_type(inum > 0 ? inum : 0);
@@ -222,7 +221,7 @@ clear_va_args:
 //-----------------------------------------------------------------------------
 /// get the position where the next argument token starts
 template< class StringType >
-typename sstream< StringType >::size_type sstream< StringType >::nextarg_(const char *fmt)
+typename sstream< StringType >::size_type sstream< StringType >::nextarg_(const char_type *fmt)
 {
     size_type next = 0;
     value_type prev = '\0';
@@ -243,7 +242,7 @@ typename sstream< StringType >::size_type sstream< StringType >::nextarg_(const 
 //-----------------------------------------------------------------------------
 template <class StringType>
 template <class T, class... MoreArgs>
-void sstream<StringType>::printp_(const char* fmt, T const& arg, MoreArgs&& ...more)
+void sstream<StringType>::printp_(const char_type* fmt, T const& arg, MoreArgs&& ...more)
 {
     size_type next = nextarg_(fmt); // where does the next argument token start?
     if(C4_UNLIKELY(next == npos)) // no more tokens were found
@@ -260,7 +259,7 @@ void sstream<StringType>::printp_(const char* fmt, T const& arg, MoreArgs&& ...m
 //-----------------------------------------------------------------------------
 template <class StringType>
 template <class T, class... MoreArgs>
-void sstream<StringType>::scanp_(const char* fmt, T & arg, MoreArgs&& ...more)
+void sstream<StringType>::scanp_(const char_type* fmt, T & arg, MoreArgs&& ...more)
 {
     size_type next = nextarg_(fmt); // where does the next argument token start?
     if(C4_UNLIKELY(next == npos)) // no more tokens were found
