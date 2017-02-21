@@ -37,19 +37,9 @@ struct RoundTripTest_c4string : public ::testing::Test
     sstream< c4::string > ss;
 };
 template <class T>
-struct RoundTripTest_stdstring : public ::testing::Test
-{
-    sstream< std::string > ss;
-};
-template <class T>
 struct RoundTripTest_c4wstring : public ::testing::Test
 {
     sstream< c4::wstring > ss;
-};
-template <class T>
-struct RoundTripTest_stdwstring : public ::testing::Test
-{
-    sstream< std::wstring > ss;
 };
 template <class T>
 struct RoundTripTest_c4substring : public ::testing::Test
@@ -69,12 +59,22 @@ struct RoundTripTest_c4wsubstring : public ::testing::Test
     {
     }
 };
+template <class T>
+struct RoundTripTest_stdstring : public ::testing::Test
+{
+    sstream< std::string > ss;
+};
+template <class T>
+struct RoundTripTest_stdwstring : public ::testing::Test
+{
+    sstream< std::wstring > ss;
+};
 TYPED_TEST_CASE_P(RoundTripTest_c4string);
-TYPED_TEST_CASE_P(RoundTripTest_stdstring);
 TYPED_TEST_CASE_P(RoundTripTest_c4wstring);
-TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
 TYPED_TEST_CASE_P(RoundTripTest_c4substring);
 TYPED_TEST_CASE_P(RoundTripTest_c4wsubstring);
+TYPED_TEST_CASE_P(RoundTripTest_stdstring);
+TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
 
 //-----------------------------------------------------------------------------
 #define _testrtrip3(which, strtype)                                 \

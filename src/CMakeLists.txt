@@ -78,6 +78,12 @@ if(C4STL_BUILD_TESTS)
         c4/types.test.cpp
         )
 
+    if(WIN32)
+        if(MSVC)
+            set_property(SOURCE c4/sstream.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
+        endif()
+    endif()
+
     target_link_libraries(c4stl-test c4stl ${gtest_LIBRARIES})
     target_include_directories(c4stl-test PUBLIC
         "${gtest_INCLUDE_DIRS}"
