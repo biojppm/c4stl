@@ -66,6 +66,7 @@ public:
     sstream& operator=(sstream const& that) = default;
     sstream& operator=(sstream     && that) = default;
 
+    void move_in(StringType &&str);
     StringType&& move_out();
 
     void reset()
@@ -77,7 +78,7 @@ public:
 
     void reserve(size_type cap);
     C4_ALWAYS_INLINE size_type capacity() const { return m_string.capacity(); }
-    
+
     size_type max_size() const { return m_string.max_size() - 1; }
 
 public:
@@ -282,7 +283,7 @@ private:
     C4_ALWAYS_INLINE void uncat() {}
     C4_ALWAYS_INLINE void printp_(const char_type* fmt)
     {
-        write(fmt, traits_type::length(fmt));
+        write(fmt, szconv< size_type >(traits_type::length(fmt)));
     }
     void scanp_(const char_type *fmt)
     {
@@ -306,39 +307,41 @@ public:
 /** a utility class for dispatching template types to their printf/scanf formats */
 template< class CharType, class T > struct fmt_tag {};
 
-#define _C4_DEFINE_FMT_TAG(_ty, fmtstr) \
-template<>\
-struct fmt_tag< char, _ty >\
-{\
-    static constexpr const char fmt[] = fmtstr;\
-    static constexpr const char fmtn[] = fmtstr "%n";\
-};\
-template<>\
-struct fmt_tag< wchar_t, _ty >\
-{\
-    static constexpr const wchar_t fmt[] = C4_XCAT(L, fmtstr);\
-    static constexpr const wchar_t fmtn[] = C4_XCAT(C4_XCAT(L, fmtstr), "%n");\
+/** define printf formats for a scalar (intrinsic) type */
+#define _C4_DEFINE_FMT_TAG(_ty, fmtstr)                                  \
+template<>                                                               \
+struct fmt_tag< char, _ty >                                              \
+{                                                                        \
+    static constexpr const char fmt[] = fmtstr;                          \
+    static constexpr const char fmtn[] = fmtstr "%n";                    \
+};                                                                       \
+template<>                                                               \
+struct fmt_tag< wchar_t, _ty >                                           \
+{                                                                        \
+    static constexpr const wchar_t fmt[] = C4_XCAT(L, fmtstr);           \
+    static constexpr const wchar_t fmtn[] = C4_XCAT(C4_XCAT(L, fmtstr), "%n"); \
 }
 
-#define _C4_DEFINE_SCALAR_IO_OPERATOR(ty) \
-template<class StringType>\
-C4_ALWAYS_INLINE \
-sstream<StringType>& operator<< (sstream<StringType>& ss, ty var)\
-{\
-    ss.printf(fmt_tag< typename StringType::value_type, ty >::fmt, var);\
-    return ss;\
-}\
-template<class StringType>\
-C4_ALWAYS_INLINE \
-sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var) \
-{\
-    ss.scanf____(fmt_tag< typename StringType::value_type, ty >::fmtn, &var);\
-    return ss;\
+/** define chevron IO operators for a scalar (intrinsic) type */
+#define _C4_DEFINE_CHEVRON_IO_OPERATORS(ty)                              \
+template<class StringType>                                               \
+C4_ALWAYS_INLINE                                                         \
+sstream<StringType>& operator<< (sstream<StringType>& ss, ty var)        \
+{                                                                        \
+    ss.printf(fmt_tag< typename StringType::value_type, ty >::fmt, var); \
+    return ss;                                                           \
+}                                                                        \
+template<class StringType>                                               \
+C4_ALWAYS_INLINE                                                         \
+sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var)       \
+{                                                                        \
+    ss.scanf____(fmt_tag< typename StringType::value_type, ty >::fmtn, &var); \
+    return ss;                                                           \
 }
 
 _C4_DEFINE_FMT_TAG(void*   , "%p"               );
 _C4_DEFINE_FMT_TAG(char    , "%c"               );
-_C4_DEFINE_FMT_TAG(wchar_t , "%c"              );
+_C4_DEFINE_FMT_TAG(wchar_t , "%c"               );
 _C4_DEFINE_FMT_TAG(char*   , "%s"               );
 _C4_DEFINE_FMT_TAG(wchar_t*, "%s"               );
 _C4_DEFINE_FMT_TAG(double  , "%lg"              );
@@ -357,19 +360,19 @@ template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (s
 template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, wchar_t  var) { ss.write(&var, 1); return ss; }\
 template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar_t& var) { ss.read(&var, 1); return ss; }
 
-_C4_DEFINE_SCALAR_IO_OPERATOR(void*   )
-_C4_DEFINE_SCALAR_IO_OPERATOR(char*   )
-_C4_DEFINE_SCALAR_IO_OPERATOR(wchar_t*)
-_C4_DEFINE_SCALAR_IO_OPERATOR( int8_t )
-_C4_DEFINE_SCALAR_IO_OPERATOR(uint8_t )
-_C4_DEFINE_SCALAR_IO_OPERATOR( int16_t)
-_C4_DEFINE_SCALAR_IO_OPERATOR(uint16_t)
-_C4_DEFINE_SCALAR_IO_OPERATOR( int32_t)
-_C4_DEFINE_SCALAR_IO_OPERATOR(uint32_t)
-_C4_DEFINE_SCALAR_IO_OPERATOR( int64_t)
-_C4_DEFINE_SCALAR_IO_OPERATOR(uint64_t)
-_C4_DEFINE_SCALAR_IO_OPERATOR(float   )
-_C4_DEFINE_SCALAR_IO_OPERATOR(double  )
+_C4_DEFINE_CHEVRON_IO_OPERATORS(void*   )
+_C4_DEFINE_CHEVRON_IO_OPERATORS(char*   )
+_C4_DEFINE_CHEVRON_IO_OPERATORS(wchar_t*)
+_C4_DEFINE_CHEVRON_IO_OPERATORS( int8_t )
+_C4_DEFINE_CHEVRON_IO_OPERATORS(uint8_t )
+_C4_DEFINE_CHEVRON_IO_OPERATORS( int16_t)
+_C4_DEFINE_CHEVRON_IO_OPERATORS(uint16_t)
+_C4_DEFINE_CHEVRON_IO_OPERATORS( int32_t)
+_C4_DEFINE_CHEVRON_IO_OPERATORS(uint32_t)
+_C4_DEFINE_CHEVRON_IO_OPERATORS( int64_t)
+_C4_DEFINE_CHEVRON_IO_OPERATORS(uint64_t)
+_C4_DEFINE_CHEVRON_IO_OPERATORS(float   )
+_C4_DEFINE_CHEVRON_IO_OPERATORS(double  )
 
 template< class StringType, size_t N >
 C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, const char (&var)[N])
