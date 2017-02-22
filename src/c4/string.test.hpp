@@ -199,6 +199,10 @@ TEST(classname, prepend_dir)                            \
 TEST(classname, erase)                                  \
 {                                                       \
     test_stringbase_erase< classname >();               \
+}                                                       \
+TEST(classname, string_vs_wstring)                      \
+{                                                       \
+    test_string_vs_wstring< classname >();              \
 }
 
 //-------------------------------------------
@@ -2792,6 +2796,46 @@ void test_stringbase_prepend_dir()
     C4_EXPECT_EQ(out, "/c/c/b/a/");
     out.pushl("////////d////////");
     C4_EXPECT_EQ(out, "////////d/c/c/b/a/");
+}
+
+
+template< class S >
+void test_string_vs_wstring()
+{
+    char    rbuf[64];
+    wchar_t wrbuf[64];
+    using WS = typename S::wstring_type;
+
+    S   s( "áaàaâaäaãaéeèeëeêeóoòoôoõoöoñnçcíiìiïi"),  r( rbuf);
+    WS ws(L"áaàaâaäaãaéeèeëeêeóoòoôoõoöoñnçcíiìiïi"), wr(wrbuf);
+
+    s2ws(s, &wr);
+    C4_EXPECT_EQ(wr, ws);
+    wr.clear();
+
+    ws2s(ws, &r);
+    C4_EXPECT_EQ(r, s);
+    r.clear();
+
+    s2ws(s, &wr);
+    ws2s(wr, &r);
+    C4_EXPECT_EQ(r, s);
+    wr.clear();
+    r.clear();
+
+    ws2s(ws, &r);
+    s2ws(r, &wr);
+    C4_EXPECT_EQ(wr, ws);
+
+    {
+        auto awr = s2ws(s);
+        C4_EXPECT_EQ(awr, ws);
+    }
+
+    {
+        auto ar = ws2s(ws);
+        C4_EXPECT_EQ(ar, s);
+    }
 }
 
 #undef _clout

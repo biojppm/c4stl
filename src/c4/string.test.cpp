@@ -9,18 +9,44 @@ C4_BEGIN_NAMESPACE(c4)
 /** this function was made a friend to have access to member names */
 void test_string_member_alignment()
 {
-    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::substring  , m_str     ));
-    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::substringrs, m_str     ));
-    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::substring  , m_size    ));
-    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::substringrs, m_size    ));
-    EXPECT_EQ(offsetof(c4::string, m_capacity), offsetof(c4::substringrs, m_capacity));
+    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::substring   , m_str     ));
+    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::substringrs , m_str     ));
+    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::substring   , m_size    ));
+    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::substringrs , m_size    ));
+    EXPECT_EQ(offsetof(c4::string, m_capacity), offsetof(c4::substringrs , m_capacity));
+    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::csubstring  , m_str     ));
+    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::csubstringrs, m_str     ));
+    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::csubstring  , m_size    ));
+    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::csubstringrs, m_size    ));
+    EXPECT_EQ(offsetof(c4::string, m_capacity), offsetof(c4::csubstringrs, m_capacity));
+
+    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::wsubstring  , m_str     ));
+    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::wsubstringrs, m_str     ));
+    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::wsubstring  , m_size    ));
+    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::wsubstringrs, m_size    ));
+    EXPECT_EQ(offsetof(c4::wstring, m_capacity), offsetof(c4::wsubstringrs, m_capacity));
+
+    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::cwsubstring  , m_str     ));
+    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::cwsubstringrs, m_str     ));
+    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::cwsubstring  , m_size    ));
+    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::cwsubstringrs, m_size    ));
+    EXPECT_EQ(offsetof(c4::wstring, m_capacity), offsetof(c4::cwsubstringrs, m_capacity));
 }
 
 C4_BEGIN_HIDDEN_NAMESPACE
 
-TEST(StringConversion, member_alignment)
+TEST(StringInterop, member_alignment)
 {
     test_string_member_alignment();
+}
+
+TEST(StringInterop, to_span)
+{
+    span< char > sp;
+    c4::string str("asdkljasdkja");
+    sp = str;
+    C4_EXPECT_EQ(sp.data(), str.data());
+    C4_EXPECT_EQ(sp.size(), str.size());
 }
 
 _C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(substring)
@@ -107,12 +133,6 @@ TEST(string, appendzz)
     auto ss1 = s3.substr(1,1);
     s1 = s2 + s3 + ss0 + ss1 + ss0 + ss1;;
     C4_EXPECT_EQ(s1, "s2s3s3s3");
-}
-
-TEST(string, s2ws)
-{
-    string s("áàãâäõê");
-    wstring ws = s2ws(s);
 }
 
 C4_END_HIDDEN_NAMESPACE
