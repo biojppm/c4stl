@@ -105,7 +105,10 @@ public:
 
 public:
 
-    template< class U > using rebind = Allocator< U >;
+    template< class U > struct rebind
+    {
+        using other = Allocator< U >;
+    };
     template< class U > Allocator< U > rebound() { return Allocator< U >(*this); }
 
     Allocator() : AllocatorBase() {}
@@ -161,7 +164,10 @@ class SmallAllocator : public AllocatorBase
 
 public:
 
-    template< class U > using rebind = SmallAllocator< U >;
+    template< class U > struct rebind
+    {
+        using other = SmallAllocator< U >;
+    };
     template< class U > SmallAllocator< U > rebound() { return SmallAllocator< U >(*this); }
 
     SmallAllocator() : AllocatorBase() {}
