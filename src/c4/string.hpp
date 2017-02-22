@@ -2264,10 +2264,10 @@ public:
     using size_type  = SizeType;
     using ssize_type = typename std::make_signed< SizeType >::type;
 
-    //using nalloc_type  = typename Alloc::rebind< char    >::other; ///< narrow allocator
-    //using walloc_type  = typename Alloc::rebind< wchar_t >::other; ///< wide allocator
-    using nstring_type = basic_string< char,    SizeType, Allocator<char> >; ///< narrow string type
-    using wstring_type = basic_string< wchar_t, SizeType, Allocator<wchar_t> >; ///< wide string type
+    using nalloc_type  = typename Alloc::template rebind< char    >::other; ///< narrow allocator
+    using walloc_type  = typename Alloc::template rebind< wchar_t >::other; ///< wide allocator
+    using nstring_type = basic_string< char,    SizeType, nalloc_type >; ///< narrow string type
+    using wstring_type = basic_string< wchar_t, SizeType, walloc_type >; ///< wide string type
 
     static constexpr const SizeType npos = SizeType(-1);
 
