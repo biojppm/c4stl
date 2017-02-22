@@ -39,13 +39,13 @@ set(src
 create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
 
 if(MSVC)
-	list(APPEND src c4stl.natvis)
+    list(APPEND src c4stl.natvis)
 endif()
 
 add_library(c4stl ${src})
 target_include_directories(c4stl PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/../extern)
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extern)
 
 #------------------------------------------------------------------------------
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
