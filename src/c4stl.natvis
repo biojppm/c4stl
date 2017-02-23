@@ -87,6 +87,7 @@ See also:
     <Expand>
       <Synthetic Name="m_str">
         <DisplayString>{(($T3*)this)->m_str,[(($T3*)this)->m_size]}</DisplayString>
+        <StringView>(($T3*)this)->m_str,[(($T3*)this)->m_size]</StringView>
       </Synthetic>
       <Synthetic Name="m_size">
         <DisplayString>{(($T3*)this)->m_size}</DisplayString>
@@ -140,7 +141,77 @@ See also:
       </Synthetic>
     </Expand>
   </Type>
-
+  <Type Name="c4::basic_small_string&lt;*,*,*&gt;">
+    <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 0">{m_short.arr,[m_short.flag_n_sz >> 1]} (sz={m_short.flag_n_sz >> 1},cap={arr_size}) [SHORT]</DisplayString>
+    <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 1">{m_long.str,[m_long.flag_n_sz >> 1]} (sz={m_long.flag_n_sz >> 1},cap={m_long.cap}) [LONG]</DisplayString>
+    <StringView Condition="(m_short.flag_n_sz &amp; 1) == 0">m_short.arr,[m_short.flag_n_sz >> 1]</StringView>
+    <StringView Condition="(m_short.flag_n_sz &amp; 1) == 1">m_long.str,[m_long.flag_n_sz >> 1]</StringView>
+    <Expand>
+      <Synthetic Name="[size]">
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 0">{m_short.flag_n_sz >> 1}</DisplayString>
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 1">{m_long.flag_n_sz >> 1}</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[capacity]">
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 0">{arr_size}</DisplayString>
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 1">{m_long.cap}</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[mode]">
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 0">[SHORT]</DisplayString>
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 1">[LONG]</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[full_string]">
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 0">{m_short.arr,[arr_size]}</DisplayString>
+        <DisplayString Condition="(m_short.flag_n_sz &amp; 1) == 1">{m_long.str,[m_long.cap]}</DisplayString>
+        <StringView Condition="(m_short.flag_n_sz &amp; 1) == 0">m_short.arr,[arr_size]</StringView>
+        <StringView Condition="(m_short.flag_n_sz &amp; 1) == 1">m_long.str,[m_long.cap]</StringView>
+      </Synthetic>
+      <Synthetic Name="[raw_object]">
+        <DisplayString>{m_raw}</DisplayString>
+        <Expand>
+          <ArrayItems>
+            <Size>sizeof(m_raw)</Size>
+            <ValuePointer>m_raw</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="c4::string_impl&lt;*,*,c4::basic_small_string&lt;*,*,*&gt;,*&gt;">
+    <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.arr,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz >> 1]} (sz={((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz >> 1},cap={((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->arr_size}) [SHORT]</DisplayString>
+    <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.str,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.flag_n_sz >> 1]} (sz={((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.flag_n_sz >> 1},cap={((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.cap}) [LONG]</DisplayString>
+    <StringView Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.arr,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz >> 1]</StringView>
+    <StringView Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.str,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.flag_n_sz >> 1]</StringView>
+    <Expand>
+      <Synthetic Name="[size]">
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz >> 1}</DisplayString>
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.flag_n_sz >> 1}</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[capacity]">
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->arr_size}</DisplayString>
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.cap}</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[mode]">
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">[SHORT]</DisplayString>
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">[LONG]</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[full_string]">
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.arr,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->arr_size]}</DisplayString>
+        <DisplayString Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.str,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.cap]}</DisplayString>
+        <StringView Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 0">((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.arr,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->arr_size]</StringView>
+        <StringView Condition="(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_short.flag_n_sz &amp; 1) == 1">((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.str,[((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_long.cap]</StringView>
+      </Synthetic>
+      <Synthetic Name="[raw_object]">
+        <DisplayString>{((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_raw}</DisplayString>
+        <Expand>
+          <ArrayItems>
+            <Size>sizeof(((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_raw)</Size>
+            <ValuePointer>((c4::basic_small_string&lt;$T1,$T2,$T5&gt;*)this)->m_raw</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  
   <Type Name="c4::sstream">
     <DisplayString>{m_buf,[m_size]} (sz={m_size})</DisplayString>
     <StringView>m_buf,[m_size]</StringView>
