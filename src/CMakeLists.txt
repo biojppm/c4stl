@@ -81,6 +81,7 @@ if(C4STL_BUILD_TESTS)
     if(WIN32)
         if(MSVC)
             set_property(SOURCE c4/sstream.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
+            set_property(SOURCE c4/string.test.cpp  APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
         endif()
     endif()
 

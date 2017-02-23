@@ -455,7 +455,6 @@ void test_stringbase_template_ctor_and_init()
     C4_EXPECT_EQ(n.empty(), false);
     C4_EXPECT_EQ(n.size(), strlen(NTEST));
     C4_EXPECT_EQ(n, NTEST);
-
 }
 template< typename S >
 void test_stringbase_char()

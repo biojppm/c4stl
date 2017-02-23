@@ -2539,6 +2539,10 @@ public:
 
 private:
 
+    /**
+     * @see http://stackoverflow.com/questions/21694302/what-are-the-mechanics-of-short-string-optimization-in-libc
+     * @see https://github.com/elliotgoodrich/SSO-23
+     */
     union {
         _short< C > m_short;
         _long       m_long;
