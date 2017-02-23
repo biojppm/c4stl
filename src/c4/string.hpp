@@ -2510,14 +2510,14 @@ class basic_small_string : public string_impl< C, SizeType, basic_small_string< 
 
     struct _long
     {
+        SizeType flag_n_sz; ///< flag (first bit) and size
+        SizeType cap;
         C *      str;
-        SizeType sz;
-        SizeType cap_n_flag; ///< capacity and flag
     };
    
     template< class _Char > struct _short;
-    template<> struct _short< char    > { char    arr[(sizeof(_long) - 1)/sizeof(char)   ];             char sz_n_flag; };
-    template<> struct _short< wchar_t > { wchar_t arr[(sizeof(_long) - 1)/sizeof(wchar_t)]; char __pad; char sz_n_flag; };
+    template<> struct _short< char    > { char flag_n_sz;             char    arr[(sizeof(_long) - 1)/sizeof(char)   ]; };
+    template<> struct _short< wchar_t > { char flag_n_sz; char __pad; wchar_t arr[(sizeof(_long) - 1)/sizeof(wchar_t)]; };
 
 public:
 
@@ -2546,10 +2546,13 @@ private:
     };
     Alloc m_alloc;
 
-    static constexpr const SizeType s_longbit  = 1;
-    static constexpr const SizeType s_longmask = SizeType(0x01) << (s_longbit - 1);
+    void     _set_short_sz(SizeType sz)   { m_short.flag_n_sz = ((char)sz) << 1; }
+    void     _set_long_sz(SizeType sz) { m_long.flag_n_sz = (sz << 1) | 1; }
+    SizeType _get_short_sz() const { return m_short.flag_n_sz >> 1; }
+    SizeType _get_long_sz() const { return m_long.flag_n_sz >> 1; }
 
-    friend void test_member_alignment();
+    template< class, class >
+    friend void test_small_string_flag_alignment();
 
 public:
 
@@ -2562,28 +2565,28 @@ public:
     
 public:
 
-    C4_ALWAYS_INLINE char is_long() const { return m_short.sz_n_flag & s_longmask; }
+    C4_ALWAYS_INLINE char is_long() const { return m_short.flag_n_sz & 1; }
 
     C4_ALWAYS_INLINE       C* c_str()       C4_NOEXCEPT_A { C4_ASSERT(!empty()); return data(); }
     C4_ALWAYS_INLINE const C* c_str() const C4_NOEXCEPT_A { C4_ASSERT(!empty()); return data(); }
 
-    C4_ALWAYS_INLINE       C* data()       noexcept { return is_long() ? m_long.ptr : m_short.arr; }
-    C4_ALWAYS_INLINE const C* data() const noexcept { return is_long() ? m_long.ptr : m_short.arr; }
+    C4_ALWAYS_INLINE       C* data()       noexcept { return is_long() ? m_long.str : m_short.arr; }
+    C4_ALWAYS_INLINE const C* data() const noexcept { return is_long() ? m_long.str : m_short.arr; }
 
-    C4_ALWAYS_INLINE SizeType size() const noexcept { return is_long() ? m_long.sz : (m_short.sz_n_flag >> s_longbit); }
+    C4_ALWAYS_INLINE SizeType size() const noexcept { return is_long() ? _get_long_sz() : _get_short_sz(); }
 
-    C4_ALWAYS_INLINE SizeType   capacity() const noexcept { return is_long() ? (m_long.cap_n_flag >> s_longbit) : C4_COUNTOF(m_long.arr); }
-    constexpr C4_ALWAYS_INLINE SizeType max_size() const noexcept { return (alloc_traits::max_size(m_alloc) >> s_longbit) - 1; } // there's one less bit for the short/long flag
+    C4_ALWAYS_INLINE SizeType   capacity() const noexcept { return is_long() ? m_long.cap : arr_size; }
+    constexpr C4_ALWAYS_INLINE SizeType max_size() const noexcept { return (alloc_traits::max_size(m_alloc) << 1) - 1; } // there's one less bit for the short/long flag
 
 public:
 
     _C4STR_ASSIGNOPS(C, basic_small_string)
 
     C4_ALWAYS_INLINE basic_small_string() : m_alloc() { memset(m_raw, 0, sizeof(m_raw)); }
-    C4_ALWAYS_INLINE basic_small_string(Alloc const& a) : basic_small_string(), m_alloc(a) {}
+    C4_ALWAYS_INLINE basic_small_string(Alloc const& a) : m_alloc(a) { memset(m_raw, 0, sizeof(m_raw)); }
     C4_ALWAYS_INLINE ~basic_small_string()
     {
-        free();
+        this->_free();
     }
 
     C4_ALWAYS_INLINE basic_small_string(SizeType sz)                 : basic_small_string()  { resize(sz); }
@@ -2601,9 +2604,13 @@ public:
     void assign(basic_small_string const& that)
     {
         if(&that == this) return;
-        resize(that.m_size);
-        assign(that.m_str, that.m_size);
+        resize(that.size());
+        assign(that.data(), that.size());
     }
+    // keep the current long status, even though the short array
+    // would be enough to hold the string. This is because the
+    // memory is already allocated, so there's little cost in
+    // keeeping using it. If explicit resizing is desired, call shrink_to_fit()
     void assign(basic_small_string && that)
     {
         if(&that == this) return;
@@ -2611,31 +2618,28 @@ public:
         {
             if(is_long())
             {
-                free();
+                this->_free();
             }
-            m_long.ptr = that.m_long.ptr;
-            m_long.sz = that.m_long.sz;
-            m_long.cap_n_flag = m_long.cap_n_flag;
-            that.m_long.ptr = nullptr;
-            that.m_long.sz = 0;
-            that.m_long.cap_n_flag = 0;
+            m_long = that.m_long;
+            memset(&that.m_long, 0, sizeof(that.m_long));
         }
         else
         {
+            auto sz = that._get_short_sz();
             if(is_long())
             {
-                // keep the current long status, even though the short array
-                // would be enough to hold the string. This is because the
-                // memory is already allocated, so there's little cost in
-                // using it.
-                traits_type::copy(m_long.ptr, that.m_short.arr, (that.m_short.sz_n_flag >> s_longbit) + 1);
-                m_long.sz = that.m_short.sz_n_flag >> s_longbit;
+                _set_long_sz(sz);
+                traits_type::copy(m_long.str, that.m_short.arr, sz);
+                m_long.str[sz] = C(0);
             }
             else
             {
-                traits_type::copy(m_short.arr, that.m_short.arr, (that.m_short.sz_n_flag >> s_longbit) + 1);
-                m_short.sz_n_flag = that.m_short.sz_n_flag;
+                _set_short_sz(sz);
+                traits_type::copy(m_short.arr, that.m_short.arr, sz);
+                m_short.arr[sz] = C(0);
             }
+            that._set_short_sz(0);
+            that.m_short.arr[0] = C(0);
         }
     }
 
@@ -2660,7 +2664,7 @@ public:
         resize(n);
         C *d = data();
         traits_type::copy(d, s, n);
-        d[size()] = C(0);
+        d[n] = C(0);
     }
 
     template< int N > C4_ALWAYS_INLINE basic_small_string(const C (&s)[N])                 : basic_small_string()  { assign(&s[0], N-1); }
@@ -2689,7 +2693,7 @@ public:
         {
             d[i] = c;
         }
-        d[size()] = C(0);
+        d[n] = C(0);
     }
 
     template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_small_string(basic_small_string< C, Sz_, Al_ > const& that) { assign(that); }
@@ -2702,7 +2706,7 @@ public:
     {
         SizeType sz = m_size;
         grow(1);
-        data()[size()] = c;
+        data()[sz] = c;
     }
  
 public:
@@ -2711,22 +2715,23 @@ public:
     {
         reserve(sz + 1);
         _set_size(sz);
-        data()[size()] = C(0);
+        data()[sz] = C(0);
     }
-    void reserve(SizeType sz)
+    void reserve(SizeType cap)
     {
         SizeType next = (SizeType)(1.618f * float(size()));
-        sz = sz > next ? sz : next;
-        if(sz > capacity())
+        cap = cap > next ? cap : next;
+        if(cap > capacity())
         {
-            _resizebuf(sz);
+            _resizebuf(cap);
         }
     }
     void grow(SizeType more)
     {
-        reserve(m_size + more + 1);
+        auto sz = m_size + more;
+        reserve(sz + 1);
         _set_size(sz);
-        data()[size()] = C(0);
+        data()[sz] = C(0);
     }
     void clear()
     {
@@ -2737,69 +2742,91 @@ public:
             d[0] = C(0);
         }
     }
-    void free()
-    {
-        if(is_long())
-        {
-            m_alloc.deallocate(m_long.str, m_long.cap_n_flag >> s_longbit);
-            m_long.str = nullptr;
-            m_long.sz = 0;
-            m_long.cap_n_flag = 0;
-        }
-        else
-        {
-            m_short.sz_n_flag = 0;
-        }
-    }
 
     void shrink_to_fit()
     {
         if( ! is_long()) return;
 
-        if(m_size == 0)
+        auto sz = _get_long_sz();
+        if(sz < arr_size)
         {
-            free();
+            _long saved = m_long;
+            traits_type::copy(m_short.arr, saved.str, sz);
+            m_short.arr[sz] = C(0);
+            _set_short_sz(sz);
+            m_alloc.deallocate(saved.str, saved.cap);
         }
-        else if(capacity() > m_size + 1)
+        else if(m_long.cap > sz + 1)
         {
-            _resizebuf(m_size + 1);
+            _resizebuf(sz + 1);
         }
     }
 
 private:
 
+    void _free()
+    {
+        if(is_long())
+        {
+            m_alloc.deallocate(m_long.str, m_long.cap);
+            m_long.flag_n_sz = 0; // also sets the flag to short mode
+            m_long.cap = 0; 
+            m_long.str = nullptr;
+        }
+        else
+        {
+            m_short.flag_n_sz = 0;
+        }
+    }
     void _set_size(SizeType sz)
     {
         if(is_long())
         {
-            m_long.sz = sz;
+            _set_long_sz(sz);
         }
         else
         {
-            m_short.sz_n_flag = (sz << s_longbit);
+            _set_short_sz(sz);
         }
     }
     void _resizebuf(SizeType cap)
     {
-        if(cap > C4_COUNTOF(m_short.arr))
+        if(cap > arr_size) // create a long version
         {
             C *tmp = m_alloc.allocate(cap);
-            if(m_long.str)
+            if(is_long())
             {
-                traits_type::copy(tmp, m_long.str, m_long.sz+1);
-                m_alloc.deallocate(m_long.str, m_long.cap_n_flag >> s_longbit);
+                auto sz = _get_long_sz();
+                if(sz)
+                {
+                    traits_type::copy(tmp, m_long.str, sz);
+                    tmp[sz] = C(0);
+                    m_alloc.deallocate(m_long.str, m_long.cap);
+                }
+            }
+            else
+            {
+                auto sz = _get_short_sz();
+                traits_type::copy(tmp, m_short.arr, sz);
+                tmp[sz] = C(0);
             }
             m_long.str = tmp;
-            m_long.cap_n_flag = (cap << s_longbit) | s_longmask;
+            m_long.cap = cap;
+            m_long.flag_n_sz |= 1;
         }
-        else
+        else // create a short version
         {
             if(is_long())
             {
-                _long saved = m_long; // save the current m_long as it will be overwriten in the memcpy
-                traits_type::copy(m_short.arr, saved.str, saved.sz + 1);
-                m_alloc.deallocate(saved.str, saved.cap_n_flag >> s_longbit);
-                m_short.sz_n_flag = saved.sz << s_longbit; 
+                auto sz = _get_long_sz();
+                if(sz > 0)
+                {
+                    C4_ASSERT(sz < (arr_size - 1));
+                    _long saved = m_long; // save the current m_long as it will be overwriten in the memcpy
+                    traits_type::copy(m_short.arr, m_long.str, sz);
+                    m_alloc.deallocate(saved.str, saved.cap);
+                    _set_short_sz(sz);
+                }
             }
             else
             {

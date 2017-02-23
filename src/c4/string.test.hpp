@@ -14,9 +14,21 @@ TEST(classname, empty_ctor)                                     \
 {                                                               \
     test_stringbase_empty_ctor< classname >();                  \
 }                                                               \
-TEST(classname, copy_move)                                      \
+TEST(classname, copy_move_small_small)                          \
 {                                                               \
-    test_stringbase_copy_move< classname >();                   \
+    test_stringbase_copy_move_small_small< classname >();       \
+}                                                               \
+TEST(classname, copy_move_big_big)                              \
+{                                                               \
+    test_stringbase_copy_move_big_big< classname >();           \
+}                                                               \
+TEST(classname, copy_move_small_big)                            \
+{                                                               \
+    test_stringbase_copy_move_small_big< classname >();         \
+}                                                               \
+TEST(classname, copy_move_big_small)                            \
+{                                                               \
+    test_stringbase_copy_move_big_small< classname >();         \
 }                                                               \
 TEST(classname, template_ctor_and_init)                         \
 {                                                               \
@@ -222,36 +234,204 @@ void test_stringbase_empty_ctor()
     }
 }
 
+#define NTEST "shortname"
+#define MTEST "This is another name, big-ass big to effectively ensure that it will extend beyond the small string optimization. Just go on a little more to make really really sure that it really is so. Almost done. Just a little bit more. Almost. There."
+#define BTEST "This is really big:" MTEST
+
+/// copy ctor+assign a small string to a small string
 template< typename S >
-void test_stringbase_copy_move()
+void test_stringbase_copy_move_small_small()
 {
-#define NTEST "this is a name"
-#define MTEST "this is another name"
     S n(NTEST);
 
-    S n2(n), n21;
-    C4_EXPECT_EQ(n.empty(), false);
-    C4_EXPECT_EQ(n2.empty(), false);
-    C4_EXPECT_EQ(n2, n);
-    C4_EXPECT_EQ(n2, NTEST);
-    n21 = n;
-    C4_EXPECT_EQ(n.empty(), false);
-    C4_EXPECT_EQ(n21.empty(), false);
-    C4_EXPECT_EQ(n21, n);
-    C4_EXPECT_EQ(n21, NTEST);
-
-
-    S n3(std::move(n)), n31;
-    C4_EXPECT_EQ(n.empty(), true);
-    C4_EXPECT_EQ(n3.empty(), false);
-    C4_EXPECT_EQ(n3, n2);
-    C4_EXPECT_EQ(n3, NTEST);
-    n31 = std::move(n3);
-    C4_EXPECT_EQ(n3.empty(), true);
-    C4_EXPECT_EQ(n31.empty(), false);
-    C4_EXPECT_EQ(n31, n21);
-    C4_EXPECT_EQ(n31, NTEST);
+    { // copy ctor with small
+        S n2(n);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, NTEST);
+    }
+    { // move ctor with small
+        S n2(n);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, NTEST);
+        S n21(std::move(n2));
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), true);
+        C4_EXPECT_EQ(n21.empty(), false);
+        C4_EXPECT_EQ(n21, n);
+        C4_EXPECT_EQ(n21, NTEST);
+    }
+    { // copy assign small to currently empty
+        S n21;
+        n21 = n;
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n21.empty(), false);
+        C4_EXPECT_EQ(n21, n);
+        C4_EXPECT_EQ(n21, NTEST);
+    }
+    { // move assign small to currently empty
+        S n21, n2(n);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n21.empty(), true);
+        n21 = std::move(n2);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), true);
+        C4_EXPECT_EQ(n21.empty(), false);
+        C4_EXPECT_EQ(n21, n);
+        C4_EXPECT_EQ(n21, NTEST);
+    }
+    { // copy assign small to currently non-empty small
+        S n2(n);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, NTEST);
+        n2 = "small";
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, "small");
+    }
+    { // move assign small to currently non-empty small
+        S n2(n), n3("small");
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, NTEST);
+        C4_EXPECT_EQ(n3.empty(), false);
+        n2 = std::move(n3);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n3.empty(), true);
+        C4_EXPECT_EQ(n2, "small");
+        C4_EXPECT_EQ(n2, "small");
+    }
 }
+
+/// copy ctor+assign a big string to a big string
+template< typename S >
+void test_stringbase_copy_move_big_big()
+{
+    S n(MTEST);
+
+    { // copy ctor with big
+        S n2(n);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, MTEST);
+    }
+    { // move ctor with big
+        S n2(n);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, MTEST);
+        S n21(std::move(n2));
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), true);
+        C4_EXPECT_EQ(n21.empty(), false);
+        C4_EXPECT_EQ(n21, n);
+        C4_EXPECT_EQ(n21, MTEST);
+    }
+    { // copy assign big to currently empty
+        S n21;
+        n21 = n;
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n21.empty(), false);
+        C4_EXPECT_EQ(n21, n);
+        C4_EXPECT_EQ(n21, MTEST);
+    }
+    { // move assign big to currently empty
+        S n21, n2(n);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n21.empty(), true);
+        n21 = std::move(n2);
+        C4_EXPECT_EQ(n.empty(), false);
+        C4_EXPECT_EQ(n2.empty(), true);
+        C4_EXPECT_EQ(n21.empty(), false);
+        C4_EXPECT_EQ(n21, n);
+        C4_EXPECT_EQ(n21, MTEST);
+    }
+    { // copy assign big to currently non-empty big
+        S n2(n), n3(BTEST);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, MTEST);
+        n2 = n3;
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, BTEST);
+    }
+    { // move assign big to currently non-empty big
+        S n2(n), n3(BTEST);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, MTEST);
+        C4_EXPECT_EQ(n3.empty(), false);
+        n2 = std::move(n3);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n3.empty(), true);
+        C4_EXPECT_EQ(n2, BTEST);
+        C4_EXPECT_EQ(n2, BTEST);
+    }
+}
+
+/// assign a big string to a small string
+template< typename S >
+void test_stringbase_copy_move_big_small()
+{
+    S n(NTEST);
+
+    { // copy assign big to currently non-empty small
+        S n2(n), n3(BTEST);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, NTEST);
+        n2 = n3;
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, BTEST);
+    }
+    { // move assign big to currently non-empty small
+        S n2(n), n3(BTEST);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, NTEST);
+        C4_EXPECT_EQ(n3.empty(), false);
+        n2 = std::move(n3);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n3.empty(), true);
+        C4_EXPECT_EQ(n2, BTEST);
+    }
+}
+
+/// assign a small string to a big string
+template< typename S >
+void test_stringbase_copy_move_small_big()
+{
+    S n(MTEST);
+
+    { // copy assign small to currently non-empty big
+        S n2(n), n3(NTEST);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, MTEST);
+        n2 = n3;
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, NTEST);
+    }
+    { // move assign small to currently non-empty big
+        S n2(n), n3(NTEST);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2, n);
+        C4_EXPECT_EQ(n2, MTEST);
+        C4_EXPECT_EQ(n3.empty(), false);
+        n2 = std::move(n3);
+        C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n3.empty(), true);
+        C4_EXPECT_EQ(n2, NTEST);
+    }
+}
+
 template< typename S >
 void test_stringbase_template_ctor_and_init()
 {

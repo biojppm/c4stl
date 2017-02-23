@@ -33,6 +33,33 @@ void test_string_member_alignment()
     EXPECT_EQ(offsetof(c4::wstring, m_capacity), offsetof(c4::cwsubstringrs, m_capacity));
 }
 
+template< class C, class I >
+void test_small_string_flag_alignment()
+{
+    basic_small_string< C, I > ss;
+    EXPECT_EQ((char*)&ss.m_short.flag_n_sz, (char*)&ss.m_long.flag_n_sz);
+
+    ss.m_short.flag_n_sz = 0;
+    ss.m_long.flag_n_sz = 0; // clear
+    EXPECT_EQ(ss.m_short.flag_n_sz, ss.m_long.flag_n_sz);
+
+    ss.m_short.flag_n_sz |= 1;
+    EXPECT_EQ(ss.m_short.flag_n_sz & 1, ss.m_long.flag_n_sz & 1);
+    EXPECT_EQ(ss.m_short.flag_n_sz, ss.m_long.flag_n_sz);
+
+    ss.m_short.flag_n_sz &= ~1;
+    EXPECT_EQ(ss.m_short.flag_n_sz & 1, ss.m_long.flag_n_sz & 1);
+    EXPECT_EQ(ss.m_short.flag_n_sz, ss.m_long.flag_n_sz);
+
+    ss.m_long.flag_n_sz |= 1;
+    EXPECT_EQ(ss.m_short.flag_n_sz & 1, ss.m_long.flag_n_sz & 1);
+    EXPECT_EQ(ss.m_short.flag_n_sz, ss.m_long.flag_n_sz);
+
+    ss.m_long.flag_n_sz &= ~1;
+    EXPECT_EQ(ss.m_short.flag_n_sz & 1, ss.m_long.flag_n_sz & 1);
+    EXPECT_EQ(ss.m_short.flag_n_sz, ss.m_long.flag_n_sz);
+}
+
 C4_BEGIN_HIDDEN_NAMESPACE
 
 TEST(StringInterop, member_alignment)
@@ -52,6 +79,17 @@ TEST(StringInterop, to_span)
 _C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(substring)
 _C4_TEST_STRINGBASE_DERIVED(substringrs)
 _C4_TEST_STRINGBASE_DERIVED(string)
+TEST(small_string, flag_alignment)
+{
+    //test_small_string_flag_alignment< char, uint16_t >();
+    //test_small_string_flag_alignment< char, uint32_t >();
+    test_small_string_flag_alignment< char, uint64_t >();
+
+    //test_small_string_flag_alignment< wchar_t, uint16_t >();
+   // test_small_string_flag_alignment< wchar_t, uint32_t >();
+    test_small_string_flag_alignment< wchar_t, uint64_t >();
+}
+_C4_TEST_STRINGBASE_DERIVED(small_string)
 
 TEST(StringTrimOverflow, trim)
 {
