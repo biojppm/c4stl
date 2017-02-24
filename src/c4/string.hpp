@@ -2049,7 +2049,7 @@ c4::sstream< StreamStringType >& operator<< (c4::sstream< StreamStringType >& os
 template< class StreamStringType, typename C, typename Size, class Str, class Sub >
 c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is, string_impl< C, Size, Str, Sub > & n)
 {
-    Str::size_type pos = 0;
+    decltype(is.remg()) pos = 0;
     // skip leading whitespace
     while(is.remg() >= pos && c4::isspace(is.peek(pos)))
     {
@@ -2066,8 +2066,8 @@ c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is
         ++pos;
     }
     Str& ncast = static_cast< Str& >(n);
-    ncast.resize(pos);
-    is.read(ncast.data(), ncast.size());
+    ncast.resize(szconv< Size >(pos));
+    is.read(ncast.data(), pos);
     return is;
 }
 
@@ -2099,8 +2099,8 @@ public:
 
     static constexpr const SizeType npos = SizeType(-1);
 
-    using nstring_type = basic_substring< char   , SizeType >; ///< narrow string type
-    using wstring_type = basic_substring< wchar_t, SizeType >; ///< wide string type
+    template< class C_ >
+    using parameterized_string_type = basic_small_string< C_, SizeType >;
 
 public:
 
@@ -2191,8 +2191,8 @@ public:
 
     static constexpr const size_type npos = SizeType(-1);
 
-    using nstring_type = basic_substringrs< char   , SizeType >; ///< narrow string type
-    using wstring_type = basic_substringrs< wchar_t, SizeType >; ///< wide string type
+    template< class C_ >
+    using parameterized_string_type = basic_small_string< C_, SizeType >;
 
 public:
 
@@ -2266,6 +2266,7 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substringrs< C C4_COMMA SizeType >, typ
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
 template< class C, class SizeType, class Alloc >
 class basic_string : public string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
@@ -2280,10 +2281,8 @@ public:
     using size_type  = SizeType;
     using ssize_type = typename std::make_signed< SizeType >::type;
 
-    using nalloc_type  = typename Alloc::template rebind< char    >::other; ///< narrow allocator
-    using walloc_type  = typename Alloc::template rebind< wchar_t >::other; ///< wide allocator
-    using nstring_type = basic_string< char,    SizeType, nalloc_type >; ///< narrow string type
-    using wstring_type = basic_string< wchar_t, SizeType, walloc_type >; ///< wide string type
+    template< class C_ >
+    using parameterized_string_type = basic_string< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
 
     static constexpr const SizeType npos = SizeType(-1);
 
@@ -2498,7 +2497,7 @@ public:
 };
 
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Allocator >,
-    typename C, typename SizeType, class Allocator)
+    typename C, typename SizeType, class Allocator);
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -2529,10 +2528,8 @@ public:
     using size_type  = SizeType;
     using ssize_type = typename std::make_signed< SizeType >::type;
 
-    using nalloc_type  = typename Alloc::template rebind< char    >::other; ///< narrow allocator
-    using walloc_type  = typename Alloc::template rebind< wchar_t >::other; ///< wide allocator
-    using nstring_type = basic_small_string< char,    SizeType, nalloc_type >; ///< narrow string type
-    using wstring_type = basic_small_string< wchar_t, SizeType, walloc_type >; ///< wide string type
+    template< class C_ >
+    using parameterized_string_type = basic_small_string< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
 
     static constexpr const SizeType npos = SizeType(-1);
     static constexpr const SizeType arr_size = C4_COUNTOF(_short< C >::arr);
@@ -2550,8 +2547,8 @@ private:
     };
     Alloc m_alloc;
 
-    void     _set_short_sz(SizeType sz)   { m_short.flag_n_sz = ((char)sz) << 1; }
-    void     _set_long_sz(SizeType sz) { m_long.flag_n_sz = (sz << 1) | 1; }
+    void     _set_short_sz(SizeType sz) { C4_XASSERT_MSG((((char)sz << 1) >> 1) == sz, "size overflow"); m_short.flag_n_sz = (char)sz << 1; }
+    void     _set_long_sz(SizeType sz) { C4_XASSERT_MSG(((sz << 1) >> 1) == sz, "size overflow"); m_long.flag_n_sz = (sz << 1) | 1; }
     SizeType _get_short_sz() const { return m_short.flag_n_sz >> 1; }
     SizeType _get_long_sz() const { return m_long.flag_n_sz >> 1; }
 
@@ -2579,8 +2576,9 @@ public:
 
     C4_ALWAYS_INLINE SizeType size() const noexcept { return is_long() ? _get_long_sz() : _get_short_sz(); }
 
-    C4_ALWAYS_INLINE SizeType   capacity() const noexcept { return is_long() ? m_long.cap : arr_size; }
-    constexpr C4_ALWAYS_INLINE SizeType max_size() const noexcept { return (alloc_traits::max_size(m_alloc) << 1) - 1; } // there's one less bit for the short/long flag
+    C4_ALWAYS_INLINE SizeType capacity() const noexcept { return is_long() ? m_long.cap : arr_size; }
+
+    constexpr C4_ALWAYS_INLINE SizeType max_size() const noexcept { return (alloc_traits::max_size(m_alloc) >> 1) - 1; } // there's one less bit for the short/long flag
 
 public:
 
@@ -2609,12 +2607,12 @@ public:
     {
         if(&that == this) return;
         resize(that.size());
-        assign(that.data(), that.size());
+        traits_type::copy(data(), that.data(), that.size());
     }
     // keep the current long status, even though the short array
     // would be enough to hold the string. This is because the
     // memory is already allocated, so there's little cost in
-    // keeeping using it. If explicit resizing is desired, call shrink_to_fit()
+    // keeping using it. If explicit resizing is desired, call shrink_to_fit()
     void assign(basic_small_string && that)
     {
         if(&that == this) return;
@@ -2708,7 +2706,7 @@ public:
 
     void push_back(C c)
     {
-        SizeType sz = m_size;
+        SizeType sz = size();
         grow(1);
         data()[sz] = c;
     }
@@ -2717,18 +2715,19 @@ public:
 
     void resize(SizeType sz)
     {
-        reserve(sz + 1);
-        _set_size(sz);
+        SizeType prev = size();
+        _resize(sz);
+        if(sz > prev)
+        {
+            traits_type::assign(data() + prev, sz - prev, C(0));
+        }
         data()[sz] = C(0);
     }
     void reserve(SizeType cap)
     {
-        SizeType next = (SizeType)(1.618f * float(size()));
+        SizeType next = szconv< SizeType >(1.618f * float(size()));
         cap = cap > next ? cap : next;
-        if(cap > capacity())
-        {
-            _resizebuf(cap);
-        }
+        _reserve(cap);
     }
     void grow(SizeType more)
     {
@@ -2793,6 +2792,20 @@ private:
             _set_short_sz(sz);
         }
     }
+    /** resizes without writing anything into the buffer. Does not grow the buffer. */
+    void _resize(SizeType sz)
+    {
+        reserve(sz + 1);
+        _set_size(sz);
+    }
+    void _reserve(SizeType cap)
+    {
+        if(cap > capacity())
+        {
+            _resizebuf(cap);
+        }
+    }
+    /** resizes the buffer to the given capacity */
     void _resizebuf(SizeType cap)
     {
         if(cap > arr_size) // create a long version

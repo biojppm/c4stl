@@ -40,7 +40,7 @@ void test_small_string_flag_alignment()
     EXPECT_EQ((char*)&ss.m_short.flag_n_sz, (char*)&ss.m_long.flag_n_sz);
 
     ss.m_short.flag_n_sz = 0;
-    ss.m_long.flag_n_sz = 0; // clear
+    ss.m_long.flag_n_sz = 0;
     EXPECT_EQ(ss.m_short.flag_n_sz, ss.m_long.flag_n_sz);
 
     ss.m_short.flag_n_sz |= 1;
@@ -76,20 +76,39 @@ TEST(StringInterop, to_span)
     C4_EXPECT_EQ(sp.size(), str.size());
 }
 
-_C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(substring)
-_C4_TEST_STRINGBASE_DERIVED(substringrs)
-_C4_TEST_STRINGBASE_DERIVED(string)
 TEST(small_string, flag_alignment)
 {
-    //test_small_string_flag_alignment< char, uint16_t >();
-    //test_small_string_flag_alignment< char, uint32_t >();
+    test_small_string_flag_alignment< char, int8_t >();
+    test_small_string_flag_alignment< char, int16_t >();
+    test_small_string_flag_alignment< char, int32_t >();
+    test_small_string_flag_alignment< char, int64_t >();
+    test_small_string_flag_alignment< char, uint8_t >();
+    test_small_string_flag_alignment< char, uint16_t >();
+    test_small_string_flag_alignment< char, uint32_t >();
     test_small_string_flag_alignment< char, uint64_t >();
 
-    //test_small_string_flag_alignment< wchar_t, uint16_t >();
-   // test_small_string_flag_alignment< wchar_t, uint32_t >();
+    test_small_string_flag_alignment< wchar_t, int8_t >();
+    test_small_string_flag_alignment< wchar_t, int16_t >();
+    test_small_string_flag_alignment< wchar_t, int32_t >();
+    test_small_string_flag_alignment< wchar_t, int64_t >();
+    test_small_string_flag_alignment< wchar_t, uint8_t >();
+    test_small_string_flag_alignment< wchar_t, uint16_t >();
+    test_small_string_flag_alignment< wchar_t, uint32_t >();
     test_small_string_flag_alignment< wchar_t, uint64_t >();
 }
-_C4_TEST_STRINGBASE_DERIVED(small_string)
+
+_C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(substring, substring)
+_C4_TEST_STRINGBASE_DERIVED(substringrs, substringrs)
+_C4_TEST_STRINGBASE_DERIVED(string, string)
+_C4_TEST_STRINGBASE_DERIVED(small_string, small_string)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u8 , basic_small_string< char C4_COMMA uint8_t  >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u16, basic_small_string< char C4_COMMA uint16_t >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u32, basic_small_string< char C4_COMMA uint32_t >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u64, basic_small_string< char C4_COMMA uint64_t >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_i8 , basic_small_string< char C4_COMMA int8_t   >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_i16, basic_small_string< char C4_COMMA int16_t  >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_i32, basic_small_string< char C4_COMMA int32_t  >)
+//WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_i64, basic_small_string< char C4_COMMA int64_t  >)
 
 TEST(StringTrimOverflow, trim)
 {

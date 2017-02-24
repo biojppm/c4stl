@@ -9,212 +9,212 @@ void PrintTo(string_impl< C, Sz, Str, SubStr > const& s, ::std::ostream* os)
     os->write(s.data(), s.size());
 }
 
-#define _C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(classname)   \
+#define _C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(classname, classtype)   \
 TEST(classname, empty_ctor)                                     \
 {                                                               \
-    test_stringbase_empty_ctor< classname >();                  \
+    test_stringbase_empty_ctor< classtype >();                  \
 }                                                               \
 TEST(classname, copy_move_small_small)                          \
 {                                                               \
-    test_stringbase_copy_move_small_small< classname >();       \
+    test_stringbase_copy_move_small_small< classtype >();       \
 }                                                               \
 TEST(classname, copy_move_big_big)                              \
 {                                                               \
-    test_stringbase_copy_move_big_big< classname >();           \
+    test_stringbase_copy_move_big_big< classtype >();           \
 }                                                               \
 TEST(classname, copy_move_small_big)                            \
 {                                                               \
-    test_stringbase_copy_move_small_big< classname >();         \
+    test_stringbase_copy_move_small_big< classtype >();         \
 }                                                               \
 TEST(classname, copy_move_big_small)                            \
 {                                                               \
-    test_stringbase_copy_move_big_small< classname >();         \
+    test_stringbase_copy_move_big_small< classtype >();         \
 }                                                               \
 TEST(classname, template_ctor_and_init)                         \
 {                                                               \
-    test_stringbase_template_ctor_and_init< classname >();      \
+    test_stringbase_template_ctor_and_init< classtype >();      \
 }                                                               \
 TEST(classname, charbuf)                                        \
 {                                                               \
-    test_stringbase_char< classname >();                        \
+    test_stringbase_char< classtype >();                        \
 }                                                               \
 TEST(classname, charbuf_and_size)                               \
 {                                                               \
-    test_stringbase_char_and_size< classname >();               \
+    test_stringbase_char_and_size< classtype >();               \
 }                                                               \
 TEST(classname, eq)                                             \
 {                                                               \
-    test_stringbase_eq< classname >();                          \
+    test_stringbase_eq< classtype >();                          \
 }                                                               \
 TEST(classname, ne)                                             \
 {                                                               \
-    test_stringbase_ne< classname >();                          \
+    test_stringbase_ne< classtype >();                          \
 }                                                               \
 TEST(classname, gt)                                             \
 {                                                               \
-    test_stringbase_gt< classname >();                          \
+    test_stringbase_gt< classtype >();                          \
 }                                                               \
 TEST(classname, lt)                                             \
 {                                                               \
-    test_stringbase_lt< classname >();                          \
+    test_stringbase_lt< classtype >();                          \
 }                                                               \
 TEST(classname, substr)                                         \
 {                                                               \
-    test_stringbase_substr< classname >();                      \
+    test_stringbase_substr< classtype >();                      \
 }                                                               \
 TEST(classname, range)                                          \
 {                                                               \
-    test_stringbase_range< classname >();                       \
+    test_stringbase_range< classtype >();                       \
 }                                                               \
 TEST(classname, is_substr)                                      \
 {                                                               \
-    test_stringbase_is_substr< classname >();                   \
+    test_stringbase_is_substr< classtype >();                   \
 }                                                               \
 TEST(classname, compl)                                          \
 {                                                               \
-    test_stringbase_compl< classname >();                       \
+    test_stringbase_compl< classtype >();                       \
 }                                                               \
 TEST(classname, compr)                                          \
 {                                                               \
-    test_stringbase_compr< classname >();                       \
+    test_stringbase_compr< classtype >();                       \
 }                                                               \
 TEST(classname, find)                                           \
 {                                                               \
-    test_stringbase_find< classname >();                        \
+    test_stringbase_find< classtype >();                        \
 }                                                               \
 TEST(classname, nextdiff)                                       \
 {                                                               \
-    test_stringbase_nextdiff< classname >();                    \
+    test_stringbase_nextdiff< classtype >();                    \
 }                                                               \
 TEST(classname, prevdiff)                                       \
 {                                                               \
-    test_stringbase_prevdiff< classname >();                    \
+    test_stringbase_prevdiff< classtype >();                    \
 }                                                               \
 TEST(classname, find_first_of)                                  \
 {                                                               \
-    test_stringbase_find_first_of< classname >();               \
+    test_stringbase_find_first_of< classtype >();               \
 }                                                               \
 TEST(classname, find_first_not_of)                              \
 {                                                               \
-    test_stringbase_find_first_not_of< classname >();           \
+    test_stringbase_find_first_not_of< classtype >();           \
 }                                                               \
 TEST(classname, find_last_of)                                   \
 {                                                               \
-    test_stringbase_find_last_of< classname >();                \
+    test_stringbase_find_last_of< classtype >();                \
 }                                                               \
 TEST(classname, find_last_not_of)                               \
 {                                                               \
-    test_stringbase_find_last_not_of< classname >();            \
+    test_stringbase_find_last_not_of< classtype >();            \
 }                                                               \
 TEST(classname, begins_with)                                    \
 {                                                               \
-    test_stringbase_begins_with< classname >();                 \
+    test_stringbase_begins_with< classtype >();                 \
 }                                                               \
 TEST(classname, ends_with)                                      \
 {                                                               \
-    test_stringbase_ends_with< classname >();                   \
+    test_stringbase_ends_with< classtype >();                   \
 }                                                               \
 TEST(classname, trimr)                                          \
 {                                                               \
-    test_stringbase_trimr< classname >();                       \
+    test_stringbase_trimr< classtype >();                       \
 }                                                               \
 TEST(classname, triml)                                          \
 {                                                               \
-    test_stringbase_triml< classname >();                       \
+    test_stringbase_triml< classtype >();                       \
 }                                                               \
 TEST(classname, trim)                                           \
 {                                                               \
-    test_stringbase_trim< classname >();                        \
+    test_stringbase_trim< classtype >();                        \
 }                                                               \
 TEST(classname, trimwsr)                                        \
 {                                                               \
-    test_stringbase_trimwsr< classname >();                     \
+    test_stringbase_trimwsr< classtype >();                     \
 }                                                               \
 TEST(classname, trimwsl)                                        \
 {                                                               \
-    test_stringbase_trimwsl< classname >();                     \
+    test_stringbase_trimwsl< classtype >();                     \
 }                                                               \
 TEST(classname, trimws)                                         \
 {                                                               \
-    test_stringbase_trimws< classname >();                      \
+    test_stringbase_trimws< classtype >();                      \
 }                                                               \
 TEST(classname, next_split)                                     \
 {                                                               \
-    test_stringbase_next_split< classname >();                  \
+    test_stringbase_next_split< classtype >();                  \
 }                                                               \
 TEST(classname, split)                                          \
 {                                                               \
-    test_stringbase_split< classname >();                       \
+    test_stringbase_split< classtype >();                       \
 }                                                               \
 TEST(classname, popr)                                           \
 {                                                               \
-    test_stringbase_popr< classname >();                        \
+    test_stringbase_popr< classtype >();                        \
 }                                                               \
 TEST(classname, popl)                                           \
 {                                                               \
-    test_stringbase_popl< classname >();                        \
+    test_stringbase_popl< classtype >();                        \
 }                                                               \
 TEST(classname, gpopr)                                          \
 {                                                               \
-    test_stringbase_gpopr< classname >();                       \
+    test_stringbase_gpopr< classtype >();                       \
 }                                                               \
 TEST(classname, gpopl)                                          \
 {                                                               \
-    test_stringbase_gpopl< classname >();                       \
+    test_stringbase_gpopl< classtype >();                       \
 }                                                               \
 TEST(classname, dirname)                                        \
 {                                                               \
-    test_stringbase_dirname< classname >();                     \
+    test_stringbase_dirname< classtype >();                     \
 }                                                               \
 TEST(classname, basename)                                       \
 {                                                               \
-    test_stringbase_basename< classname >();                    \
+    test_stringbase_basename< classtype >();                    \
 }                                                               \
 TEST(classname, sstream)                                        \
 {                                                               \
-    test_stringbase_stream< classname, c4::sstream<c4::string> >();         \
+    test_stringbase_stream< classtype, c4::sstream<c4::string> >();         \
 }                                                               \
 TEST(classname, hash)                                           \
 {                                                               \
-    test_stringbase_hash< classname >();                        \
+    test_stringbase_hash< classtype >();                        \
 }
 
 
-#define _C4_TEST_STRINGBASE_DERIVED(classname)          \
+#define _C4_TEST_STRINGBASE_DERIVED(classname, classtype) \
                                                         \
-_C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(classname)   \
+_C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(classname, classtype)   \
                                                         \
 TEST(classname, sum)                                    \
 {                                                       \
-    test_stringbase_sum< classname >();                 \
+    test_stringbase_sum< classtype >();                 \
 }                                                       \
 TEST(classname, dircat)                                 \
 {                                                       \
-    test_stringbase_dircat< classname >();              \
+    test_stringbase_dircat< classtype >();              \
 }                                                       \
 TEST(classname, append)                                 \
 {                                                       \
-    test_stringbase_append< classname >();              \
+    test_stringbase_append< classtype >();              \
 }                                                       \
 TEST(classname, prepend)                                \
 {                                                       \
-    test_stringbase_prepend< classname >();             \
+    test_stringbase_prepend< classtype >();             \
 }                                                       \
 TEST(classname, append_dir)                             \
 {                                                       \
-    test_stringbase_append_dir< classname >();          \
+    test_stringbase_append_dir< classtype >();          \
 }                                                       \
 TEST(classname, prepend_dir)                            \
 {                                                       \
-    test_stringbase_prepend_dir< classname >();         \
+    test_stringbase_prepend_dir< classtype >();         \
 }                                                       \
 TEST(classname, erase)                                  \
 {                                                       \
-    test_stringbase_erase< classname >();               \
+    test_stringbase_erase< classtype >();               \
 }                                                       \
 TEST(classname, string_vs_wstring)                      \
 {                                                       \
-    test_string_vs_wstring< classname >();              \
+    test_string_vs_wstring< classtype >();              \
 }
 
 //-------------------------------------------
@@ -312,11 +312,16 @@ template< typename S >
 void test_stringbase_copy_move_big_big()
 {
     S n(MTEST);
+    
+    C4_EXPECT_EQ(n.size(), S::traits_type::length(MTEST));
+    C4_EXPECT_EQ(n, MTEST);
 
     { // copy ctor with big
         S n2(n);
         C4_EXPECT_EQ(n.empty(), false);
         C4_EXPECT_EQ(n2.empty(), false);
+        C4_EXPECT_EQ(n2.size(), n.size());
+        C4_EXPECT_EQ(n2.capacity(), n.capacity());
         C4_EXPECT_EQ(n2, n);
         C4_EXPECT_EQ(n2, MTEST);
     }
@@ -2978,12 +2983,13 @@ void test_stringbase_prepend_dir()
 }
 
 
-template< class S >
+template< class S_ >
 void test_string_vs_wstring()
 {
     char    rbuf[64];
     wchar_t wrbuf[64];
-    using WS = typename S::wstring_type;
+    using S  = typename S_::parameterized_string_type< char >;
+    using WS = typename S_::parameterized_string_type< wchar_t >;
 
     S   s( "áaàaâaäaãaéeèeëeêeóoòoôoõoöoñnçcíiìiïi"),  r( rbuf);
     WS ws(L"áaàaâaäaãaéeèeëeêeóoòoôoõoöoñnçcíiìiïi"), wr(wrbuf);
