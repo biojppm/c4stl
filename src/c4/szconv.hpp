@@ -19,7 +19,7 @@ C4_ALWAYS_INLINE _C4FOR(>=) szconv(SizeIn sz)
     return sz;
 }
 
-/** when SizeOut is narrower than SizeIn, narrowing will occur, so make add a check */
+/** when SizeOut is narrower than SizeIn, narrowing will occur, so add a check for overflow */
 template< class SizeOut, class SizeIn >
 C4_ALWAYS_INLINE _C4FOR(<) szconv(SizeIn sz)
 {

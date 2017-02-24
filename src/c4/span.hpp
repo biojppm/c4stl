@@ -4,15 +4,15 @@
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 
-/** @todo add a paged_span */
+#include <algorithm>
 
 C4_BEGIN_NAMESPACE(c4)
 
-template< class T, class I = uint32_t > class span;
-template< class T, class I = uint32_t > class spanrs;
+template< class T, class I=C4_SIZE_TYPE > class span;
+template< class T, class I=C4_SIZE_TYPE > class spanrs;
 
-template< class T, class I = uint32_t > using cspan   = span< const T, I >;
-template< class T, class I = uint32_t > using cspanrs = spanrs< const T, I >;
+template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >;
+template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21,9 +21,13 @@ template< class T, class I = uint32_t > using cspanrs = spanrs< const T, I >;
 template< class T, class I, class SpanImpl >
 class _span_crtp
 {
-#define _c4this ((SpanImpl*)this)
-#define _c4ptr  ((SpanImpl*)this)->m_ptr
-#define _c4sz   ((SpanImpl*)this)->m_size
+// some utility defines, undefined at the end of this class
+#define _c4this  ((SpanImpl      *)this)
+#define _c4cthis ((SpanImpl const*)this)
+#define _c4ptr   ((SpanImpl      *)this)->m_ptr
+#define _c4cptr  ((SpanImpl const*)this)->m_ptr
+#define _c4sz    ((SpanImpl      *)this)->m_size
+#define _c4csz   ((SpanImpl const*)this)->m_size
 
 public:
 
@@ -34,61 +38,68 @@ public:
     C4_ALWAYS_INLINE constexpr I value_size() const noexcept { return sizeof(T); }
     C4_ALWAYS_INLINE constexpr I elm_size  () const noexcept { return sizeof(T); }
     C4_ALWAYS_INLINE constexpr I type_size () const noexcept { return sizeof(T); }
-    C4_ALWAYS_INLINE           I byte_size () const noexcept { return _c4sz*sizeof(T); }
+    C4_ALWAYS_INLINE           I byte_size () const noexcept { return _c4csz*sizeof(T); }
 
-    C4_ALWAYS_INLINE bool empty()    const noexcept { return _c4sz == 0; }
-    C4_ALWAYS_INLINE I    size()     const noexcept { return _c4sz; }
+    C4_ALWAYS_INLINE bool empty()    const noexcept { return _c4csz == 0; }
+    C4_ALWAYS_INLINE I    size()     const noexcept { return _c4csz; }
     //C4_ALWAYS_INLINE I    capacity() const noexcept { return _c4sz; } // this must be defined by impl classes
 
     C4_ALWAYS_INLINE void clear() noexcept { _c4sz = 0; }
 
     C4_ALWAYS_INLINE T      * data()       noexcept { return _c4ptr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return _c4ptr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return _c4cptr; }
 
     C4_ALWAYS_INLINE       iterator  begin()       noexcept { return _c4ptr; }
-    C4_ALWAYS_INLINE const_iterator  begin() const noexcept { return _c4ptr; }
-    C4_ALWAYS_INLINE const_iterator cbegin() const noexcept { return _c4ptr; }
+    C4_ALWAYS_INLINE const_iterator  begin() const noexcept { return _c4cptr; }
+    C4_ALWAYS_INLINE const_iterator cbegin() const noexcept { return _c4cptr; }
 
-    C4_ALWAYS_INLINE       iterator  end()       noexcept { return _c4ptr + _c4sz; }
-    C4_ALWAYS_INLINE const_iterator  end() const noexcept { return _c4ptr + _c4sz; }
-    C4_ALWAYS_INLINE const_iterator cend() const noexcept { return _c4ptr + _c4sz; }
+    C4_ALWAYS_INLINE       iterator  end()       noexcept { return _c4ptr  + _c4sz; }
+    C4_ALWAYS_INLINE const_iterator  end() const noexcept { return _c4cptr + _c4csz; }
+    C4_ALWAYS_INLINE const_iterator cend() const noexcept { return _c4cptr + _c4csz; }
 
-    C4_ALWAYS_INLINE T&          front()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[0]; }
-    C4_ALWAYS_INLINE fastcref<T> front() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[0]; }
+    C4_ALWAYS_INLINE T      & front()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr [0]; }
+    C4_ALWAYS_INLINE T const& front() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4cptr[0]; }
 
-    C4_ALWAYS_INLINE T&          back()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[_c4sz - 1]; }
-    C4_ALWAYS_INLINE fastcref<T> back() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr[_c4sz - 1]; }
+    C4_ALWAYS_INLINE T      & back()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4ptr [_c4sz  - 1]; }
+    C4_ALWAYS_INLINE T const& back() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return _c4cptr[_c4csz - 1]; }
 
-    C4_ALWAYS_INLINE T&          operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
-    C4_ALWAYS_INLINE fastcref<T> operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < _c4sz); return _c4ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < _c4sz ); return _c4ptr [i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < _c4csz); return _c4cptr[i]; }
 
-    C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT_X
-    {
-        C4_XASSERT(first >= 0 && first < _c4sz);
-        return _c4this->_select(_c4ptr + first, _c4sz - first);
-    }
     C4_ALWAYS_INLINE SpanImpl subspan(I first, I num) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(first >= 0 && first < _c4sz);
-        C4_XASSERT(first + num >= 0 && first + num < _c4sz);
-        return _c4this->_select(_c4ptr + first, num);
+        C4_XASSERT(first >= 0 && first < _c4csz);
+        C4_XASSERT(first + num >= 0 && first + num < _c4csz);
+        return _c4cthis->_select(_c4cptr + first, num);
     }
-    C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT_X ///< goes up until the end of the span
     {
-        C4_XASSERT(first >= 0 && first < _c4sz);
-        C4_XASSERT(last >= 0 && last < _c4sz);
-        return _c4this->_select(_c4ptr + first, last - first);
+        C4_XASSERT(first >= 0 && first < _c4csz);
+        return _c4cthis->_select(_c4cptr + first, _c4csz - first);
+    }
+
+    C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT_X ///< last element is NOT included
+    {
+        C4_XASSERT(first >= 0 && first < _c4csz);
+        C4_XASSERT(last >= 0 && last <= _c4csz);
+        C4_XASSERT(last >= first);
+        return _c4cthis->_select(_c4cptr + first, last - first);
+    }
+    C4_ALWAYS_INLINE SpanImpl range(I first) const C4_NOEXCEPT_X ///< goes up until the end of the span
+    {
+        C4_XASSERT(first >= 0 && first < _c4csz);
+        return _c4cthis->_select(_c4cptr + first, _c4csz - first);
     }
 
     C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(num >= 0 && num < _c4sz);
-        return _c4this->_select(_c4ptr, num);
+        C4_XASSERT(num >= 0 && num < _c4csz);
+        return _c4cthis->_select(_c4cptr, num);
     }
     C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(num >= 0 && num < _c4sz);
-        return _c4this->_select(_c4ptr + _c4sz - num, num);
+        C4_XASSERT(num >= 0 && num < _c4csz);
+        return _c4cthis->_select(_c4cptr + _c4csz - num, num);
     }
 
     C4_ALWAYS_INLINE bool same_span(_span_crtp const& that) const noexcept
@@ -98,12 +109,16 @@ public:
     template< class I2, class Impl2 >
     C4_ALWAYS_INLINE bool same_span(_span_crtp< T, I2, Impl2 > const& that) const noexcept
     {
-        return size() == that.size() && data() == that.data();
+        I tsz = szconv< I >(that.size()); // asserts that the size does not overflow
+        return size() == tsz && data() == that.data();
     }
 
 #undef _c4this
+#undef _c4cthis
 #undef _c4ptr
+#undef _c4cptr
 #undef _c4sz
+#undef _c4csz
 };
 
 //-----------------------------------------------------------------------------

@@ -9,8 +9,12 @@
 //#define C4_NO_ALLOC_DEFAULTS
 //#define C4_REDEFINE_CPPNEW
 
+#ifndef C4_SIZE_TYPE
+#   define C4_SIZE_TYPE size_t
+#endif
+
 #ifndef C4_STR_SIZE_TYPE
-#   define C4_STR_SIZE_TYPE size_t
+#   define C4_STR_SIZE_TYPE C4_SIZE_TYPE
 #endif
 
 /** Define this to disable string expression templates. */

@@ -137,6 +137,50 @@ TEST(spanrs, subspan)
 }
 
 //-----------------------------------------------------------------------------
+TEST(span, range)
+{
+    int arr[10];
+    span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
+
+    auto ss = s.range(0, 5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.range(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+
+    ss = s.range(5, 10);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+}
+TEST(spanrs, range)
+{
+    int arr[10];
+    spanrs< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
+
+    auto ss = s.range(0, 5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.range(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+
+    ss = s.range(5, 10);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+}
+
+//-----------------------------------------------------------------------------
 TEST(span, first)
 {
     int arr[10];
