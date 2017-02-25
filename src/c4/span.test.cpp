@@ -21,6 +21,14 @@ TEST(spanrs, default_init)
     EXPECT_EQ(s.data(), nullptr);
 }
 
+TEST(perma_span, default_init)
+{
+    perma_span< int > s;
+    EXPECT_EQ(s.size(), 0);
+    EXPECT_EQ(s.capacity(), 0);
+    EXPECT_EQ(s.data(), nullptr);
+}
+
 //-----------------------------------------------------------------------------
 TEST(span, empty_init)
 {
@@ -47,6 +55,27 @@ TEST(spanrs, empty_init)
         EXPECT_EQ(s.size(), 0);
         EXPECT_EQ(s.capacity(), 10);
         EXPECT_EQ(s.data(), arr);
+    }
+}
+
+TEST(perma_span, empty_init)
+{
+    int arr[10];
+
+    {
+        perma_span< int > s(arr, 0);
+        EXPECT_EQ(s.size(), 0);
+        EXPECT_EQ(s.capacity(), 0);
+        EXPECT_EQ(s.data(), arr);
+        EXPECT_EQ(s.offset(), 0);
+    }
+
+    {
+        perma_span< int > s(arr, 0, C4_COUNTOF(arr));
+        EXPECT_EQ(s.size(), 0);
+        EXPECT_EQ(s.capacity(), 10);
+        EXPECT_EQ(s.data(), arr);
+        EXPECT_EQ(s.offset(), 0);
     }
 }
 
@@ -97,9 +126,16 @@ TEST(span, fromArray)
 
 TEST(spanrs, fromArray)
 {
-    test_fromArray< span<char> >();
-    test_fromArray< span<int> >();
-    test_fromArray< span<uint32_t> >();
+    test_fromArray< spanrs<char> >();
+    test_fromArray< spanrs<int> >();
+    test_fromArray< spanrs<uint32_t> >();
+}
+
+TEST(perma_span, fromArray)
+{
+    test_fromArray< perma_span<char> >();
+    test_fromArray< perma_span<int> >();
+    test_fromArray< perma_span<uint32_t> >();
 }
 
 //-----------------------------------------------------------------------------
@@ -135,13 +171,43 @@ TEST(spanrs, subspan)
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), &arr[5]);
 }
+TEST(perma_span, subspan)
+{
+    int arr[10];
+    perma_span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
+
+    auto ss = s.subspan(0, 5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+    EXPECT_EQ(ss.offset(), 0);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+    EXPECT_EQ(ss.offset(), 0);
+
+    ss = s.subspan(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+    EXPECT_EQ(ss.offset(), 5);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+    EXPECT_EQ(ss.offset(), 0);
+}
 
 //-----------------------------------------------------------------------------
 TEST(span, range)
 {
     int arr[10];
     span< int > s(arr);
-    C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
+    C4_STATIC_ASSERT((std::is_same< decltype(s.range(0)), decltype(s) >::value));
 
     auto ss = s.range(0, 5);
     EXPECT_EQ(ss.size(), 5);
@@ -162,7 +228,7 @@ TEST(spanrs, range)
 {
     int arr[10];
     spanrs< int > s(arr);
-    C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
+    C4_STATIC_ASSERT((std::is_same< decltype(s.range(0)), decltype(s) >::value));
 
     auto ss = s.range(0, 5);
     EXPECT_EQ(ss.size(), 5);
@@ -178,6 +244,37 @@ TEST(spanrs, range)
     EXPECT_EQ(ss.size(), 5);
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), &arr[5]);
+}
+TEST(perma_span, range)
+{
+    int arr[10];
+    perma_span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.range(0)), decltype(s) >::value));
+
+    auto ss = s.range(0, 5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.range(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+
+    ss = s.range(5, 10);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), &arr[5]);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
 }
 
 //-----------------------------------------------------------------------------
@@ -213,13 +310,39 @@ TEST(spanrs, first)
     EXPECT_EQ(ss.capacity(), 10);
     EXPECT_EQ(ss.data(), arr);
 }
+TEST(perma_span, first)
+{
+    int arr[10];
+    perma_span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
+
+    auto ss = s.first(0);
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.first(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+}
 
 //-----------------------------------------------------------------------------
 TEST(span, last)
 {
     int arr[10];
     span< int > s(arr);
-    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
+    C4_STATIC_ASSERT((std::is_same< decltype(s.last(1)), decltype(s) >::value));
 
     auto ss = s.last(0);
     EXPECT_EQ(ss.size(), 0);
@@ -235,7 +358,7 @@ TEST(spanrs, last)
 {
     int arr[10];
     spanrs< int > s(arr);
-    C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
+    C4_STATIC_ASSERT((std::is_same< decltype(s.last(1)), decltype(s) >::value));
 
     auto ss = s.last(0);
     EXPECT_EQ(ss.size(), 0);
@@ -246,6 +369,32 @@ TEST(spanrs, last)
     EXPECT_EQ(ss.size(), 5);
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), arr + 5);
+}
+TEST(perma_span, last)
+{
+    int arr[10];
+    perma_span< int > s(arr);
+    C4_STATIC_ASSERT((std::is_same< decltype(s.last(1)), decltype(s) >::value));
+
+    auto ss = s.last(0);
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.capacity(), 0);
+    EXPECT_EQ(ss.data(), arr + s.size());
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = s.last(5);
+    EXPECT_EQ(ss.size(), 5);
+    EXPECT_EQ(ss.capacity(), 5);
+    EXPECT_EQ(ss.data(), arr + 5);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
 }
 
 //-----------------------------------------------------------------------------
@@ -268,7 +417,7 @@ TEST(span, rtrim)
 TEST(spanrs, rtrim)
 {
     int arr[10];
-    span< int > s(arr);
+    spanrs< int > s(arr);
     auto ss = s;
 
     ss.rtrim(0);
@@ -278,7 +427,33 @@ TEST(spanrs, rtrim)
 
     ss.rtrim(5);
     EXPECT_EQ(ss.size(), s.size() - 5);
-    EXPECT_EQ(ss.capacity(), s.capacity() - 5);
+    EXPECT_EQ(ss.capacity(), s.capacity());
+    EXPECT_EQ(ss.data(), arr);
+}
+TEST(perma_span, rtrim)
+{
+    int arr[10];
+    perma_span< int > s(arr);
+    auto ss = s;
+
+    ss.rtrim(0);
+    EXPECT_EQ(ss.size(), s.size());
+    EXPECT_EQ(ss.capacity(), s.capacity());
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss.rtrim(5);
+    EXPECT_EQ(ss.size(), s.size() - 5);
+    EXPECT_EQ(ss.capacity(), s.capacity());
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
     EXPECT_EQ(ss.data(), arr);
 }
 
@@ -302,7 +477,7 @@ TEST(span, ltrim)
 TEST(spanrs, ltrim)
 {
     int arr[10];
-    span< int > s(arr);
+    spanrs< int > s(arr);
     auto ss = s;
 
     ss.ltrim(0);
@@ -314,6 +489,32 @@ TEST(spanrs, ltrim)
     EXPECT_EQ(ss.size(), s.size() - 5);
     EXPECT_EQ(ss.capacity(), s.size() - 5);
     EXPECT_EQ(ss.data(), arr + 5);
+}
+TEST(perma_span, ltrim)
+{
+    int arr[10];
+    perma_span< int > s(arr);
+    auto ss = s;
+
+    ss.ltrim(0);
+    EXPECT_EQ(ss.size(), s.size());
+    EXPECT_EQ(ss.capacity(), ss.capacity());
+    EXPECT_EQ(ss.data(), arr);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
+
+    ss.ltrim(5);
+    EXPECT_EQ(ss.size(), s.size() - 5);
+    EXPECT_EQ(ss.capacity(), s.size() - 5);
+    EXPECT_EQ(ss.data(), arr + 5);
+
+    ss = ss.original();
+    EXPECT_EQ(ss.size(), 10);
+    EXPECT_EQ(ss.capacity(), 10);
+    EXPECT_EQ(ss.data(), arr);
 }
 
 //-----------------------------------------------------------------------------

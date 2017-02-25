@@ -10,9 +10,11 @@ C4_BEGIN_NAMESPACE(c4)
 
 template< class T, class I=C4_SIZE_TYPE > class span;
 template< class T, class I=C4_SIZE_TYPE > class spanrs;
+template< class T, class I=C4_SIZE_TYPE > class perma_span;
 
 template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >;
 template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >;
+template< class T, class I=C4_SIZE_TYPE > using cperma_span = perma_span< const T, I >;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -91,12 +93,12 @@ public:
         return _c4cthis->_select(_c4cptr + first, _c4csz - first);
     }
 
-    C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT_X ///< get the first num elements, starting at 0
     {
         C4_XASSERT(num >= 0 && num < _c4csz);
         return _c4cthis->_select(_c4cptr, num);
     }
-    C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT_X ///< get the last num elements, starting at size()-num
     {
         C4_XASSERT(num >= 0 && num < _c4csz);
         return _c4cthis->_select(_c4cptr + _c4csz - num, num);
@@ -125,22 +127,22 @@ public:
 template <class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator==
 (
-    const _span_crtp<T, Il, _Impll>& l,
-    const _span_crtp<T, Ir, _Implr>& r
+    _span_crtp<T, Il, _Impll> const& l,
+    _span_crtp<T, Ir, _Implr> const& r
 )
 {
 #if C4_CPP >= 14
     return std::equal(l.begin(), l.end(), r.begin(), r.end());
 #else
-    return l.same_span(r) && std::equal(l.begin(), l.end(), r.begin());
+    return l.same_span(r) || std::equal(l.begin(), l.end(), r.begin());
 #endif
 }
 
 template <class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator!=
 (
-    const _span_crtp<T, Il, _Impll>& l,
-    const _span_crtp<T, Ir, _Implr>& r
+    _span_crtp<T, Il, _Impll> const& l,
+    _span_crtp<T, Ir, _Implr> const& r
 )
 {
     return ! (l == r);
@@ -150,8 +152,8 @@ inline constexpr bool operator!=
 template <class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator<
 (
-    const _span_crtp<T, Il, _Impll>& l,
-    const _span_crtp<T, Ir, _Implr>& r
+    _span_crtp<T, Il, _Impll> const& l,
+    _span_crtp<T, Ir, _Implr> const& r
 )
 {
     return std::lexicographical_compare(l.begin(), l.end(), r.begin(), r.end());
@@ -160,8 +162,8 @@ inline constexpr bool operator<
 template <class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator<=
 (
-    const _span_crtp<T, Il, _Impll>& l,
-    const _span_crtp<T, Ir, _Implr>& r
+    _span_crtp<T, Il, _Impll> const& l,
+    _span_crtp<T, Ir, _Implr> const& r
 )
 {
     return ! (l > r);
@@ -171,8 +173,8 @@ inline constexpr bool operator<=
 template <class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator>
 (
-    const _span_crtp<T, Il, _Impll>& l,
-    const _span_crtp<T, Ir, _Implr>& r
+    _span_crtp<T, Il, _Impll> const& l,
+    _span_crtp<T, Ir, _Implr> const& r
 )
 {
     return r < l;
@@ -182,11 +184,11 @@ inline constexpr bool operator>
 template <class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator>=
 (
-    const _span_crtp<T, Il, _Impll>& l,
-    const _span_crtp<T, Ir, _Implr>& r
+    _span_crtp<T, Il, _Impll> const& l,
+    _span_crtp<T, Ir, _Implr> const& r
 )
 {
-    return !(l < r);
+    return ! (l < r);
 }
 
 //-----------------------------------------------------------------------------
@@ -240,7 +242,15 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** a span resizeable up to a capacity */
+/** A span resizeable up to a capacity. Subselection or resizing will keep
+ * the original provided it starts at begin(). If subselection or resizing
+ * change the pointer, then the original capacity information will be lost.
+ *
+ * Thus, resizing via resize() and ltrim() and subselecting via first()
+ * or any of subspan() or range() when starting from the beginning will keep
+ * the original capacity. OTOH, using last(), or any of subspan() or range()
+ * with an offset from the start will remove from capacity by the corresponding
+ * offset. If this is undesired, then consider using perma_span. */
 template< class T, class I >
 class spanrs : public _span_crtp<T, I, spanrs<T, I>>
 {
@@ -286,6 +296,76 @@ public:
     C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
     C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_capacity -= n; }
 
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+/** A span which always retains the information about the original range it
+ * was taken from. The resizing methods resize(), ltrim(), rtrim() as well
+ * as the subselection methods subspan(), range(), first() and last() can be
+ * used at will without loosing the original span, which can always
+ * be recovered by calling original(). */
+template< class T, class I >
+class perma_span : public _span_crtp<T, I, perma_span<T, I>>
+{
+    friend class _span_crtp<T, I, perma_span<T, I>>;
+
+    T *m_ptr;     ///< the current ptr. the original ptr is (m_ptr - m_offset).
+    I m_size;     ///< the current size. the original size is (m_capacity + m_offset).
+    I m_capacity; ///< the current capacity. the original capacity is (m_capacity + m_offset).
+    I m_offset;   ///< the offset of m_ptr to the start of the original span.
+
+    C4_ALWAYS_INLINE perma_span _select(T *p, I sz) const noexcept
+    {
+        auto delta = p - m_ptr;
+        return perma_span(p, sz, m_capacity - delta, m_offset + delta);
+    }
+
+public:
+
+    _c4_DEFINE_ARRAY_TYPES(T, I)
+
+    C4_ALWAYS_INLINE operator perma_span< const T, I > () const noexcept { return perma_span< const T, I >(m_ptr, m_size, m_capacity, m_offset); }
+    C4_ALWAYS_INLINE operator span< T, I > () const noexcept { return span< T, I >(m_ptr, m_size); }
+    C4_ALWAYS_INLINE operator spanrs< T, I > () const noexcept { return spanrs< T, I >(m_ptr, m_size, m_capacity); }
+
+public:
+
+    C4_ALWAYS_INLINE perma_span() noexcept : m_ptr{nullptr}, m_size{0}, m_capacity{0}, m_offset{0} {}
+    C4_ALWAYS_INLINE perma_span(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz}, m_offset{0} {}
+    C4_ALWAYS_INLINE perma_span(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{0} {}
+    C4_ALWAYS_INLINE perma_span(T *p, I sz, I cap, I offs) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{offs} {}
+    template< size_t N >
+    C4_ALWAYS_INLINE perma_span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N}, m_offset{0} {}
+
+    perma_span(perma_span const&) = default;
+    perma_span(perma_span     &&) = default;
+
+    perma_span& operator= (perma_span const&) = default;
+    perma_span& operator= (perma_span     &&) = default;
+
+public:
+
+    C4_ALWAYS_INLINE I offset() const noexcept { return m_offset; }
+    C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
+
+    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A { C4_ASSERT(sz <= m_capacity); m_size = sz; }
+
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_offset += n; m_capacity -= n; }
+
+    /** recover the original span as a perma_span */
+    C4_ALWAYS_INLINE perma_span original() const
+    {
+        return perma_span(m_ptr - m_offset, m_capacity + m_offset, m_capacity + m_offset, 0);
+    }
+    /** recover the original span as a different span type. Example: spanrs<...> orig = s.original< spanrs >(); */
+    template< template< class, class > class OtherSpanType >
+    C4_ALWAYS_INLINE OtherSpanType< T, I > original()
+    {
+        return OtherSpanType< T, I >(m_ptr - m_offset, m_capacity + m_offset);
+    }
 };
 
 C4_END_NAMESPACE(c4)
