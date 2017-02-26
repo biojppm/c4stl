@@ -10,11 +10,11 @@ C4_BEGIN_NAMESPACE(c4)
 
 template< class T, class I=C4_SIZE_TYPE > class span;
 template< class T, class I=C4_SIZE_TYPE > class spanrs;
-template< class T, class I=C4_SIZE_TYPE > class perma_span;
+template< class T, class I=C4_SIZE_TYPE > class etched_span;
 
 template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >;
 template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >;
-template< class T, class I=C4_SIZE_TYPE > using cperma_span = perma_span< const T, I >;
+template< class T, class I=C4_SIZE_TYPE > using cetched_span = etched_span< const T, I >;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -228,14 +228,14 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_size; }
 
-    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A
+    C4_ALWAYS_INLINE void resize(I sz) C4_NOEXCEPT_A
     {
         C4_XASSERT(sz <= m_size);
         m_size = sz;
     }
 
-    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
-    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; }
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; }
 
 };
 
@@ -250,7 +250,7 @@ public:
  * or any of subspan() or range() when starting from the beginning will keep
  * the original capacity. OTOH, using last(), or any of subspan() or range()
  * with an offset from the start will remove from capacity by the corresponding
- * offset. If this is undesired, then consider using perma_span. */
+ * offset. If this is undesired, then consider using etched_span. */
 template< class T, class I >
 class spanrs : public _span_crtp<T, I, spanrs<T, I>>
 {
@@ -293,8 +293,8 @@ public:
         m_size = sz;
     }
 
-    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
-    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_capacity -= n; }
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_capacity -= n; }
 
 };
 
@@ -307,58 +307,58 @@ public:
  * used at will without loosing the original span, which can always
  * be recovered by calling original(). */
 template< class T, class I >
-class perma_span : public _span_crtp<T, I, perma_span<T, I>>
+class etched_span : public _span_crtp<T, I, etched_span<T, I>>
 {
-    friend class _span_crtp<T, I, perma_span<T, I>>;
+    friend class _span_crtp<T, I, etched_span<T, I>>;
 
     T *m_ptr;     ///< the current ptr. the original ptr is (m_ptr - m_offset).
     I m_size;     ///< the current size. the original size is (m_capacity + m_offset).
     I m_capacity; ///< the current capacity. the original capacity is (m_capacity + m_offset).
-    I m_offset;   ///< the offset of m_ptr to the start of the original span.
+    I m_offset;   ///< the offset of the current m_ptr to the start of the original memory block.
 
-    C4_ALWAYS_INLINE perma_span _select(T *p, I sz) const noexcept
+    C4_ALWAYS_INLINE etched_span _select(T *p, I sz) const noexcept
     {
         auto delta = p - m_ptr;
-        return perma_span(p, sz, m_capacity - delta, m_offset + delta);
+        return etched_span(p, sz, m_capacity - delta, m_offset + delta);
     }
 
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
 
-    C4_ALWAYS_INLINE operator perma_span< const T, I > () const noexcept { return perma_span< const T, I >(m_ptr, m_size, m_capacity, m_offset); }
+    C4_ALWAYS_INLINE operator etched_span< const T, I > () const noexcept { return etched_span< const T, I >(m_ptr, m_size, m_capacity, m_offset); }
     C4_ALWAYS_INLINE operator span< T, I > () const noexcept { return span< T, I >(m_ptr, m_size); }
     C4_ALWAYS_INLINE operator spanrs< T, I > () const noexcept { return spanrs< T, I >(m_ptr, m_size, m_capacity); }
 
 public:
 
-    C4_ALWAYS_INLINE perma_span() noexcept : m_ptr{nullptr}, m_size{0}, m_capacity{0}, m_offset{0} {}
-    C4_ALWAYS_INLINE perma_span(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz}, m_offset{0} {}
-    C4_ALWAYS_INLINE perma_span(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{0} {}
-    C4_ALWAYS_INLINE perma_span(T *p, I sz, I cap, I offs) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{offs} {}
+    C4_ALWAYS_INLINE etched_span() noexcept : m_ptr{nullptr}, m_size{0}, m_capacity{0}, m_offset{0} {}
+    C4_ALWAYS_INLINE etched_span(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz}, m_offset{0} {}
+    C4_ALWAYS_INLINE etched_span(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{0} {}
+    C4_ALWAYS_INLINE etched_span(T *p, I sz, I cap, I offs) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{offs} {}
     template< size_t N >
-    C4_ALWAYS_INLINE perma_span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N}, m_offset{0} {}
+    C4_ALWAYS_INLINE etched_span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N}, m_offset{0} {}
 
-    perma_span(perma_span const&) = default;
-    perma_span(perma_span     &&) = default;
+    etched_span(etched_span const&) = default;
+    etched_span(etched_span     &&) = default;
 
-    perma_span& operator= (perma_span const&) = default;
-    perma_span& operator= (perma_span     &&) = default;
+    etched_span& operator= (etched_span const&) = default;
+    etched_span& operator= (etched_span     &&) = default;
 
 public:
 
     C4_ALWAYS_INLINE I offset() const noexcept { return m_offset; }
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
-    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A { C4_ASSERT(sz <= m_capacity); m_size = sz; }
+    C4_ALWAYS_INLINE void resize(I sz) C4_NOEXCEPT_A { C4_ASSERT(sz <= m_capacity); m_size = sz; }
 
-    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; }
-    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_X { C4_XASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_offset += n; m_capacity -= n; }
+    C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; }
+    C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_offset += n; m_capacity -= n; }
 
-    /** recover the original span as a perma_span */
-    C4_ALWAYS_INLINE perma_span original() const
+    /** recover the original span as an etched_span */
+    C4_ALWAYS_INLINE etched_span original() const
     {
-        return perma_span(m_ptr - m_offset, m_capacity + m_offset, m_capacity + m_offset, 0);
+        return etched_span(m_ptr - m_offset, m_capacity + m_offset, m_capacity + m_offset, 0);
     }
     /** recover the original span as a different span type. Example: spanrs<...> orig = s.original< spanrs >(); */
     template< template< class, class > class OtherSpanType >
