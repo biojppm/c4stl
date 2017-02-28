@@ -2,6 +2,7 @@
 \#*
 
 .vs/
+CMakeLists.txt.user
 
 build/
 install/
