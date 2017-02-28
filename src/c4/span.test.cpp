@@ -21,9 +21,9 @@ TEST(spanrs, default_init)
     EXPECT_EQ(s.data(), nullptr);
 }
 
-TEST(perma_span, default_init)
+TEST(etched_span, default_init)
 {
-    perma_span< int > s;
+    etched_span< int > s;
     EXPECT_EQ(s.size(), 0);
     EXPECT_EQ(s.capacity(), 0);
     EXPECT_EQ(s.data(), nullptr);
@@ -58,12 +58,12 @@ TEST(spanrs, empty_init)
     }
 }
 
-TEST(perma_span, empty_init)
+TEST(etched_span, empty_init)
 {
     int arr[10];
 
     {
-        perma_span< int > s(arr, 0);
+        etched_span< int > s(arr, 0);
         EXPECT_EQ(s.size(), 0);
         EXPECT_EQ(s.capacity(), 0);
         EXPECT_EQ(s.data(), arr);
@@ -71,7 +71,7 @@ TEST(perma_span, empty_init)
     }
 
     {
-        perma_span< int > s(arr, 0, C4_COUNTOF(arr));
+        etched_span< int > s(arr, 0, C4_COUNTOF(arr));
         EXPECT_EQ(s.size(), 0);
         EXPECT_EQ(s.capacity(), 10);
         EXPECT_EQ(s.data(), arr);
@@ -83,7 +83,7 @@ TEST(perma_span, empty_init)
 template< class SpanClass >
 void test_fromArray()
 {
-    using T = SpanClass::value_type;
+    using T = typename SpanClass::value_type;
     T arr1[10];
     T arr2[20];
 
@@ -131,11 +131,11 @@ TEST(spanrs, fromArray)
     test_fromArray< spanrs<uint32_t> >();
 }
 
-TEST(perma_span, fromArray)
+TEST(etched_span, fromArray)
 {
-    test_fromArray< perma_span<char> >();
-    test_fromArray< perma_span<int> >();
-    test_fromArray< perma_span<uint32_t> >();
+    test_fromArray< etched_span<char> >();
+    test_fromArray< etched_span<int> >();
+    test_fromArray< etched_span<uint32_t> >();
 }
 
 //-----------------------------------------------------------------------------
@@ -171,10 +171,10 @@ TEST(spanrs, subspan)
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), &arr[5]);
 }
-TEST(perma_span, subspan)
+TEST(etched_span, subspan)
 {
     int arr[10];
-    perma_span< int > s(arr);
+    etched_span< int > s(arr);
     C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
 
     auto ss = s.subspan(0, 5);
@@ -245,10 +245,10 @@ TEST(spanrs, range)
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), &arr[5]);
 }
-TEST(perma_span, range)
+TEST(etched_span, range)
 {
     int arr[10];
-    perma_span< int > s(arr);
+    etched_span< int > s(arr);
     C4_STATIC_ASSERT((std::is_same< decltype(s.range(0)), decltype(s) >::value));
 
     auto ss = s.range(0, 5);
@@ -310,10 +310,10 @@ TEST(spanrs, first)
     EXPECT_EQ(ss.capacity(), 10);
     EXPECT_EQ(ss.data(), arr);
 }
-TEST(perma_span, first)
+TEST(etched_span, first)
 {
     int arr[10];
-    perma_span< int > s(arr);
+    etched_span< int > s(arr);
     C4_STATIC_ASSERT((std::is_same< decltype(s.first(1)), decltype(s) >::value));
 
     auto ss = s.first(0);
@@ -370,10 +370,10 @@ TEST(spanrs, last)
     EXPECT_EQ(ss.capacity(), 5);
     EXPECT_EQ(ss.data(), arr + 5);
 }
-TEST(perma_span, last)
+TEST(etched_span, last)
 {
     int arr[10];
-    perma_span< int > s(arr);
+    etched_span< int > s(arr);
     C4_STATIC_ASSERT((std::is_same< decltype(s.last(1)), decltype(s) >::value));
 
     auto ss = s.last(0);
@@ -430,10 +430,10 @@ TEST(spanrs, rtrim)
     EXPECT_EQ(ss.capacity(), s.capacity());
     EXPECT_EQ(ss.data(), arr);
 }
-TEST(perma_span, rtrim)
+TEST(etched_span, rtrim)
 {
     int arr[10];
-    perma_span< int > s(arr);
+    etched_span< int > s(arr);
     auto ss = s;
 
     ss.rtrim(0);
@@ -490,10 +490,10 @@ TEST(spanrs, ltrim)
     EXPECT_EQ(ss.capacity(), s.size() - 5);
     EXPECT_EQ(ss.data(), arr + 5);
 }
-TEST(perma_span, ltrim)
+TEST(etched_span, ltrim)
 {
     int arr[10];
-    perma_span< int > s(arr);
+    etched_span< int > s(arr);
     auto ss = s;
 
     ss.ltrim(0);
