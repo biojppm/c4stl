@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_CXX_STANDARD 11)
 
 set(src
     c4/allocator.hpp
+    c4/char_traits.cpp
     c4/char_traits.hpp
     c4/common.hpp
     c4/compiler.hpp
@@ -24,6 +25,7 @@ set(src
     c4/platform.hpp
     c4/preprocessor.hpp
     c4/span.hpp
+    c4/sstream.cpp
     c4/sstream.hpp
     c4/sstream.def.hpp
     c4/string.cpp
@@ -63,6 +65,7 @@ if(C4STL_BUILD_TESTS)
         PREFIX ${C4STL_EXTERN_DIR}
         INCLUDES gtest/gtest.h
         LIBRARIES gtest_main gtest)
+    find_package(Threads)
 
     add_executable(c4stl-test
         ../test/main.cpp
@@ -85,7 +88,7 @@ if(C4STL_BUILD_TESTS)
         endif()
     endif()
 
-    target_link_libraries(c4stl-test c4stl ${gtest_LIBRARIES})
+    target_link_libraries(c4stl-test c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
     target_include_directories(c4stl-test PUBLIC
         "${gtest_INCLUDE_DIRS}"
         ${CMAKE_CURRENT_SOURCE_DIR}/../test)
