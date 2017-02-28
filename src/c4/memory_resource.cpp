@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef C4_POSIX
+#   include <errno.h>
+#endif
 
 C4_BEGIN_NAMESPACE(c4)
 

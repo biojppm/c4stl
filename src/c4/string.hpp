@@ -79,7 +79,7 @@
 
 
 C4_BEGIN_NAMESPACE(c4)
- 
+
 //-----------------------------------------------------------------------------
 C4_ALWAYS_INLINE size_t strsz(const char* s) { return ::strlen(s); }
 C4_ALWAYS_INLINE size_t strsz(char* s) { return ::strlen(s); }
@@ -377,6 +377,7 @@ struct _strWrapImpl : public _strExpr< C, _strWrapImpl< C, S > >
 template< typename C >
 struct _strWrapCharPtr : public _strExpr< C, _strWrapCharPtr< C > >
 {
+    using traits_type = char_traits< C >;
     typedef C  value_type;
     typedef C const * expr_type;
 
@@ -935,12 +936,12 @@ public:
         return num;
     }
     /** count the number of characters whose value is C */
-    size_type count(C val, size_type first_char, size_type num_chars = npos) const C4_NOEXCEPT_X
+    size_type count(C val, size_type first_char, size_type num_chars = StrType::npos) const C4_NOEXCEPT_X
     {
         size_type num = 0;
-        C4_XASSERT(first_char >= 0 && first_char < sz);
-        size_type last_char == npos ? _c4cthisSZ - first_char : first_char + num_chars;
-        C4_XASSERT(last_char  >= 0 && last_char  < sz);
+        C4_XASSERT(first_char >= 0 && first_char < _c4cthisSZ);
+        size_type last_char = StrType::npos ? _c4cthisSZ - first_char : first_char + num_chars;
+        C4_XASSERT(last_char  >= 0 && last_char  < _c4cthisSZ);
         C const* d = _c4cthisSTR;
         for(size_type i = first_char; i != last_char; ++i)
         {
@@ -960,7 +961,7 @@ public:
     {
         size_type num = 0;
         C * d = _c4thisSTR;
-        for(size_type i = start_pos; i < sz; ++i)
+        for(size_type i = start_pos; i < _c4cthisSZ; ++i)
         {
             if(d[i] == val)
             {
@@ -1022,9 +1023,9 @@ public:
         }
     }
 
-    /** COMPlement Left: return the complement to the left of the beginning of the given substring.
+    /** COMPLment Left: return the complement to the left of the beginning of the given substring.
      * If ss does not begin inside this, returns an empty substring. */
-    SubStrType compl(SubStrType const& ss) const noexcept
+    SubStrType compll(SubStrType const& ss) const noexcept
     {
         auto ssb = ss.begin();
         auto b = begin();
@@ -1039,9 +1040,9 @@ public:
         }
     }
 
-    /** COMPlement Right: return the complement to the right of the end of the given substring.
+    /** COMPLement Right: return the complement to the right of the end of the given substring.
      * If ss does not end inside this, returns an empty substring. */
-    SubStrType compr(SubStrType const& ss) const noexcept
+    SubStrType complr(SubStrType const& ss) const noexcept
     {
         auto sse = ss.end();
         auto b = begin();
@@ -1519,7 +1520,7 @@ public:
         {
             if(_c4cthisSZ > ss.size())
             {
-                auto rem = compr(ss);
+                auto rem = complr(ss);
                 if(rem.count(sep) == rem.size())
                 {
                     return substr();
@@ -1645,7 +1646,7 @@ public:
     SubStrType gpopr(C sep = C('/'), bool skip_empty=false) const
     {
         auto ss = popl(sep, skip_empty);
-        ss = compr(ss);
+        ss = complr(ss);
         auto pos = ss.find(sep);
         if(pos != StrType::npos)
         {
@@ -1669,7 +1670,7 @@ public:
     SubStrType gpopl(C sep = C('/'), bool skip_empty=false) const
     {
         auto ss = popr(sep, skip_empty);
-        ss = compl(ss);
+        ss = compll(ss);
         auto pos = ss.find(sep);
         if(pos != StrType::npos)
         {
@@ -1764,7 +1765,7 @@ public:
     bool operator== (const C (&a)[N]) const
     {
         if(N-1 != _c4cthisSZ) return false;
-        if(_c4cthisSTR == _c4cthatSTR) return true;
+        if(_c4cthisSTR == &a[0]) return true;
         return traits_type::compare(_c4cthisSTR, a, _c4cthisSZ) == 0;
     }
     template< size_t N > C4_ALWAYS_INLINE bool operator!= (const C (&a)[N]) const { return !this->operator== (a); }
@@ -2043,7 +2044,7 @@ C4_ALWAYS_INLINE
 c4::sstream< StreamStringType >& operator<< (c4::sstream< StreamStringType >& os, string_impl< C, Size, Str, Sub > const& n)
 {
     os.write(n.data(), n.size());
-    return is;
+    return os;
 }
 
 template< class StreamStringType, typename C, typename Size, class Str, class Sub >
@@ -2074,7 +2075,8 @@ c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** a proxy string which does not manage any memory.
+/** a proxy string which does not manage any memory. Basically a span, but
+ * enriched with string methods.
  *  -It is in general NOT null terminated.
  *  -Can be resized, but only to smaller sizes.
  *  -Can be written to output streams.
@@ -2100,7 +2102,7 @@ public:
     static constexpr const SizeType npos = SizeType(-1);
 
     template< class C_ >
-    using parameterized_string_type = basic_small_string< C_, SizeType >;
+    using parameterized_string_type = basic_substring< C_, SizeType >;
 
 public:
 
@@ -2150,7 +2152,7 @@ public:
     C4_ALWAYS_INLINE void reserve(SizeType sz) { C4_CHECK(sz <= m_size); m_size = sz; }
 
     C4_ALWAYS_INLINE SizeType capacity() const { return m_size; }
-    constexpr C4_ALWAYS_INLINE SizeType max_size() const { return std::numeric_limit< SizeType >::max(); }
+    constexpr C4_ALWAYS_INLINE SizeType max_size() const { return std::numeric_limits< SizeType >::max(); }
 
 private:
 
@@ -2164,6 +2166,9 @@ private:
 
 }; // basic_substring
 
+template< class C, class SizeType >
+const SizeType basic_substring< C, SizeType >::npos;
+
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substring< C C4_COMMA SizeType >, typename C, typename SizeType)
 
 //-----------------------------------------------------------------------------
@@ -2172,7 +2177,8 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substring< C C4_COMMA SizeType >, typen
 /** substringReSizeable: same as substring, but additionally has a fixed
  * max capacity, so it can be resizeable up to capacity. Therefore, it
  * can be modified with methods that change its size such as append(), prepend(),
- * or read with input streams (again, up to capacity). */
+ * or read with input streams (again, up to capacity).
+ * @see basic_substring */
 template< class C, class SizeType >
 class basic_substringrs : public string_impl< C, SizeType, basic_substringrs< C, SizeType >, basic_substringrs< C, SizeType > >
 {
@@ -2192,7 +2198,7 @@ public:
     static constexpr const size_type npos = SizeType(-1);
 
     template< class C_ >
-    using parameterized_string_type = basic_small_string< C_, SizeType >;
+    using parameterized_string_type = basic_substringrs< C_, SizeType >;
 
 public:
 
@@ -2247,7 +2253,7 @@ public:
     C4_ALWAYS_INLINE void resize(SizeType sz) { C4_CHECK(sz <= m_capacity && (m_str != nullptr || sz == 0)); m_size = sz; }
 
     C4_ALWAYS_INLINE SizeType capacity() const { return m_capacity; }
-    constexpr C4_ALWAYS_INLINE SizeType max_size() const { return std::numeric_limit< SizeType >::max(); }
+    constexpr C4_ALWAYS_INLINE SizeType max_size() const { return std::numeric_limits< SizeType >::max(); }
 
 private:
 
@@ -2260,6 +2266,9 @@ private:
     friend void test_string_member_alignment();
 
 }; // basic_substringrs
+
+template< class C, class SizeType >
+const SizeType basic_substringrs< C, SizeType >::npos;
 
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substringrs< C C4_COMMA SizeType >, typename C, typename SizeType)
 
@@ -2496,12 +2505,20 @@ public:
 
 };
 
-_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Allocator >,
-    typename C, typename SizeType, class Allocator);
+template< class C, class SizeType, class Alloc >
+const SizeType basic_string< C, SizeType, Alloc >::npos;
+
+_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Alloc >,
+    typename C, typename SizeType, class Alloc);
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+template< class _Char, size_t N > struct _shortstr;
+template< size_t N > struct _shortstr< char   , N > { char flag_n_sz;             char    arr[(N - 1)/sizeof(char)   ]; };
+template< size_t N > struct _shortstr< wchar_t, N > { char flag_n_sz; char __pad; wchar_t arr[(N - 1)/sizeof(wchar_t)]; };
+
 template< class C, class SizeType, class Alloc >
 class basic_small_string : public string_impl< C, SizeType, basic_small_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
@@ -2513,10 +2530,7 @@ class basic_small_string : public string_impl< C, SizeType, basic_small_string< 
         SizeType cap;
         C *      str;
     };
-   
-    template< class _Char > struct _short;
-    template<> struct _short< char    > { char flag_n_sz;             char    arr[(sizeof(_long) - 1)/sizeof(char)   ]; };
-    template<> struct _short< wchar_t > { char flag_n_sz; char __pad; wchar_t arr[(sizeof(_long) - 1)/sizeof(wchar_t)]; };
+    using _short = _shortstr< C, sizeof(_long) >;
 
 public:
 
@@ -2532,7 +2546,7 @@ public:
     using parameterized_string_type = basic_small_string< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
 
     static constexpr const SizeType npos = SizeType(-1);
-    static constexpr const SizeType arr_size = C4_COUNTOF(_short< C >::arr);
+    static constexpr const SizeType arr_size = C4_COUNTOF(_short::arr);
 
 private:
 
@@ -2541,9 +2555,9 @@ private:
      * @see https://github.com/elliotgoodrich/SSO-23
      */
     union {
-        _short< C > m_short;
-        _long       m_long;
-        char        m_raw[sizeof(_short<C>) > sizeof(_long) ? sizeof(_short<C>) : sizeof(_long)];
+        _short m_short;
+        _long  m_long;
+        char   m_raw[sizeof(_short) > sizeof(_long) ? sizeof(_short) : sizeof(_long)];
     };
     Alloc m_alloc;
 
@@ -2557,7 +2571,7 @@ private:
 
 public:
 
-    C4_ALWAYS_INLINE operator bool () const { return ! empty(); }
+    C4_ALWAYS_INLINE operator bool () const { return size() > 0; }
 
     C4_ALWAYS_INLINE operator const basic_substring  < const C, SizeType > () const { return basic_substring  < const C, SizeType >(data(), size()); }
     C4_ALWAYS_INLINE operator const basic_substring  <       C, SizeType > ()       { return basic_substring  < const C, SizeType >(data(), size()); }
@@ -2568,8 +2582,8 @@ public:
 
     C4_ALWAYS_INLINE char is_long() const { return m_short.flag_n_sz & 1; }
 
-    C4_ALWAYS_INLINE       C* c_str()       C4_NOEXCEPT_A { C4_ASSERT(!empty()); return data(); }
-    C4_ALWAYS_INLINE const C* c_str() const C4_NOEXCEPT_A { C4_ASSERT(!empty()); return data(); }
+    C4_ALWAYS_INLINE       C* c_str()       C4_NOEXCEPT_A { C4_ASSERT(size() > 0); return data(); }
+    C4_ALWAYS_INLINE const C* c_str() const C4_NOEXCEPT_A { C4_ASSERT(size() > 0); return data(); }
 
     C4_ALWAYS_INLINE       C* data()       noexcept { return is_long() ? m_long.str : m_short.arr; }
     C4_ALWAYS_INLINE const C* data() const noexcept { return is_long() ? m_long.str : m_short.arr; }
@@ -2731,7 +2745,7 @@ public:
     }
     void grow(SizeType more)
     {
-        auto sz = m_size + more;
+        auto sz = size() + more;
         reserve(sz + 1);
         _set_size(sz);
         data()[sz] = C(0);
@@ -2854,6 +2868,8 @@ private:
 
 };
 
+template< class C, class SizeType, class Alloc >
+const SizeType basic_small_string< C, SizeType, Alloc >::npos;
 
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_small_string< C C4_COMMA SizeType C4_COMMA Allocator >,
     typename C, typename SizeType, class Allocator)

@@ -6,6 +6,8 @@
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 
+#include <limits>
+
 C4_BEGIN_NAMESPACE(c4)
 
 /** use SFINAE to overload szconv() based on whether SizeOut is narrower than SizeIn */

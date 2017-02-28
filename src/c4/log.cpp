@@ -3,6 +3,7 @@
 #include "c4/compiler.hpp"
 #include "c4/time.hpp"
 
+#include <stdarg.h>
 #include <assert.h>
 #include <string.h>
 
@@ -374,5 +375,19 @@ size_t LogBuffer::nextarg_(const char *fmt)
     }
     return size_t(-1); // no more tokens were found
 }
+constexpr const char fmt_tag_< void *       >::fmt[];
+constexpr const char fmt_tag_< double       >::fmt[];
+constexpr const char fmt_tag_< float        >::fmt[];
+constexpr const char fmt_tag_< char         >::fmt[];
+constexpr const char fmt_tag_<  int64_t     >::fmt[];
+constexpr const char fmt_tag_< uint64_t     >::fmt[];
+constexpr const char fmt_tag_<  int32_t     >::fmt[];
+constexpr const char fmt_tag_< uint32_t     >::fmt[];
+constexpr const char fmt_tag_<  int16_t     >::fmt[];
+constexpr const char fmt_tag_< uint16_t     >::fmt[];
+constexpr const char fmt_tag_<  int8_t      >::fmt[];
+constexpr const char fmt_tag_< uint8_t      >::fmt[];
+constexpr const char fmt_tag_<       char * >::fmt[];
+constexpr const char fmt_tag_< const char * >::fmt[];
 
 C4_END_NAMESPACE(c4)

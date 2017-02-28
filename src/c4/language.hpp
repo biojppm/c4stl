@@ -2,6 +2,7 @@
 #define _C4_LANGUAGE_HPP_
 
 #include "c4/preprocessor.hpp"
+#include "c4/compiler.hpp"
 
 /* Detect C++ standard.
  * @see http://stackoverflow.com/a/7132549/5875572 */
@@ -13,6 +14,19 @@
 #       elif _MSC_VER == 1900
 #           define C4_CPP 14
 #           define C4_CPP14
+#       else
+#           error C++ lesser than C++11 not supported
+#       endif
+#   elif defined(__INTEL_COMPILER) // https://software.intel.com/en-us/node/524490
+#       ifdef __INTEL_CXX17_MODE__ // not sure about this
+#           define C4_CPP 17
+#           define C4_CPP17
+#       elif defined __INTEL_CXX14_MODE__ // not sure about this
+#           define C4_CPP 14
+#           define C4_CPP14
+#       elif defined __INTEL_CXX11_MODE__
+#           define C4_CPP 11
+#           define C4_CPP11
 #       else
 #           error C++ lesser than C++11 not supported
 #       endif
@@ -141,7 +155,11 @@
 #   define C4_LIKELY(x)   __builtin_expect(x, 1)
 #   define C4_UNLIKELY(x) __builtin_expect(x, 0)
 #   define C4_UNREACHABLE() __builtin_unreachable()
-#   define C4_ATTR_FORMAT(...) __attribute__((__VA_ARGS__)) ///< @see https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#Common-Function-Attributes
+#   if defined(C4_GCC)
+#       define C4_ATTR_FORMAT(...) //__attribute__((__VA_ARGS__)) ///< @see https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#Common-Function-Attributes
+#   else
+#       define C4_ATTR_FORMAT(...)
+#   endif
 #else
 #   define C4_RESTRICT __restrict
 #   define C4_RESTRICT_FN __declspec(restrict)
@@ -197,7 +215,7 @@ C4_END_NAMESPACE(c4)
 
 /** @def C4_VA_LIST_REUSE_MUST_COPY
  * @todo I strongly suspect that this is actually only in UNIX platforms. revisit this. */
-#ifdef __GNUC__ 
+#ifdef __GNUC__
 #   define C4_VA_LIST_REUSE_MUST_COPY
 #endif
 

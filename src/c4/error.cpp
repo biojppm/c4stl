@@ -69,12 +69,12 @@ void handle_error(const char *fmt, ...)
     {
         C4_LOGF_ERR("\n");
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_str());
+        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_strp());
         C4_LOGF_ERR("ERROR: %s:%d: here: %s\n", file, line, func);
 #elif defined(C4_ERROR_SHOWS_FILELINE)
-        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_str());
+        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_strp());
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
-        C4_LOGF_ERR("ERROR: %s\n", ss.c_str());
+        C4_LOGF_ERR("ERROR: %s\n", ss.c_strp());
 #endif
         c4::log.flush();
     }
@@ -82,7 +82,7 @@ void handle_error(const char *fmt, ...)
     {
         if(s_error_callback)
         {
-            s_error_callback(ss.c_str(), ss.tellp());
+            s_error_callback(ss.c_strp(), ss.tellp());
         }
     }
     if(s_error_flags & ON_ERROR_ABORT)
@@ -114,12 +114,12 @@ void handle_warning(const char *fmt, ...)
     va_end(args);
     C4_LOGF_WARN("\n");
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_str());
+    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_strp());
     C4_LOGF_WARN("WARNING: %s:%d: here: %s\n", file, line, func);
 #elif defined(C4_ERROR_SHOWS_FILELINE)
-    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_str());
+    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_strp());
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
-    C4_LOGF_WARN("WARNING: %s\n", ss.c_str());
+    C4_LOGF_WARN("WARNING: %s\n", ss.c_strp());
 #endif
     c4::log.flush();
 }

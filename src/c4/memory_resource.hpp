@@ -303,14 +303,14 @@ struct ScopedMemoryResource
 
     ScopedMemoryResource(MemoryResource *r)
     :
-        m_original(c4::get_memory_resource())
+        m_original(get_memory_resource())
     {
-        c4::set_memory_resource(r);
+        set_memory_resource(r);
     }
 
     ~ScopedMemoryResource()
     {
-        c4::set_memory_resource(m_original);
+        set_memory_resource(m_original);
     }
 };
 
@@ -321,15 +321,15 @@ struct ScopedMemoryResourceCounts
 
     ScopedMemoryResourceCounts() : mr()
     {
-        c4::set_memory_resource(&mr);
+        set_memory_resource(&mr);
     }
     ScopedMemoryResourceCounts(MemoryResource *m) : mr(m)
     {
-        c4::set_memory_resource(&mr);
+        set_memory_resource(&mr);
     }
     ~ScopedMemoryResourceCounts()
     {
-        c4::set_memory_resource(mr.resource());
+        set_memory_resource(mr.resource());
     }
 };
 

@@ -1,5 +1,14 @@
 #include "c4/string.hpp"
+#include "c4/config.hpp"
 #include "c4/test.hpp"
+
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wwritable-strings" // ISO C++11 does not allow conversion from string literal to char*
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wwrite-strings" // ISO C++ forbids converting a string constant to ‘C* {aka char*}’
+#endif
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -70,13 +79,13 @@ TEST(classname, is_substr)                                      \
 {                                                               \
     test_stringbase_is_substr< classtype >();                   \
 }                                                               \
-TEST(classname, compl)                                          \
+TEST(classname, compll)                                         \
 {                                                               \
-    test_stringbase_compl< classtype >();                       \
+    test_stringbase_compll< classtype >();                      \
 }                                                               \
-TEST(classname, compr)                                          \
+TEST(classname, complr)                                         \
 {                                                               \
-    test_stringbase_compr< classtype >();                       \
+    test_stringbase_complr< classtype >();                      \
 }                                                               \
 TEST(classname, find)                                           \
 {                                                               \
@@ -172,7 +181,7 @@ TEST(classname, basename)                                       \
 }                                                               \
 TEST(classname, sstream)                                        \
 {                                                               \
-    test_stringbase_stream< classtype, c4::sstream<c4::string> >();         \
+    test_stringbase_stream< classtype, c4::sstream<std::string> >();         \
 }                                                               \
 TEST(classname, hash)                                           \
 {                                                               \
@@ -235,8 +244,12 @@ void test_stringbase_empty_ctor()
 }
 
 #define NTEST "shortname"
-#define MTEST "This is another name, big-ass big to effectively ensure that it will extend beyond the small string optimization. Just go on a little more to make really really sure that it really is so. Almost done. Just a little bit more. Almost. There."
-#define BTEST "This is really big:" MTEST
+#define MTEST "This is a big name to effectively ensure that it will extend beyond the small string optimization."
+#define BTEST "see: " MTEST
+
+#ifdef C4_CLANG
+
+#endif
 
 /// copy ctor+assign a small string to a small string
 template< typename S >
@@ -608,46 +621,46 @@ void test_stringbase_is_substr()
 }
 
 template< typename S >
-void test_stringbase_compl()
+void test_stringbase_compll()
 {
     S n("0123456789");
 
-    C4_EXPECT_EQ(n.compl(n.substr()), "");
-    C4_EXPECT_EQ(n.is_substr(n.compl(n.substr())), true);
-    C4_EXPECT_EQ(n.compl(n.substr(0, 0)), "");
-    C4_EXPECT_EQ(n.is_substr(n.compl(n.substr(0, 0))), true);
+    C4_EXPECT_EQ(n.compll(n.substr()), "");
+    C4_EXPECT_EQ(n.is_substr(n.compll(n.substr())), true);
+    C4_EXPECT_EQ(n.compll(n.substr(0, 0)), "");
+    C4_EXPECT_EQ(n.is_substr(n.compll(n.substr(0, 0))), true);
 
-    C4_EXPECT_EQ(n.compl(n.substr(0, 1)), "");
-    C4_EXPECT_EQ(n.compl(n.substr(0, 3)), "");
+    C4_EXPECT_EQ(n.compll(n.substr(0, 1)), "");
+    C4_EXPECT_EQ(n.compll(n.substr(0, 3)), "");
 
-    C4_EXPECT_EQ(n.compl(n.range(5, 10)), "01234");
-    C4_EXPECT_EQ(n.compl(n.range(5, 5)), "01234");
+    C4_EXPECT_EQ(n.compll(n.range(5, 10)), "01234");
+    C4_EXPECT_EQ(n.compll(n.range(5, 5)), "01234");
 
-    C4_EXPECT_EQ(n.compl(n.substr(n.size(), 0)), n);
-    C4_EXPECT_EQ(n.compl(n.range(n.size(), n.size())), n);
+    C4_EXPECT_EQ(n.compll(n.substr(n.size(), 0)), n);
+    C4_EXPECT_EQ(n.compll(n.range(n.size(), n.size())), n);
 }
 
 template< typename S >
-void test_stringbase_compr()
+void test_stringbase_complr()
 {
     S n("0123456789");
 
-    C4_EXPECT_EQ(n.compr(n.substr()), "");
-    C4_EXPECT_EQ(n.is_substr(n.compr(n.substr())), true);
-    C4_EXPECT_EQ(n.compr(n.substr(0, 0)), "0123456789");
-    C4_EXPECT_EQ(n.is_substr(n.compr(n.substr(0, 0))), true);
+    C4_EXPECT_EQ(n.complr(n.substr()), "");
+    C4_EXPECT_EQ(n.is_substr(n.complr(n.substr())), true);
+    C4_EXPECT_EQ(n.complr(n.substr(0, 0)), "0123456789");
+    C4_EXPECT_EQ(n.is_substr(n.complr(n.substr(0, 0))), true);
 
-    C4_EXPECT_EQ(n.compr(n.substr(0, 1)), "123456789");
-    C4_EXPECT_EQ(n.compr(n.substr(0, 3)), "3456789");
+    C4_EXPECT_EQ(n.complr(n.substr(0, 1)), "123456789");
+    C4_EXPECT_EQ(n.complr(n.substr(0, 3)), "3456789");
 
-    C4_EXPECT_EQ(n.compr(n.substr(5)), "");
-    C4_EXPECT_EQ(n.compr(n.range(5, 10)), "");
+    C4_EXPECT_EQ(n.complr(n.substr(5)), "");
+    C4_EXPECT_EQ(n.complr(n.range(5, 10)), "");
  
-    C4_EXPECT_EQ(n.compr(n.substr(5, 0)), "56789");
-    C4_EXPECT_EQ(n.compr(n.range(5, 5)), "56789");
+    C4_EXPECT_EQ(n.complr(n.substr(5, 0)), "56789");
+    C4_EXPECT_EQ(n.complr(n.range(5, 5)), "56789");
 
-    C4_EXPECT_EQ(n.compr(n.substr(0, 0)), n);
-    C4_EXPECT_EQ(n.compr(n.range(0, 0)), n);
+    C4_EXPECT_EQ(n.complr(n.substr(0, 0)), n);
+    C4_EXPECT_EQ(n.complr(n.range(0, 0)), n);
 }
 
 template< typename S >
@@ -2758,7 +2771,7 @@ void test_stringbase_stream()
 template< class S >
 void test_stringbase_hash()
 {
-    S::char_type *cn = "adfkusdfkjsdf2ekjsdfkjh";
+    typename S::char_type *cn = "adfkusdfkjsdf2ekjsdfkjh";
     S r("adfkusdfkjsdf2ekjsdfkjh");
     S n(cn);
     std::hash< S > H;
@@ -2988,8 +3001,8 @@ void test_string_vs_wstring()
 {
     char    rbuf[64];
     wchar_t wrbuf[64];
-    using S  = typename S_::parameterized_string_type< char >;
-    using WS = typename S_::parameterized_string_type< wchar_t >;
+    using S  = typename S_::template parameterized_string_type< char >;
+    using WS = typename S_::template parameterized_string_type< wchar_t >;
 
     S   s( "áaàaâaäaãaéeèeëeêeóoòoôoõoöoñnçcíiìiïi"),  r( rbuf);
     WS ws(L"áaàaâaäaãaéeèeëeêeóoòoôoõoöoñnçcíiìiïi"), wr(wrbuf);
@@ -3026,5 +3039,11 @@ void test_string_vs_wstring()
 #undef _clout
 #undef MTEST
 #undef NTEST
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic pop
+#endif
 
 C4_END_NAMESPACE(c4)

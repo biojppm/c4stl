@@ -79,17 +79,17 @@ TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
 //-----------------------------------------------------------------------------
 #define _testrtrip3(which, strtype)                                 \
                                                                     \
-    which<strtype, TypeParam>(ss, 65, 66, 67);                      \
-    ss.reset();                                                     \
+    which<strtype, TypeParam>(this->ss, 65, 66, 67);                      \
+    this->ss.reset();                                                     \
                                                                     \
-    which<strtype, TypeParam>(ss, 97, 98, 99);                      \
-    ss.reset();                                                     \
+    which<strtype, TypeParam>(this->ss, 97, 98, 99);                      \
+    this->ss.reset();                                                     \
                                                                     \
-    which<strtype, TypeParam>(ss, 123, 124, 125);                   \
-    ss.reset();                                                     \
+    which<strtype, TypeParam>(this->ss, 123, 124, 125);                   \
+    this->ss.reset();                                                     \
                                                                     \
-    which<strtype, exvec3<TypeParam>>(ss, {65,66,67},{68,69,70},{71,72,73}); \
-    ss.reset();
+    which<strtype, exvec3<TypeParam>>(this->ss, {65,66,67},{68,69,70},{71,72,73}); \
+    this->ss.reset();
 
 //-----------------------------------------------------------------------------
 
@@ -101,9 +101,9 @@ void do_round_trip_chevron(sstream<String> &ss, T const& val1, T const& val2, T 
     ss << val1 << char_type(' ') << val2 << char_type(' ') << val3;
     char_type c;
     ss >> v1 >> c >> v2 >> c >> v3;
-    EXPECT_EQ(v1, val1);
-    EXPECT_EQ(v2, val2);
-    EXPECT_EQ(v3, val3);
+    EXPECT_EQ(v1, val1) << C4_PRETTY_FUNC;
+    EXPECT_EQ(v2, val2) << C4_PRETTY_FUNC;
+    EXPECT_EQ(v3, val3) << C4_PRETTY_FUNC;
 }
 TYPED_TEST_P(RoundTripTest_c4string, chevron)
 {

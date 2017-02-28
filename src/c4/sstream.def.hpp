@@ -5,6 +5,7 @@
 #include "c4/sstream.hpp"
 #endif
 
+#include <string.h>
 
 C4_BEGIN_NAMESPACE(c4)
 

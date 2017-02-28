@@ -3,6 +3,7 @@
 
 #include "c4/config.hpp"
 #include "c4/error.hpp"
+#include "c4/szconv.hpp"
 
 #include <algorithm>
 

@@ -19,6 +19,7 @@
 #   pragma GCC system_header
 #endif
 
+#define C4_WIDEN(str) L"" str
 
 #define C4_COUNTOF(arr) sizeof(arr)/sizeof((arr)[0])
 

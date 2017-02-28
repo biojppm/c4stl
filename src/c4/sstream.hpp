@@ -84,12 +84,12 @@ public:
 public:
 
     /// get the full resulting span (from 0 to tellp)
-    C4_ALWAYS_INLINE cspan_type span() const noexcept { return cspan_type(m_string.data(), m_putpos); }
+    C4_ALWAYS_INLINE cspan_type strp() const noexcept { return cspan_type(m_string.data(), m_putpos); }
     /// get the current reading span (from tellg to to tellp)
-    C4_ALWAYS_INLINE cspan_type spang() const C4_NOEXCEPT_X { C4_XASSERT(m_putpos >= m_getpos); return cspan_type(m_string.data() + m_getpos, m_putpos - m_getpos); }
+    C4_ALWAYS_INLINE cspan_type strg() const C4_NOEXCEPT_X { C4_XASSERT(m_putpos >= m_getpos); return cspan_type(m_string.data() + m_getpos, m_putpos - m_getpos); }
 
     /// get the full resulting string (from 0 to tellp)
-    C4_ALWAYS_INLINE const char* c_str() const { C4_XASSERT(m_string[m_putpos] == '\0'); return m_string.data(); }
+    C4_ALWAYS_INLINE const char* c_strp() const { C4_XASSERT(m_string[m_putpos] == '\0'); return m_string.data(); }
     /// get the current reading string (from tellg to tellp)
     C4_ALWAYS_INLINE const char* c_strg() const { C4_XASSERT(m_getpos < m_putpos && m_string[m_putpos] == '\0'); return m_string.data() + m_getpos; }
 
@@ -100,14 +100,14 @@ public:
     ///< write a sequence of characters
     void write(const char *str, size_type sz);
     ///< write a sequence of characters
-    C4_ALWAYS_INLINE void write(const wchar_t *str, size_type sz) { write(reinterpret_cast< const char* >(str), sz * sizeof(wchar_t)); }
+    C4_ALWAYS_INLINE void write(const wchar_t *str, size_type sz) { write(reinterpret_cast< const char* >(str), sz * sizeof(wchar_t)); } // invoke the char version
     ///< write a sequence of characters
     C4_ALWAYS_INLINE void write(cspan_type const& s) { write(s.data(), s.size()); }
 
     ///< read a sequence of characters
     void read(char *str, size_type sz);
     ///< read a sequence of characters
-    C4_ALWAYS_INLINE void read(wchar_t *str, size_type sz) { read(reinterpret_cast< char* >(str), sz * sizeof(wchar_t)); }
+    C4_ALWAYS_INLINE void read(wchar_t *str, size_type sz) { read(reinterpret_cast< char* >(str), sz * sizeof(wchar_t)); } // invoke the char version
     ///< read a sequence of characters
     C4_ALWAYS_INLINE void read ( span_type & s) { read(s.data(), s.size()); }
 
@@ -308,7 +308,7 @@ public:
 template< class CharType, class T > struct fmt_tag {};
 
 /** define printf formats for a scalar (intrinsic) type */
-#define _C4_DEFINE_FMT_TAG(_ty, fmtstr)                                  \
+#define _C4_DECLARE_FMT_TAG(_ty, fmtstr)                                 \
 template<>                                                               \
 struct fmt_tag< char, _ty >                                              \
 {                                                                        \
@@ -318,9 +318,26 @@ struct fmt_tag< char, _ty >                                              \
 template<>                                                               \
 struct fmt_tag< wchar_t, _ty >                                           \
 {                                                                        \
-    static constexpr const wchar_t fmt[] = C4_XCAT(L, fmtstr);           \
-    static constexpr const wchar_t fmtn[] = C4_XCAT(C4_XCAT(L, fmtstr), "%n"); \
+    static constexpr const wchar_t fmt[] = C4_WIDEN(fmtstr);             \
+    static constexpr const wchar_t fmtn[] = C4_WIDEN(fmtstr "%n");       \
 }
+
+_C4_DECLARE_FMT_TAG(void*   , "%p"                );
+_C4_DECLARE_FMT_TAG(char    , "%c"                );
+_C4_DECLARE_FMT_TAG(wchar_t , "%c"                );
+_C4_DECLARE_FMT_TAG(char*   , "%s"                );
+_C4_DECLARE_FMT_TAG(wchar_t*, "%s"                );
+_C4_DECLARE_FMT_TAG(double  , "%lg"               );
+_C4_DECLARE_FMT_TAG(float   , "%g"                );
+_C4_DECLARE_FMT_TAG( int8_t , "%" PRId8 /*"%hhd"*/);
+_C4_DECLARE_FMT_TAG(uint8_t , "%" PRIu8 /*"%hhu"*/);
+_C4_DECLARE_FMT_TAG( int16_t, "%" PRId16/*"%hd" */);
+_C4_DECLARE_FMT_TAG(uint16_t, "%" PRIu16/*"%hu" */);
+_C4_DECLARE_FMT_TAG( int32_t, "%" PRId32/*"%d"  */);
+_C4_DECLARE_FMT_TAG(uint32_t, "%" PRIu32/*"%u"  */);
+_C4_DECLARE_FMT_TAG( int64_t, "%" PRId64/*"%lld"*/);
+_C4_DECLARE_FMT_TAG(uint64_t, "%" PRIu64/*"%llu"*/);
+
 
 /** define chevron IO operators for a scalar (intrinsic) type */
 #define _C4_DEFINE_CHEVRON_IO_OPERATORS(ty)                              \
@@ -338,22 +355,6 @@ sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var)       \
     ss.scanf____(fmt_tag< typename StringType::value_type, ty >::fmtn, &var); \
     return ss;                                                           \
 }
-
-_C4_DEFINE_FMT_TAG(void*   , "%p"               );
-_C4_DEFINE_FMT_TAG(char    , "%c"               );
-_C4_DEFINE_FMT_TAG(wchar_t , "%c"               );
-_C4_DEFINE_FMT_TAG(char*   , "%s"               );
-_C4_DEFINE_FMT_TAG(wchar_t*, "%s"               );
-_C4_DEFINE_FMT_TAG(double  , "%lg"              );
-_C4_DEFINE_FMT_TAG(float   , "%g"               );
-_C4_DEFINE_FMT_TAG( int8_t , /*"%hhd"*/"%"PRId8 );
-_C4_DEFINE_FMT_TAG(uint8_t , /*"%hhu"*/"%"PRIu8 );
-_C4_DEFINE_FMT_TAG( int16_t, /*"%hd" */"%"PRId16);
-_C4_DEFINE_FMT_TAG(uint16_t, /*"%hu" */"%"PRIu16);
-_C4_DEFINE_FMT_TAG( int32_t, /*"%d"  */"%"PRId32);
-_C4_DEFINE_FMT_TAG(uint32_t, /*"%u"  */"%"PRIu32);
-_C4_DEFINE_FMT_TAG( int64_t, /*"%lld"*/"%"PRId64);
-_C4_DEFINE_FMT_TAG(uint64_t, /*"%llu"*/"%"PRIu64);
 
 template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator<< (sstream<StringType>& ss, char  var) { ss.write(&var, 1); return ss; }\
 template< class StringType > C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, char& var) { ss.read(&var, 1); return ss; }

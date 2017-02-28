@@ -264,13 +264,14 @@ public:
         template <class T>
         Proxy& operator<< (fastcref<T> v)
         {
-            if(C4_LIKELY(!buf)) return;
-            *buf << var;
+            if(C4_LIKELY(!buf)) return *this;
+            *buf << v;
             if(buf->pos > C4_LOG_BUFFER_REF_SIZE) // flush the buffer if it gets big
             {
-                Log::pump(buf->rd(), buf->pos);
+                c4::log.pump(buf->rd(), buf->pos);
                 buf->clear();
             }
+            return *this;
         }
     };
 
@@ -286,7 +287,7 @@ public:
     template <class T>
     Proxy operator<< (fastcref<T> v)
     {
-        Proxy s(main_channel(), INFO);
+        Proxy s(*main_channel(), INFO);
         s << v;
         return s;
     }

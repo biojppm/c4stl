@@ -9,6 +9,14 @@ C4_BEGIN_NAMESPACE(c4)
 
 struct AllocatorBase
 {
+// utility macros, undefined at the end of the class
+/** SFINAE: enable the function with a void return type when a condition is verified */
+#define _c4_void_if(cond) C4_ALWAYS_INLINE typename std::enable_if< cond, void >::type
+/** @see http://en.cppreference.com/w/cpp/memory/uses_allocator */
+#define _c4_uses_allocator(U) std::uses_allocator< U, MemoryResource* >::value
+/** @see http://en.cppreference.com/w/cpp/types/is_constructible */
+#define _c4_is_constructible(...) std::is_constructible< __VA_ARGS__ >::value
+
 protected:
 
     MemoryResource *m_resource;
@@ -22,13 +30,6 @@ public:
 
     /** for construct:
      * @see http://en.cppreference.com/w/cpp/experimental/polymorphic_allocator/construct */
-
-/** SFINAE: enable the function with a void return type when a condition is verified */
-#define _c4_void_if(cond) C4_ALWAYS_INLINE typename std::enable_if< cond, void >::type
-/** @see http://en.cppreference.com/w/cpp/memory/uses_allocator */
-#define _c4_uses_allocator(U) std::uses_allocator< U, MemoryResource* >::value
-/** @see http://en.cppreference.com/w/cpp/types/is_constructible */
-#define _c4_is_constructible(...) std::is_constructible< __VA_ARGS__ >::value
 
     // 1. types with no allocators
     template< class U, class... Args >

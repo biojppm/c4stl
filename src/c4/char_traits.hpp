@@ -51,7 +51,7 @@ struct select_literal< wchar_t >
     }
 };
 
-#define C4_TXTTY(txt, ty) c4::select_literal< ty >::select(txt, C4_XCAT(L, txt))
+#define C4_TXTTY(txt, ty) c4::select_literal< ty >::select(txt, C4_WIDEN(txt))
 
 C4_END_NAMESPACE(c4)
 
