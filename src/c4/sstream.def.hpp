@@ -233,12 +233,12 @@ void sstream< StringType >::printf(const char_type *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    this->vprintf(fmt, args);
+    this->vprintf_(fmt, args, char_type());
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::vprintf(const char_type *fmt, va_list args)
+void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, char /*overload tag*/)
 {
 #ifdef C4_VA_LIST_REUSE_MUST_COPY
     va_list args_dup;
@@ -246,34 +246,93 @@ void sstream< StringType >::vprintf(const char_type *fmt, va_list args)
 #endif
 
     auto *b = buf_();
-    
+
     /* vsnprintf() returns number of characters written if successful or negative
      * value if an error occurred. If the resulting string gets truncated due to
      * buf_size limit, function returns the total number of characters
      * (not including the terminating null-byte) which would have been written,
      * if the limit was not imposed.
-     * @see http://en.cppreference.com/w/cpp/io/c/vfprintf . * 
+     * @see http://en.cppreference.com/w/cpp/io/c/vfprintf . *
      */
-    int inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args);
+    int inum = ::vsnprintf(b + m_putpos, remp(), fmt, args);
     size_type snum = size_type(inum >= 0 ? inum : -inum);
-    
+
+    // Please dear sir - kindly allow me the indiscretion of splicing some gotos. Much obliged.
+
+    // bad formatting?
+    if(C4_UNLIKELY(inum < 0))
+    {
+        errf_();
+        b[m_putpos] = char_type(0);
+        return;
+    }
+
+    // not enough space? fix it by resizing
+    if(C4_UNLIKELY(snum + 1 > remp()))
+    {
+        growto_(m_putpos + snum + 1); // don't forget the terminating character
+        if(C4_UNLIKELY(m_status & EOFP))
+        {
+            goto clear_va_args;
+        }
+        b = buf_();
+#ifdef C4_VA_LIST_REUSE_MUST_COPY
+        inum = ::vsnprintf(b + m_putpos, remp(), fmt, args_dup);
+#else
+        inum = ::vsnprintf(b + m_putpos, remp(), fmt, args);
+#endif
+        C4_ASSERT(inum >= 0 && size_type(inum) < remp());
+        snum = size_type(inum > 0 ? inum : 0);
+    }
+
+    // phew, we're done
+    m_putpos += snum;
+    b[m_putpos] = char_type(0);
+
+clear_va_args:
+    va_end(args);
+#ifdef C4_VA_LIST_REUSE_MUST_COPY
+    va_end(args_dup);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+template< class StringType >
+void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, wchar_t /*overload tag*/)
+{
+#ifdef C4_VA_LIST_REUSE_MUST_COPY
+    va_list args_dup;
+    va_copy(args_dup, args);
+#endif
+
+    auto *b = buf_();
+
+    /* vsnprintf() returns number of characters written if successful or negative
+     * value if an error occurred. If the resulting string gets truncated due to
+     * buf_size limit, function returns the total number of characters
+     * (not including the terminating null-byte) which would have been written,
+     * if the limit was not imposed.
+     * @see http://en.cppreference.com/w/cpp/io/c/vfprintf . *
+     */
+    int inum = ::vswprintf(b + m_putpos, remp(), fmt, args);
+    size_type snum = size_type(inum >= 0 ? inum : -inum);
+
     // Please dear sir - kindly allow me the indiscretion of splicing some gotos. Much obliged.
 
     // bad formatting?
     if(C4_UNLIKELY(inum < 0))
     {
 #ifdef C4_MSVC
-        if(sizeof(char_type) > 1) // the wchar_t version vswprintf() returns negative even for the
-        {                         // truncated case. So try again.
-            inum = c4::vsnprintf(nullptr, 0, fmt, args);
-            if(C4_LIKELY(inum >= 0))
-            {
-                snum = size_type(inum);
-                goto lack_of_space;    // it was just lack of space.
-            }
+        // the wchar_t version vswprintf() returns negative even for the
+        // truncated case. So try again.
+        inum = ::vswprintf(nullptr, 0, fmt, args);
+        if(C4_LIKELY(inum >= 0))
+        {
+            snum = size_type(inum);
+            goto lack_of_space;    // it was just lack of space.
         }
-#endif
         // yep, bad formatting indeed
+#endif
         errf_();
         b[m_putpos] = char_type(0);
         return;
@@ -290,9 +349,9 @@ lack_of_space:
         }
         b = buf_();
 #ifdef C4_VA_LIST_REUSE_MUST_COPY
-        inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args_dup);
+        inum = ::vswprintf(b + m_putpos, remp(), fmt, args_dup);
 #else
-        inum = c4::vsnprintf(b + m_putpos, remp(), fmt, args);
+        inum = ::vswprintf(b + m_putpos, remp(), fmt, args);
 #endif
         C4_ASSERT(inum >= 0 && size_type(inum) < remp());
         snum = size_type(inum > 0 ? inum : 0);

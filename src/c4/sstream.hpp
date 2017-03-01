@@ -116,7 +116,7 @@ public:
     /* C-style formatted print. */
 
     void printf(const char_type *fmt, ...) C4_ATTR_FORMAT(printf, 1, 2);
-    void vprintf(const char_type *fmt, va_list args);
+    C4_ALWAYS_INLINE void vprintf(const char_type *fmt, va_list args) { vprintf_(fmt, args, char_type()); }
 
     /* Due to how std::*scanf() is implemented, we do not provide public
      * scanf functions, as it is impossible to determine the number
@@ -301,8 +301,10 @@ private:
     void write_(const char* str, size_type sz, wchar_t /*overload tag*/);
     void read_(char* str, size_type sz, char /*overload tag*/);
     void read_(char* str, size_type sz, wchar_t /*overload tag*/);
+    void vprintf_(const char_type *fmt, va_list args, char /*overload tag*/);
+    void vprintf_(const char_type *fmt, va_list args, wchar_t /*overload tag*/);
 
-public:
+public: /// @todo make scanf____ private
 
     void scanf____(const char_type *fmt, void *arg, char /*overload tag*/);
     void scanf____(const char_type *fmt, void *arg, wchar_t /*overload tag*/);
@@ -408,36 +410,6 @@ C4_ALWAYS_INLINE sstream<StringType>& operator>> (sstream<StringType>& ss, wchar
     using char_type = typename sstream<StringType>::char_type;
     ss.scanf(C4_TXTTY("%.*s", char_type), (int)(N-1), &var[0]);
     return ss;
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// utility overloads for char and wchar_t printf/scanf
-
-C4_ALWAYS_INLINE int vsnprintf(char *buffer, size_t buffer_size, const char* format, va_list list)
-{
-    return ::vsnprintf(buffer, buffer_size, format, list);
-}
-C4_ALWAYS_INLINE int vsnprintf(wchar_t *buffer, size_t buffer_size, const wchar_t* format, va_list list)
-{
-    return ::vswprintf(buffer, buffer_size, format, list);
-}
-inline int sscanf(const char* buffer, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    int ret = ::vsscanf(buffer, format, args);
-    va_end(args);
-    return ret;
-}
-inline int sscanf(const wchar_t* buffer, const wchar_t* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    int ret = ::vswscanf(buffer, format, args);
-    va_end(args);
-    return ret;
 }
 
 C4_END_NAMESPACE(c4)
