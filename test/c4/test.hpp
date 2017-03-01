@@ -70,6 +70,13 @@ public:
     {
     }
 
+    AllocationCountsChecker(MemoryResource *mr_)
+    :
+        ScopedMemoryResourceCounts(mr_),
+        first(mr.counts())
+    {
+    }
+
     void reset()
     {
         first = mr.counts();
