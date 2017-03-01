@@ -30,28 +30,65 @@ struct char_traits< wchar_t > : public std::char_traits< wchar_t >
     constexpr static const size_t num_whitespace_chars = sizeof(whitespace_chars) - 1;
 };
 
+
 //-----------------------------------------------------------------------------
+C4_BEGIN_NAMESPACE(detail)
 template< typename C >
-struct select_literal;
+struct needed_chars;
+template<>
+struct needed_chars< char >
+{
+    template< class SizeType >
+    C4_ALWAYS_INLINE constexpr static SizeType for_bytes(SizeType num_bytes)
+    {
+        return num_bytes;
+    }
+};
+template<>
+struct needed_chars< wchar_t >
+{
+    template< class SizeType >
+    C4_ALWAYS_INLINE constexpr static SizeType for_bytes(SizeType num_bytes)
+    {
+        // wchar_t is not necessarily 2 bytes.
+        return (num_bytes / sizeof(wchar_t)) + ((num_bytes & (SizeType(sizeof(wchar_t)) - SizeType(1))) != 0);
+    }
+};
+C4_END_NAMESPACE(detail)
+
+/** get the number of C characters needed to store a number of bytes */
+template< typename C, typename SizeType >
+C4_ALWAYS_INLINE constexpr SizeType num_needed_chars(SizeType num_bytes)
+{
+    return detail::needed_chars< C >::for_bytes(num_bytes);
+}
+
+//-----------------------------------------------------------------------------
+
+/** get the given text string as either char or wchar_t according to the given type */
+#define C4_TXTTY(txt, type) \
+    /* is there a smarter way to do this? */\
+    c4::literal_as< type >::get(txt, C4_WIDEN(txt))
+
+template< typename C >
+struct literal_as;
 
 template<>
-struct select_literal< char >
+struct literal_as< char >
 {
-    C4_ALWAYS_INLINE static constexpr const char* select(const char* str, const wchar_t *wstr)
+    C4_ALWAYS_INLINE static constexpr const char* get(const char* str, const wchar_t *wstr)
     {
         return str;
     }
 };
 template<>
-struct select_literal< wchar_t >
+struct literal_as< wchar_t >
 {
-    C4_ALWAYS_INLINE static constexpr const wchar_t* select(const char* str, const wchar_t *wstr)
+    C4_ALWAYS_INLINE static constexpr const wchar_t* get(const char* str, const wchar_t *wstr)
     {
         return wstr;
     }
 };
-
-#define C4_TXTTY(txt, ty) c4::select_literal< ty >::select(txt, C4_WIDEN(txt))
 
 C4_END_NAMESPACE(c4)
 
