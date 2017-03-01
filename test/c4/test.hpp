@@ -2,6 +2,7 @@
 #define _C4_TEST_HPP_
 
 #include "c4/config.hpp"
+#include "c4/memory_resource.hpp"
 
 #include <gtest/gtest.h>
 
