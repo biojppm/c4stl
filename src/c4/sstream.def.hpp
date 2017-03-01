@@ -96,19 +96,39 @@ typename sstream< StringType >::char_type sstream< StringType >::peek(size_type 
         errg_();
         return '\0';
     }
-    return buf_()[m_getpos + ahead];
+
+    char_type *b = buf_();
+    return b[m_getpos + ahead];
 }
 
 //-----------------------------------------------------------------------------
+
 template< class StringType >
-void sstream< StringType >::write(const char *str, size_type sz)
+void sstream< StringType >::write_(const char *str, size_type sz, char /*overload tag*/)
 {
     if(C4_UNLIKELY(sz == 0)) return;
-    size_type wsz = sz;
-    if(sizeof(char_type) > 1)
+
+    if(C4_UNLIKELY( ! okp(sz + 1)))
     {
-        wsz = 1 + ((sz - 1) >> (sizeof(char_type) - 1));
+        growto_(m_putpos + sz + 1); // this reserves and will allocate when needed
     }
+
+    if(C4_UNLIKELY(m_status & EOFP))
+    {
+        return;
+    }
+
+    auto *b = buf_();
+    ::memcpy(b + m_putpos, str, sz);
+    m_putpos += sz;
+    b[m_putpos] = '\0';
+}
+
+template< class StringType >
+void sstream< StringType >::write_(const char *str, size_type sz, wchar_t /*overload tag*/)
+{
+    if(C4_UNLIKELY(sz == 0)) return;
+    size_type wsz = num_needed_chars< char_type >(sz);
 
     if(C4_UNLIKELY( ! okp(wsz + 1)))
     {
@@ -122,19 +142,33 @@ void sstream< StringType >::write(const char *str, size_type sz)
 
     auto *b = buf_();
     ::memcpy(b + m_putpos, str, sz);
+    ::memset(((char*)b) + sz, 0, wsz*sizeof(char_type) - sz);
     m_putpos += wsz;
-    b[m_putpos] = '\0';
+    b[m_putpos] = char_type(0);
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::read(char *str, size_type sz)
+void sstream< StringType >::read_(char *str, size_type sz, char /*overload tag*/)
 {
-    size_type wsz = sz;
-    if(sizeof(char_type) > 1)
+    if(C4_UNLIKELY( ! okg(sz))) // defend against overflow
     {
-        wsz = 1 + ((sz - 1) >> (sizeof(char_type) - 1));
+        errg_();
     }
+
+    if(C4_UNLIKELY(m_status & EOFG))
+    {
+        return;
+    }
+
+    ::memcpy(str, buf_() + m_getpos, sz);
+    m_getpos += sz;
+}
+
+template< class StringType >
+void sstream< StringType >::read_(char *str, size_type sz, wchar_t /*overload tag*/)
+{
+    size_type wsz = num_needed_chars< char_type >(sz);
 
     if(C4_UNLIKELY( ! okg(wsz))) // defend against overflow
     {
@@ -146,18 +180,40 @@ void sstream< StringType >::read(char *str, size_type sz)
         return;
     }
 
-    ::memcpy(str, buf_() + m_getpos, sz);
+    auto *b = buf_();
+    ::memcpy(str, b + m_getpos, sz);
+    ::memset(((char*)str) + sz, 0, wsz*sizeof(char_type) - sz);
     m_getpos += wsz;
 }
 
 //-----------------------------------------------------------------------------
 template< class StringType >
-void sstream< StringType >::scanf____(const char_type *fmt, void *arg)
+void sstream< StringType >::scanf____(const char_type *fmt, void *arg, char /*overload tag*/)
 {
     C4_XASSERT(traits_type::length(fmt) > 3 &&
                traits_type::compare(fmt + traits_type::length(fmt)-2, (C4_TXTTY("%n", char_type)), 2) == 0);
     int num_chars = 0, num_conv = 0;
-    num_conv = c4::sscanf(buf_() + m_getpos, fmt, arg, &num_chars);
+    num_conv = ::sscanf(buf_() + m_getpos, fmt, arg, &num_chars);
+    size_type snum = size_type(num_chars);
+    if(C4_UNLIKELY(num_conv != 1))
+    {
+        errf_();
+    }
+    if(C4_UNLIKELY(snum > remg()))
+    {
+        errg_();
+        return;
+    }
+    m_getpos += snum;
+}
+
+template< class StringType >
+void sstream< StringType >::scanf____(const char_type *fmt, void *arg, wchar_t /*overload tag*/)
+{
+    C4_XASSERT(traits_type::length(fmt) > 3 &&
+               traits_type::compare(fmt + traits_type::length(fmt)-2, (C4_TXTTY("%n", char_type)), 2) == 0);
+    int num_chars = 0, num_conv = 0;
+    num_conv = ::swscanf(buf_() + m_getpos, fmt, arg, &num_chars);
     size_type snum = size_type(num_chars);
     if(C4_UNLIKELY(num_conv != 1))
     {
