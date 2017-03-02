@@ -245,7 +245,7 @@ void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, char /*
     va_copy(args_dup, args);
 #endif
 
-    auto *b = buf_();
+    char *b = buf_();
 
     /* vsnprintf() returns number of characters written if successful or negative
      * value if an error occurred. If the resulting string gets truncated due to
@@ -264,7 +264,7 @@ void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, char /*
     {
         errf_();
         b[m_putpos] = char_type(0);
-        return;
+        goto clear_va_args;
     }
 
     // not enough space? fix it by resizing
@@ -305,26 +305,31 @@ void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, wchar_t
     va_copy(args_dup, args);
 #endif
 
-    auto *b = buf_();
+    wchar_t *b = buf_();
 
-    /* vsnprintf() returns number of characters written if successful or negative
-     * value if an error occurred. If the resulting string gets truncated due to
-     * buf_size limit, function returns the total number of characters
-     * (not including the terminating null-byte) which would have been written,
-     * if the limit was not imposed.
-     * @see http://en.cppreference.com/w/cpp/io/c/vfprintf . *
+    /* vswprintf() returns Number of wide characters written (not counting the
+     * terminating null wide character) if successful or negative value if an
+     * encoding error occurred or if the number of characters to be generated
+     * was equal or greater than size.
+     * @see http://en.cppreference.com/w/cpp/io/c/vfwprintf *
      */
     int inum = ::vswprintf(b + m_putpos, remp(), fmt, args);
     size_type snum = size_type(inum >= 0 ? inum : -inum);
 
     // Please dear sir - kindly allow me the indiscretion of splicing some gotos. Much obliged.
 
+    /* since vswprintf() returns negative both when the buffer is short
+     * or when there's a format error, we have a problem. To make things
+     * worse, it's platform dependent. */
+
+#ifdef _MSC_VER
+    /* On windows, it's possible to call vswprintf(nullptr, sz, fmt, args) to obtain
+     * the needed size. */
+
     // bad formatting?
     if(C4_UNLIKELY(inum < 0))
     {
-#ifdef C4_MSVC
-        // the wchar_t version vswprintf() returns negative even for the
-        // truncated case. So try again.
+        // vswprintf() returns negative even for the truncated case. So try again.
         inum = ::vswprintf(nullptr, 0, fmt, args);
         if(C4_LIKELY(inum >= 0))
         {
@@ -332,7 +337,6 @@ void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, wchar_t
             goto lack_of_space;    // it was just lack of space.
         }
         // yep, bad formatting indeed
-#endif
         errf_();
         b[m_putpos] = char_type(0);
         return;
@@ -345,17 +349,63 @@ lack_of_space:
         growto_(m_putpos + snum + 1); // don't forget the terminating character
         if(C4_UNLIKELY(m_status & EOFP))
         {
-            goto clear_va_args;
+            goto clear_va_args; // couldn't resize the buffer
         }
         b = buf_();
-#ifdef C4_VA_LIST_REUSE_MUST_COPY
-        inum = ::vswprintf(b + m_putpos, remp(), fmt, args_dup);
-#else
         inum = ::vswprintf(b + m_putpos, remp(), fmt, args);
-#endif
         C4_ASSERT(inum >= 0 && size_type(inum) < remp());
         snum = size_type(inum > 0 ? inum : 0);
     }
+
+#else
+    /* on unix platforms we have to resize repeatedly until the return value is
+     * positive. One should ask how we are supposed to find how a formatting
+     * error occurs??? */
+
+    // not enough space? fix it by resizing
+    if(C4_UNLIKELY(inum <= 0 || snum + 1 > remp()))
+    {
+        // get some fail-safe max size to avoid eating up all memory
+        size_t max_size = traits_type::length(fmt) * 2;
+
+        bool dup_is_clean = true;
+        while(1)
+        {
+            growto_(m_putpos + snum + 1); // don't forget the terminating character
+            if(C4_UNLIKELY(m_status & EOFP))
+            {
+                b[m_putpos] = char_type(0);
+                goto clear_va_args; // couldn't resize the buffer
+            }
+            b = buf_();
+            if(dup_is_clean) // ping-pong copy between the two va_arg vars
+            {
+                va_copy(args, args_dup);
+                inum = ::vswprintf(b + m_putpos, remp(), fmt, args_dup);
+            }
+            else
+            {
+                va_copy(args_dup, args);
+                inum = ::vswprintf(b + m_putpos, remp(), fmt, args);
+            }
+            dup_is_clean = ! dup_is_clean;
+            snum = size_type(inum > 0 ? inum : 0);
+            if(inum >= 0)
+            {
+                break;
+            }
+            else if(snum > max_size)
+            {
+                b[m_putpos] = char_type(0);
+                errp_();
+                goto clear_va_args; // max size exceeded
+            }
+        }
+
+        C4_ASSERT(inum >= 0 && size_type(inum) < remp());
+    }
+
+#endif
 
     // phew, we're done
     m_putpos += snum;
