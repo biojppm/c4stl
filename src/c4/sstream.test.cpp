@@ -1,7 +1,7 @@
 #include "sstream.hpp"
 #include "c4/string.hpp"
 
-#include "c4/test.hpp"
+#include "c4/archetypes.hpp"
 #include <iostream>
 
 C4_BEGIN_NAMESPACE(c4)

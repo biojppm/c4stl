@@ -3,10 +3,13 @@
 
 #include "c4/config.hpp"
 #include "c4/memory_resource.hpp"
+#include "c4/allocator.hpp"
+#include "c4/log.hpp"
 
 #include <gtest/gtest.h>
 
-#define C4_EXPECT(expr) C4_EXPECT_EQ(expr, true)
+#define C4_EXPECT(expr) EXPECT_TRUE(expr) << C4_PRETTY_FUNC << "\n"
+#define C4_EXPECT_FALSE(expr) EXPECT_FALSE(expr) << C4_PRETTY_FUNC << "\n"
 
 #define C4_EXPECT_NE(expr1, expr2) EXPECT_NE(expr1, expr2) << C4_PRETTY_FUNC << "\n"
 #define C4_EXPECT_EQ(expr1, expr2) EXPECT_EQ(expr1, expr2) << C4_PRETTY_FUNC << "\n"
@@ -61,60 +64,146 @@ protected:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-C4_BEGIN_NAMESPACE(archetypes)
-
-/** Resource owning archetype */
+/** count constructors, destructors and assigns */
 template< class T >
-struct AtDirectResource
+struct Counting
 {
-    T* resource;
+    T obj;
 
+    static bool log_ctors;
+    static size_t num_ctors;
+    template< class ...Args >
+    Counting(Args && ...args);
+
+    static bool log_dtors;
+    static size_t num_dtors;
+    ~Counting();
+
+    static bool log_copy_ctors;
+    static size_t num_copy_ctors;
+    Counting(Counting const& that);
+
+    static bool log_move_ctors;
+    static size_t num_move_ctors;
+    Counting(Counting && that);
+
+    static bool log_copy_assigns;
+    static size_t num_copy_assigns;
+    Counting& operator= (Counting const& that);
+
+    static bool log_move_assigns;
+    static size_t num_move_assigns;
+    Counting& operator= (Counting && that);
+
+
+    struct check_num
+    {
+        char   const* name;
+        size_t const& what;
+        size_t const  initial;
+        size_t const  must_be_num;
+        check_num(char const* nm, size_t const& w, size_t n) : name(nm), what(w), initial(what), must_be_num(n) {}
+        ~check_num()
+        {
+            size_t del = what - initial;
+            EXPECT_EQ(del, must_be_num) << "# of " << name << " calls: expected " << must_be_num << ", but got " << del;
+        }
+    };
+
+    check_num check_ctors(size_t n) { return check_num("ctor", num_ctors, n); }
+    check_num check_dtors(size_t n) { return check_num("dtor", num_dtors, n); }
+    check_num check_copy_ctors(size_t n) { return check_num("copy_ctor", num_copy_ctors, n); }
+    check_num check_move_ctors(size_t n) { return check_num("move_ctor", num_move_ctors, n); }
+    check_num check_copy_assigns(size_t n) { return check_num("copy_assign", num_copy_assigns, n); }
+    check_num check_move_assigns(size_t n) { return check_num("move_assign", num_move_assigns, n); }
+
+    struct check_num_all
+    {
+        check_num ctors, dtors, cp_ctors, mv_ctors, cp_assigns, mv_assigns;
+        check_num_all(size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _mv_ctors, size_t _cp_assigns, size_t _mv_assigns)
+        {
+            ctors = check_ctors(_ctors);
+            dtors = check_dtors(_dtors);
+            cp_ctors = check_copy_ctors(_cp_ctors);
+            mv_ctors = check_move_ctors(_mv_ctors);
+            cp_assigns = check_copy_assigns(_cp_assigns);
+            mv_assigns = check_move_assigns(_mv_assigns);
+        }
+    };
+
+    check_num_all check_all(size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _move_ctors, size_t _cp_assigns, size_t _mv_assigns)
+    {
+        return check_num_all(_ctors, _dtors, _cp_ctors, _move_ctors, _cp_assigns, _mv_assigns);
+    }
+
+    static void reset()
+    {
+        num_ctors = 0;
+        num_dtors = 0;
+        num_copy_ctors = 0;
+        num_move_ctors = 0;
+        num_copy_assigns = 0;
+        num_move_assigns = 0;
+    }
 };
 
-/** base class archetype */
-struct AtBase
-{
-    virtual ~AtBase() = default;
-};
-/** derived class archetype */
-struct AtDerived : public AtBase
-{
+template< class T > size_t Counting< T >::num_ctors = 0;
+template< class T > bool   Counting< T >::log_ctors = false;
+template< class T > size_t Counting< T >::num_dtors = 0;
+template< class T > bool   Counting< T >::log_dtors = false;
+template< class T > size_t Counting< T >::num_copy_ctors = 0;
+template< class T > bool   Counting< T >::log_copy_ctors = false;
+template< class T > size_t Counting< T >::num_move_ctors = 0;
+template< class T > bool   Counting< T >::log_move_ctors = false;
+template< class T > size_t Counting< T >::num_copy_assigns = 0;
+template< class T > bool   Counting< T >::log_copy_assigns = false;
+template< class T > size_t Counting< T >::num_move_assigns = 0;
+template< class T > bool   Counting< T >::log_move_assigns = false;
 
-};
-
-/** base class archetype */
 template< class T >
-struct AtInsidePtr
+template< class ...Args >
+Counting< T >::Counting(Args && ...args) : obj(std::forward< Args >(args)...)
 {
-    T a;
-    T b;
-    T c;
-    T *ptr;
+    if(log_ctors) C4_LOGP("Counting[{}]::ctor #{}\n", (void*)this, num_ctors);
+    ++num_ctors;
+}
 
-    AtInsidePtr() { ptr = &b; }
-    AtInsidePtr(AtInsidePtr const& that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) {}
-    AtInsidePtr(AtInsidePtr     && that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) { that.ptr = nullptr; }
-    AtInsidePtr& operator= (AtInsidePtr const& that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); }
-    AtInsidePtr& operator= (AtInsidePtr     && that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); that.ptr = nullptr; }
-    ~AtInsidePtr() { EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c); }
+template< class T >
+Counting< T >::~Counting()
+{
+    if(log_dtors) C4_LOGP("Counting[{}]::dtor #{}\n", (void*)this, num_dtors);
+    ++num_dtors;
+}
 
-    void check() const
-    {
-        EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c);
-    }
-    void check(AtInsidePtr const& that) const
-    {
-        check();
-        EXPECT_EQ(ptr - &a, that.ptr - &that.a);
-    }
-};
+template< class T >
+Counting< T >::Counting(Counting const& that)
+{
+    if(log_copy_ctors) C4_LOGP("Counting[{}]::copy_ctor #{}\n", (void*)this, num_copy_ctors);
+    ++num_copy_ctors;
+}
 
-using scalars = ::testing::Types< char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double >;
-using containees = ::testing::Types< char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double,
-    AtInsidePtr<int>, AtInsidePtr<std::string>
->;
+template< class T >
+Counting< T >::Counting(Counting && that)
+{
+    if(log_move_ctors) C4_LOGP("Counting[{}]::move_ctor #{}\n", (void*)this, num_move_ctors);
+    ++num_move_ctors;
+}
 
-C4_END_NAMESPACE(archetypes)
+template< class T >
+Counting< T >& Counting< T >::operator= (Counting const& that)
+{
+    if(log_copy_assigns) C4_LOGP("Counting[{}]::copy_assign #{}\n", (void*)this, num_copy_assigns);
+    ++num_copy_assigns;
+    return *this;
+}
+
+template< class T >
+Counting< T >& Counting< T >::operator= (Counting && that)
+{
+    if(log_move_assigns) C4_LOGP("Counting[{}]::move_assign #{}\n", (void*)this, num_move_assigns);
+    ++num_move_assigns;
+    return *this;
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -157,7 +246,7 @@ public:
         EXPECT_EQ(delta.curr.allocs, expected_allocs);
         EXPECT_EQ(delta.curr.size, expected_size);
     }
-    
+
     /** check value of total allocations and size */
     void check_total(ssize_t expected_allocs, ssize_t expected_size) const
     {
@@ -171,7 +260,7 @@ public:
         EXPECT_EQ(delta.total.allocs, expected_allocs);
         EXPECT_EQ(delta.total.size, expected_size);
     }
-    
+
     /** check value of max allocations and size */
     void check_max(ssize_t expected_max_allocs, ssize_t expected_max_size) const
     {

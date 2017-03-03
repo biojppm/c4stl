@@ -75,6 +75,8 @@ if(C4STL_BUILD_TESTS)
 
     add_executable(c4stl-test
         ../test/main.cpp
+        ../test/c4/archetypes.cpp
+        ../test/c4/archetypes.hpp
         ../test/c4/test.hpp
         c4/char_traits.test.cpp
         c4/error.test.cpp
