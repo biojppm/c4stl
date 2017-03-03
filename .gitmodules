@@ -4,3 +4,6 @@
 [submodule "extern/debugbreak"]
 	path = extern/debugbreak
 	url = https://github.com/biojppm/debugbreak
+[submodule "extern/sanitizers-cmake"]
+	path = extern/sanitizers-cmake
+	url = git://github.com/arsenm/sanitizers-cmake.git
