@@ -1,7 +1,7 @@
 #include "sstream.hpp"
 #include "c4/string.hpp"
 
-#include <gtest/gtest.h>
+#include "c4/test.hpp"
 #include <iostream>
 
 C4_BEGIN_NAMESPACE(c4)
@@ -265,13 +265,11 @@ REGISTER_TYPED_TEST_CASE_P(RoundTripTest_c4wsubstring, chevron, printp, cat, cat
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdstring,    chevron, printp, cat, catsep);
 REGISTER_TYPED_TEST_CASE_P(RoundTripTest_stdwstring,   chevron, printp, cat, catsep);
 
-using ScalarTypes = ::testing::Types<char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
-
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4string,     ScalarTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wstring,    ScalarTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4substring,  ScalarTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wsubstring, ScalarTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring,    ScalarTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdwstring,   ScalarTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4string,     c4::archetypes::scalars);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wstring,    c4::archetypes::scalars);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4substring,  c4::archetypes::scalars);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_c4wsubstring, c4::archetypes::scalars);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring,    c4::archetypes::scalars);
+INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdwstring,   c4::archetypes::scalars);
 
 C4_END_NAMESPACE(c4)
