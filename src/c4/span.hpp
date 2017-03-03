@@ -313,7 +313,7 @@ class etched_span : public _span_crtp<T, I, etched_span<T, I>>
     friend class _span_crtp<T, I, etched_span<T, I>>;
 
     T *m_ptr;     ///< the current ptr. the original ptr is (m_ptr - m_offset).
-    I m_size;     ///< the current size. the original size is (m_capacity + m_offset).
+    I m_size;     ///< the current size. the original size is unrecoverable.
     I m_capacity; ///< the current capacity. the original capacity is (m_capacity + m_offset).
     I m_offset;   ///< the offset of the current m_ptr to the start of the original memory block.
 
@@ -327,9 +327,9 @@ public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
 
-    C4_ALWAYS_INLINE operator etched_span< const T, I > () const noexcept { return etched_span< const T, I >(m_ptr, m_size, m_capacity, m_offset); }
     C4_ALWAYS_INLINE operator span< T, I > () const noexcept { return span< T, I >(m_ptr, m_size); }
     C4_ALWAYS_INLINE operator spanrs< T, I > () const noexcept { return spanrs< T, I >(m_ptr, m_size, m_capacity); }
+    C4_ALWAYS_INLINE operator etched_span< const T, I > () const noexcept { return etched_span< const T, I >(m_ptr, m_size, m_capacity, m_offset); }
 
 public:
 
