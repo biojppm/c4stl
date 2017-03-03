@@ -67,6 +67,10 @@ endif()
 #------------------------------------------------------------------------------
 
 if(C4STL_BUILD_TESTS)
+
+    enable_testing()
+    add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
+
     ExternalProject_Import(gtest
         PREFIX ${C4STL_EXTERN_DIR}
         INCLUDES gtest/gtest.h
@@ -90,7 +94,14 @@ if(C4STL_BUILD_TESTS)
         add_executable(c4stl-test-${name}
             ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp
             ${ARGN})
+        add_dependencies(unit_tests c4stl-test-${name})
         target_link_libraries(c4stl-test-${name} c4testcommon)
+        add_test(NAME c4stl-test-${name}-run
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
+        if(UNIX)
+            add_test(NAME c4stl-test-${name}-valgrind
+                COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
+        endif()
     endmacro(c4stl_add_test)
 
     c4stl_add_test(core
@@ -101,15 +112,14 @@ if(C4STL_BUILD_TESTS)
         c4/memory_util.test.cpp
         c4/preprocessor.test.cpp
         c4/span.test.cpp
-        c4/sstream.test.cpp
         c4/storage/raw.test.cpp
         c4/storage/raw.test.hpp
         c4/storage/growth.test.cpp
-        c4/string.test.cpp
-        c4/string.test.hpp
         c4/types.test.cpp
     )
 
+    c4stl_add_test(sstream c4/sstream.test.cpp)
+    c4stl_add_test(string  c4/string.test.cpp c4/string.test.hpp)
     if(WIN32)
         if(MSVC)
             set_property(SOURCE c4/sstream.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
