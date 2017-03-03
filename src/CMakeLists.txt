@@ -99,6 +99,9 @@ if(C4STL_BUILD_TESTS)
         add_test(NAME c4stl-test-${name}-run
             COMMAND ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
         if(UNIX)
+            # consider doing this for valgrind:
+            # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
+            # for now we explicitly run it:
             add_test(NAME c4stl-test-${name}-valgrind
                 COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
         endif()
