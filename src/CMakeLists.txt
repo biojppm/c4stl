@@ -73,11 +73,27 @@ if(C4STL_BUILD_TESTS)
         LIBRARIES gtest_main gtest)
     find_package(Threads)
 
-    add_executable(c4stl-test
-        ../test/main.cpp
+    add_library(c4testcommon
         ../test/c4/archetypes.cpp
         ../test/c4/archetypes.hpp
         ../test/c4/test.hpp
+    )
+    target_link_libraries(c4testcommon PUBLIC
+        c4stl
+        ${gtest_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT})
+    target_include_directories(c4testcommon PUBLIC
+        "${gtest_INCLUDE_DIRS}"
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test)
+
+    macro(c4stl_add_test name)
+        add_executable(c4stl-test-${name}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp
+            ${ARGN})
+        target_link_libraries(c4stl-test-${name} c4testcommon)
+    endmacro(c4stl_add_test)
+
+    c4stl_add_test(core
         c4/char_traits.test.cpp
         c4/error.test.cpp
         c4/log.test.cpp
@@ -92,7 +108,7 @@ if(C4STL_BUILD_TESTS)
         c4/string.test.cpp
         c4/string.test.hpp
         c4/types.test.cpp
-        )
+    )
 
     if(WIN32)
         if(MSVC)
@@ -101,10 +117,6 @@ if(C4STL_BUILD_TESTS)
         endif()
     endif()
 
-    target_link_libraries(c4stl-test c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-    target_include_directories(c4stl-test PUBLIC
-        "${gtest_INCLUDE_DIRS}"
-        ${CMAKE_CURRENT_SOURCE_DIR}/../test)
 endif(C4STL_BUILD_TESTS)
 
 #------------------------------------------------------------------------------
