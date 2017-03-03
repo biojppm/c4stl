@@ -22,11 +22,14 @@
 #define C4_EXPECT_STRCASENE(expr1, expr2) EXPECT_STRCASENE(expr1, expr2) << C4_PRETTY_FUNC << "\n"
 
 
-
 #define C4_TEST(ts, tn) TEST_F(::c4::TestFixture, ts##_##tn)
 
 
 C4_BEGIN_NAMESPACE(c4)
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 class TestFixture : public ::testing::Test
 {
@@ -53,6 +56,65 @@ protected:
 
     // Objects declared here can be used by all tests in the test case for Foo.
 };
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+C4_BEGIN_NAMESPACE(archetypes)
+
+/** Resource owning archetype */
+template< class T >
+struct AtDirectResource
+{
+    T* resource;
+
+};
+
+/** base class archetype */
+struct AtBase
+{
+    virtual ~AtBase() = default;
+};
+/** derived class archetype */
+struct AtDerived : public AtBase
+{
+
+};
+
+/** base class archetype */
+template< class T >
+struct AtInsidePtr
+{
+    T a;
+    T b;
+    T c;
+    T *ptr;
+
+    AtInsidePtr() { ptr = &b; }
+    AtInsidePtr(AtInsidePtr const& that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) {}
+    AtInsidePtr(AtInsidePtr     && that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) { that.ptr = nullptr; }
+    AtInsidePtr& operator= (AtInsidePtr const& that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); }
+    AtInsidePtr& operator= (AtInsidePtr     && that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); that.ptr = nullptr; }
+    ~AtInsidePtr() { EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c); }
+
+    void check() const
+    {
+        EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c);
+    }
+    void check(AtInsidePtr const& that) const
+    {
+        check();
+        EXPECT_EQ(ptr - &a, that.ptr - &that.a);
+    }
+};
+
+using scalars = ::testing::Types< char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double >;
+using containees = ::testing::Types< char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double,
+    AtInsidePtr<int>, AtInsidePtr<std::string>
+>;
+
+C4_END_NAMESPACE(archetypes)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
