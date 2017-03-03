@@ -120,14 +120,14 @@ struct Counting
     struct check_num_all
     {
         check_num ctors, dtors, cp_ctors, mv_ctors, cp_assigns, mv_assigns;
-        check_num_all(size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _mv_ctors, size_t _cp_assigns, size_t _mv_assigns)
+        check_num_all(Counting *c, size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _mv_ctors, size_t _cp_assigns, size_t _mv_assigns)
         {
-            ctors = check_ctors(_ctors);
-            dtors = check_dtors(_dtors);
-            cp_ctors = check_copy_ctors(_cp_ctors);
-            mv_ctors = check_move_ctors(_mv_ctors);
-            cp_assigns = check_copy_assigns(_cp_assigns);
-            mv_assigns = check_move_assigns(_mv_assigns);
+            ctors = c->check_ctors(_ctors);
+            dtors = c->check_dtors(_dtors);
+            cp_ctors = c->check_copy_ctors(_cp_ctors);
+            mv_ctors = c->check_move_ctors(_mv_ctors);
+            cp_assigns = c->check_copy_assigns(_cp_assigns);
+            mv_assigns = c->check_move_assigns(_mv_assigns);
         }
     };
 

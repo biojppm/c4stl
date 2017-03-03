@@ -405,7 +405,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSiz
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSize, I, Alignment, Alloc > >;
 
     static_assert(PageSize > 1, "PageSize must be > 1");
-    static_assert(PageSize & (PageSize - 1) == 0, "PageSize must be a power of two");
+    static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
 
     //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
     constexpr static const I _raw_idmask = I(PageSize) - I(1);
@@ -448,7 +448,7 @@ public:
     raw_paged& operator=(raw_paged const& that) = delete;
     raw_paged& operator=(raw_paged     && that) = default;
 
-    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i & _raw_pgmask;
@@ -457,7 +457,7 @@ public:
         C4_XASSERT(id < PageSize);
         return m_pages[pg][id];
     }
-    C4_ALWAYS_INLINE constexpr T const& operator[] (I i) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i & _raw_pgmask;
@@ -501,13 +501,13 @@ public:
     raw_paged(I cap, I page_sz) : m_pages(nullptr), m_num_pages(0), m_page_size(page_sz), m_allocator()
     {
         C4_ASSERT(page_sz > 1);
-        C4_ASSERT_MSG(page_sz & (page_sz - 1) == 0, "page size must be a power of two");
+        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
         crtp_base::_raw_resize(cap);
     }
     raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_page_size(page_sz), m_allocator(a)
     {
         C4_ASSERT(page_sz > 1);
-        C4_ASSERT_MSG(page_sz & (page_sz - 1) == 0, "page size must be a power of two");
+        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
         crtp_base::_raw_resize(cap);
     }
 
@@ -525,7 +525,7 @@ public:
     raw_paged& operator=(raw_paged const& that) = delete;
     raw_paged& operator=(raw_paged     && that) = default;
 
-    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i & (m_page_size - I(1));  //! page mask: bits complementary to PageSize. Use to extract the page of an index.
@@ -534,7 +534,7 @@ public:
         C4_XASSERT(id < m_num_pages);
         return m_pages[pg][id];
     }
-    C4_ALWAYS_INLINE constexpr T const& operator[] (I i) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i & (m_page_size - I(1));  //! page mask: bits complementary to PageSize. Use to extract the page of an index.
