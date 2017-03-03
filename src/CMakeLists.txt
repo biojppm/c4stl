@@ -28,6 +28,8 @@ set(src
     c4/sstream.cpp
     c4/sstream.hpp
     c4/sstream.def.hpp
+    c4/storage/raw.hpp
+    c4/storage/growth.hpp
     c4/string.cpp
     c4/string.hpp
     c4/string_fwd.hpp
@@ -36,6 +38,8 @@ set(src
     c4/time.cpp
     c4/types.hpp
     c4/windows.hpp
+
+    c4/util.hpp
 )
 
 create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
@@ -78,6 +82,9 @@ if(C4STL_BUILD_TESTS)
         c4/preprocessor.test.cpp
         c4/span.test.cpp
         c4/sstream.test.cpp
+        c4/storage/raw.test.cpp
+        c4/storage/raw.test.hpp
+        c4/storage/growth.test.cpp
         c4/string.test.cpp
         c4/string.test.hpp
         c4/types.test.cpp
