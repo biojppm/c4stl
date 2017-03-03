@@ -37,7 +37,7 @@ template< class Storage, class... > struct raw_storage_util;
 template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
 struct raw_fixed;
 
-template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator< T >, class GrowthType = growth_default >
+template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator< T >, class GrowthPolicy = growth_default >
 struct raw;
 
 template< class T, size_t PageSize = 256, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
@@ -327,12 +327,12 @@ public:
 
 //-----------------------------------------------------------------------------
 
-C4_DEFINE_STORAGE_TRAITS(raw_paged< T C4_COMMA PageSize C4_COMMA I C4_COMMA Alignment C4_COMMA Alloc C4_COMMA GrowthPolicy >,
+C4_DEFINE_STORAGE_TRAITS(raw_paged< T C4_COMMA PageSize C4_COMMA I C4_COMMA Alignment C4_COMMA Alloc >,
                          false, // fixed
                          false, // contiguous
-                         class T, size_t PageSize, class I, I Alignment, class Alloc, class GrowthPolicy);
+                         class T, size_t PageSize, class I, I Alignment, class Alloc);
 
-template< class T, class I, I Alignment, class Alloc, class GrowthPolicy, class RawPaged >
+template< class T, class I, I Alignment, class RawPaged >
 struct _raw_paged_crtp
 {
 #define _c4this static_cast< RawPaged* >(this)
@@ -345,17 +345,17 @@ protected:
     C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
     {
         I cap = capacity();
-        desired = GrowthPolicy::next_size(sizeof(T), cap, desired);
         I np = desired / _c4this->m_num_pages;
         cap = np * _c4this->m_num_pages;
         C4_ASSERT(cap >= desired);
         return cap;
     }
 
+    void _raw_resize(I cap);
 };
 
-template< class T, class I, I Alignment, class Alloc, class GrowthPolicy, class RawPaged >
-void _raw_paged_crtp::_raw_resize(I cap)
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
 {
     const I ps = _c4this->page_size();
     const I np = cap / ps;
@@ -374,7 +374,7 @@ void _raw_paged_crtp::_raw_resize(I cap)
         {
             _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
         }
-        if(to == 0)
+        if(cap == 0)
         {
             at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
             _c4this->m_pages = nullptr;
@@ -399,10 +399,10 @@ void _raw_paged_crtp::_raw_resize(I cap)
   *
   * @ingroup raw_storage_classes
   * @todo add a raw structure with a runtime-determined page size */
-template< class T, size_t PageSize, class I, I Alignment, class Alloc, class GrowthPolicy >
-struct raw_paged : public _raw_paged_crtp< T, I, Alignment, Alloc, class GrowthPolicy, raw_paged<T, PageSize, I, Alignment, Alloc, GrowthPolicy> >
+template< class T, size_t PageSize, class I, I Alignment, class Alloc >
+struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSize, I, Alignment, Alloc > >
 {
-    using crtp_base = _raw_paged_crtp< T, I, Alignment, Alloc, raw_paged<T, PageSize, I, Alignment, Alloc, GrowthPolicy> >;
+    using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSize, I, Alignment, Alloc > >;
 
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert(PageSize & (PageSize - 1) == 0, "PageSize must be a power of two");
@@ -473,10 +473,10 @@ public:
 
 //-----------------------------------------------------------------------------
 /** specialization of raw_paged for dynamic page size */
-template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
-struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, Alloc, raw_paged<T, 0, I, Alignment, Alloc, GrowthPolicy> >
+template< class T, class I, I Alignment, class Alloc >
+struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >
 {
-    using crtp_base = _raw_paged_crtp< T, I, Alignment, Alloc, raw_paged<T, 0, I, Alignment, Alloc, GrowthPolicy> >;
+    using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >;
 
     T    **m_pages;      //< array containing the pages
     I      m_num_pages;  //< number of current pages in the array
