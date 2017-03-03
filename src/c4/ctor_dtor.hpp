@@ -6,6 +6,7 @@
 #include "c4/memory_util.hpp"
 
 #include <type_traits>
+#include <utility> // std::forward
 
 C4_BEGIN_NAMESPACE(c4)
 
