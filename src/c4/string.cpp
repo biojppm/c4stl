@@ -19,7 +19,7 @@ C4_END_NAMESPACE(c4)
 //-----------------------------------------------------------------------------
 
 #ifdef C4_VSNPRINTF
-/// Limpin' Visual Studio does not have vsnprintf
+/// Visual Studio does not have vsnprintf
 /// @see http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
 int vsnprintf(char* str, size_t size, const char* format, va_list ap)
 {
@@ -40,7 +40,7 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap)
 #endif // C4_VSNPRINTF
 
 #ifdef C4_SNPRINTF
-/// Limpin' Visual Studio does not have snprintf
+/// Visual Studio does not have snprintf
 /// @see http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
 int snprintf(char* str, size_t size, const char* format, ...)
 {

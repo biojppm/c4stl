@@ -2519,6 +2519,7 @@ template< class _Char, size_t N > struct _shortstr;
 template< size_t N > struct _shortstr< char   , N > { char flag_n_sz;             char    arr[(N - 1)/sizeof(char)   ]; };
 template< size_t N > struct _shortstr< wchar_t, N > { char flag_n_sz; char __pad; wchar_t arr[(N - 1)/sizeof(wchar_t)]; };
 
+/** a string class with the small string optimization */
 template< class C, class SizeType, class Alloc >
 class basic_small_string : public string_impl< C, SizeType, basic_small_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
