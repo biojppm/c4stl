@@ -472,6 +472,10 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+/** raw paged with page size determined at runtime. */
+template< class T, class I, I Alignment, class Alloc >
+using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
+
 /** specialization of raw_paged for dynamic page size */
 template< class T, class I, I Alignment, class Alloc >
 struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >
