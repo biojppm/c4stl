@@ -28,7 +28,9 @@ set(src
     c4/sstream.cpp
     c4/sstream.hpp
     c4/sstream.def.hpp
+    c4/storage/raw.cpp
     c4/storage/raw.hpp
+    c4/storage/growth.cpp
     c4/storage/growth.hpp
     c4/string.cpp
     c4/string.hpp
