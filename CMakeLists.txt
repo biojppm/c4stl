@@ -13,6 +13,10 @@ option(C4STL_BUILD_BENCHMARKS "" ON)
 if(C4STL_BUILD_TESTS OR C4STL_BUILD_BENCHMARKS)
     include(ExternalProjectUtils)
 endif()
+if(C4STL_BUILD_TESTS)
+    enable_testing()
+endif()
+
 
 #-----------------------------------------------------------------------
 # clang sanitize

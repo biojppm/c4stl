@@ -59,7 +59,6 @@ c4stl_add_target(c4stl LIBRARY SANITIZE
 
 if(C4STL_BUILD_TESTS)
 
-    enable_testing()
     add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
 
     ExternalProject_Import(gtest
