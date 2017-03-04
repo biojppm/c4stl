@@ -13,7 +13,7 @@
 C4_BEGIN_NAMESPACE(c4)
 
 template< class C, class Sz, class Str, class SubStr >
-void PrintTo(string_impl< C, Sz, Str, SubStr > const& s, ::std::ostream* os)
+void PrintTo(_str_crtp< C, Sz, Str, SubStr > const& s, ::std::ostream* os)
 {
     os->write(s.data(), s.size());
 }

@@ -5,39 +5,42 @@
 
 /** @defgroup string_classes String classes
  *
- * Provides string classes for owned (c4::string) and non-owned (c4::substring
- * and c4::substringrs) writeable strings. These classes are mostly stl
- * compatible, with some additions, like begins_with()/ends_with(),
- * trim()/trimws(), or notably split() and related methods such as
- * popr()/popl(), gpopr()/gpopl(), pushr()/pushl(), basename()/dirname()
- * and the / operator for path concatenation. Unlike STL's string_view,
- * the substrings are writeable.
+ * Provides string classes for owned (c4::string, c4::text)
+ * and non-owned (c4::substring and c4::substringrs) strings.
+ * These classes are mostly stl compatible, with some additions,
+ * like begins_with()/ends_with(), trim()/trimws(), or notably
+ * split() and related methods such as popr()/popl(), gpopr()/gpopl(),
+ * pushr()/pushl(), basename()/dirname() and the / operator for path
+ * concatenation. Unlike STL's string_view, the substrings are writeable;
+ * they are essentially a span retaining all the string methods.
  *
- * The classes are implementated with a CRTP base class (c4::string_impl)
- * which provides the actual string methods such
- * as find(), leaving only the resource management and sizing information
- * for the derived classes. Expression templates are used for string
- * concatenation either via + or /, which has the advantage of allowing
- * concatenation of substrings (and specifically, much less memory allocations).
- * Another significant source of allocation savings is in the preeminent use
- * of substring return types.
+ * The string types are implementated with a CRTP nonvirtual base class
+ * which provides the actual string methods such as find(), leaving
+ * only the resource management and sizing information for the derived
+ * classes. A significant improvement over the STL design is that
+ * sub-selection methods return a substring instead of a string of the same
+ * type; this provides significant savings of allocations. Expression
+ * templates are used for string concatenation either via + or /, which has
+ * the advantage of allowing concatenation of substrings (and specifically,
+ * much less memory allocations).
  *
  *
  *------------------------------------
+ * A word of caution
  * Disabling expression templates (not advised):
  *
  * The default is to have string expression templates enabled.
  * Define C4_STR_DISABLE_EXPR_TPL to disable string expression templates.
- * This will cause switching to greedy evaluation of concatenation
- * operations. It will also disable some of the binary overloads.
+ * This will cause switching to greedy evaluation of the concatenation
+ * operations + and /. It will also disable some of the binary overloads.
  * DO NOT ADD VANILLA BINARY OPERATORS FOR NON-OWNED STRINGS
  * such as substring and substringrs. IT IS DANGEROUS. When expression
  * templates are not used, we must evaluate each operation immediately.
- * So summing two substrings must result in an allocated string. So eg
+ * So summing two substrings must result in an allocated string. For example,
  * this would work:
  *
  * @code
- * substring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
+ * csubstring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
  * string r;
  * r = ss1 + ss2; // OK, r is "foobar" and owns the memory
  * @endcode
@@ -87,7 +90,12 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+// forward declarations
+template< typename C, typename Size, class Str, class Sub >
+class _str_crtp;
+
 //-----------------------------------------------------------------------------
+/** @todo calls to strsz() should be replaced to calls to the char_traits */
 C4_ALWAYS_INLINE size_t strsz(const char* s) { return ::strlen(s); }
 C4_ALWAYS_INLINE size_t strsz(char* s) { return ::strlen(s); }
 C4_ALWAYS_INLINE size_t strsz(const wchar_t* ws) { return ::wcslen(ws); }
@@ -102,7 +110,7 @@ C4_ALWAYS_INLINE size_t strsz(StrType const& s)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** specialize std::hash for the given string_impl-derived type. Search
+/** specialize std::hash for the given _str_crtp-derived type. Search
  for uses of this to find out how to use it. */
 #define _C4_IMPLEMENT_TPL_STRIMPL_HASH(str_type, ...)               \
                                                                     \
@@ -159,13 +167,13 @@ C4_ALWAYS_INLINE classname& operator/= (const char (&str)[N])           \
     return *this;                                                       \
 }                                                                       \
 template< typename OSize, class OStr, class OSub >                      \
-C4_ALWAYS_INLINE classname& operator+= (string_impl< charname, OSize, OStr, OSub > const& that) \
+C4_ALWAYS_INLINE classname& operator+= (_str_crtp< charname, OSize, OStr, OSub > const& that) \
 {                                                                       \
     this->append(that);                                                 \
     return *this;                                                       \
 }                                                                       \
 template< typename OSize, class OStr, class OSub >                      \
-C4_ALWAYS_INLINE classname& operator/= (string_impl< charname, OSize, OStr, OSub > const& that) \
+C4_ALWAYS_INLINE classname& operator/= (_str_crtp< charname, OSize, OStr, OSub > const& that) \
 {                                                                       \
     this->pushr(that, '/');                                             \
     return *this;                                                       \
@@ -178,11 +186,11 @@ C4_ALWAYS_INLINE classname& operator/= (string_impl< charname, OSize, OStr, OSub
 
 #define _C4STR_ASSIGNOPS(charname, classname)                           \
                                                                         \
-/** allow other string_impl derived classes access to our members.      \
+/** allow other _str_crtp derived classes access to our members.        \
  * @warning the ::c4:: qualifier is needed as a workaround to           \
  * gcc bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52625 */        \
 template< typename sifC, typename sifSize, class sifStr, class sifSub > \
-friend class ::c4::string_impl;                                         \
+friend class ::c4::_str_crtp;                                           \
                                                                         \
 _C4STR_ASSIGNOPS_ANY(charname, classname)
 
@@ -290,11 +298,11 @@ C4_ALWAYS_INLINE tyr operator/                                      \
                                                                         \
 _C4STR_ASSIGNOPS_ANY(charname, classname)                               \
                                                                         \
-/** allow other string_impl derived classes access to our members.      \
+/** allow other _str_crtp derived classes access to our members.        \
  * @warning the ::c4:: qualifier is needed as a workaround to           \
  * gcc bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52625 */        \
 template< typename sifC, typename sifSize, class sifStr, class sifSub > \
-friend class ::c4::string_impl;                                         \
+friend class ::c4::_str_crtp;                                           \
                                                                         \
 template< class Expr >                                                  \
 C4_ALWAYS_INLINE classname(_strExpr< charname, Expr > const& expr)      \
@@ -345,7 +353,7 @@ struct _strExpr
 
 //-----------------------------------------------------------------------------
 
-/** expression template node wrapping a string_impl or std::string, std::array< char >, std::vector< char >, etc */
+/** expression template node wrapping a _str_crtp or std::string, std::array< char >, std::vector< char >, etc */
 template< typename C, typename S >
 struct _strWrapImpl : public _strExpr< C, _strWrapImpl< C, S > >
 {
@@ -380,7 +388,7 @@ struct _strWrapImpl : public _strExpr< C, _strWrapImpl< C, S > >
     }
 
 };
-// expression template node wrapping a char array
+/// expression template node wrapping a char array
 template< typename C >
 struct _strWrapCharPtr : public _strExpr< C, _strWrapCharPtr< C > >
 {
@@ -390,7 +398,7 @@ struct _strWrapCharPtr : public _strExpr< C, _strWrapCharPtr< C > >
 
     C const* str;
     size_t len;
-    
+
     _strWrapCharPtr(const C* s, size_t len_)
         : str(s), len(len_)
     {
@@ -448,7 +456,7 @@ struct _strExprRef< _strWrapCharPtr< C > >
 
 //-----------------------------------------------------------------------------
 
-// expression template for summing two string expressions
+/// expression template for summing two string expressions
 template< class C, class ExprL, class ExprR >
 struct _strPlus : public _strExpr< C, _strPlus< C, ExprL, ExprR > >
 {
@@ -524,7 +532,7 @@ struct _strSlash : public _strExpr< C, _strSlash< C, ExprL, ExprR > >
 //-----------------------------------------------------------------------------
 // string expression template operators
 
-// sum two expressions
+/// sum two expressions
 template< typename C, class ExprL, class ExprR >
 _strPlus< C, _strExpr< C, ExprL >, _strExpr< C, ExprR > >
 operator+
@@ -538,7 +546,7 @@ operator+
     _strPlus< C, ltype, rtype > expr(l, r);
     return expr;
 }
-// dircat
+/// dircat two expressions
 template< typename C, class ExprL, class ExprR >
 _strSlash< C, _strExpr< C, ExprL >, _strExpr< C, ExprR > >
 operator/
@@ -554,13 +562,13 @@ operator/
 }
 
 //--------------------------
-// sum two string_impls with same type
+/// sum two _str_crtps with same type
 template< typename C, typename Size, class Str, class Sub >
 _strPlus< C, _strWrapImpl< C, Str >, _strWrapImpl< C, Str > >
 operator+
 (
-    string_impl< C, Size, Str, Sub > const& l_,
-    string_impl< C, Size, Str, Sub > const& r_
+    _str_crtp< C, Size, Str, Sub > const& l_,
+    _str_crtp< C, Size, Str, Sub > const& r_
 )
 {
     typedef _strWrapImpl< C, Str > etype;
@@ -569,13 +577,13 @@ operator+
     _strPlus< C, etype, etype > expr(l, r);
     return expr;
 }
-// dircat
+/// dircat two _str_crtps with same type
 template< typename C, typename Size, class Str, class Sub >
 _strSlash< C, _strWrapImpl< C, Str >, _strWrapImpl< C, Str > >
 operator/
 (
-    string_impl< C, Size, Str, Sub > const& l_,
-    string_impl< C, Size, Str, Sub > const& r_
+    _str_crtp< C, Size, Str, Sub > const& l_,
+    _str_crtp< C, Size, Str, Sub > const& r_
 )
 {
     typedef _strWrapImpl< C, Str > etype;
@@ -586,13 +594,13 @@ operator/
 }
 
 //--------------------------
-// sum two string_impls of different type
+/// sum two _str_crtps of different type
 template< typename C, typename SizeL, class StrL, class SubL, typename SizeR, class StrR, class SubR >
 _strPlus< C, _strWrapImpl< C, StrL >, _strWrapImpl< C, StrR > >
 operator+
 (
-    string_impl< C, SizeL, StrL, SubL > const& l_,
-    string_impl< C, SizeR, StrR, SubR > const& r_
+    _str_crtp< C, SizeL, StrL, SubL > const& l_,
+    _str_crtp< C, SizeR, StrR, SubR > const& r_
 )
 {
     typedef _strWrapImpl< C, StrL > ltype;
@@ -602,13 +610,13 @@ operator+
     _strPlus< C, ltype, rtype > expr(l, r);
     return expr;
 }
-// dircat
+/// dircat _str_crtp and expr
 template< typename C, typename SizeL, class StrL, class SubL, typename SizeR, class StrR, class SubR >
 _strSlash< C, _strWrapImpl< C, StrL >, _strWrapImpl< C, StrR > >
 operator/
 (
-    string_impl< C, SizeL, StrL, SubL > const& l_,
-    string_impl< C, SizeR, StrR, SubR > const& r_
+    _str_crtp< C, SizeL, StrL, SubL > const& l_,
+    _str_crtp< C, SizeR, StrR, SubR > const& r_
 )
 {
     typedef _strWrapImpl< C, StrL > ltype;
@@ -620,12 +628,12 @@ operator/
 }
 
 //--------------------------
-// sum string_impl and expr
+/// sum _str_crtp and expr
 template< typename C, typename Size, class Str, class Sub, class ExprR >
 _strPlus< C, _strWrapImpl< C, Str >, _strExpr< C, ExprR > >
 operator+
 (
-    string_impl< C, Size, Str, Sub > const& l_,
+    _str_crtp< C, Size, Str, Sub > const& l_,
     _strExpr< C, ExprR > const& r
 )
 {
@@ -635,12 +643,12 @@ operator+
     _strPlus< C, ltype, rtype > expr(l, r);
     return expr;
 }
-// dircat
+/// dircat _str_crtp and expr
 template< typename C, typename Size, class Str, class Sub, class ExprR >
 _strSlash< C, _strWrapImpl< C, Str >, _strExpr< C, ExprR > >
 operator/
 (
-    string_impl< C, Size, Str, Sub > const& l_,
+    _str_crtp< C, Size, Str, Sub > const& l_,
     _strExpr< C, ExprR > const& r
 )
 {
@@ -652,13 +660,13 @@ operator/
 }
 
 //--------------------------
-// sum expr and string_impl
+/// sum expr and _str_crtp
 template< class ExprL, typename C, typename Size, class Str, class Sub >
 _strPlus< C, _strExpr< C, ExprL >, _strWrapImpl< C, Str > >
 operator+
 (
     _strExpr< C, ExprL > const& l,
-    string_impl< C, Size, Str, Sub > const& r_
+    _str_crtp< C, Size, Str, Sub > const& r_
 )
 {
     typedef _strExpr< C, ExprL > ltype;
@@ -667,13 +675,13 @@ operator+
     _strPlus< C, ltype, rtype > expr(l, r);
     return expr;
 }
-// dircat
+/// dircat expr and _str_crtp
 template< class ExprL, typename C, typename Size, class Str, class Sub >
 _strSlash< C, _strExpr< C, ExprL >, _strWrapImpl< C, Str > >
 operator/
 (
     _strExpr< C, ExprL > const& l,
-    string_impl< C, Size, Str, Sub > const& r_
+    _str_crtp< C, Size, Str, Sub > const& r_
 )
 {
     typedef _strExpr< C, ExprL > ltype;
@@ -684,12 +692,12 @@ operator/
 }
 
 //--------------------------
-// sum string_impl and const char*
+/// sum _str_crtp and const char*
 template< typename C, typename Size, class Str, class Sub >
 _strPlus< C, _strWrapImpl< C, Str >, _strWrapCharPtr< C > >
 operator+
 (
-    string_impl< C, Size, Str, Sub > const& l_,
+    _str_crtp< C, Size, Str, Sub > const& l_,
     const char* r
 )
 {
@@ -699,12 +707,12 @@ operator+
     _strPlus< C, ltype, rtype > expr(l, rtype(r));
     return expr;
 }
-// dircat
+/// dircat _str_crtp and const char*
 template< typename C, typename Size, class Str, class Sub >
 _strSlash< C, _strWrapImpl< C, Str >, _strWrapCharPtr< C > >
 operator/
 (
-    string_impl< C, Size, Str, Sub > const& l_,
+    _str_crtp< C, Size, Str, Sub > const& l_,
     const char* r
 )
 {
@@ -716,13 +724,13 @@ operator/
 }
 
 //--------------------------
-// sum const char* and string_impl
+/** sum const C* and _str_crtp */
 template< typename C, typename Size, class Str, class Sub >
 _strPlus< C, _strWrapCharPtr< C >, _strWrapImpl< C, Str > >
 operator+
 (
     const char* l,
-    string_impl< C, Size, Str, Sub > const& r_
+    _str_crtp< C, Size, Str, Sub > const& r_
 )
 {
     typedef _strWrapCharPtr< C > ltype;
@@ -731,13 +739,13 @@ operator+
     _strPlus< C, ltype, rtype > expr(ltype(l), r);
     return expr;
 }
-// dircat
+/** dircat const C* and _str_crtp */
 template< typename C, typename Size, class Str, class Sub >
 _strSlash< C, _strWrapCharPtr< C >, _strWrapImpl< C, Str > >
 operator/
 (
     const char* l,
-    string_impl< C, Size, Str, Sub > const& r_
+    _str_crtp< C, Size, Str, Sub > const& r_
 )
 {
     typedef _strWrapCharPtr< C > ltype;
@@ -748,7 +756,7 @@ operator/
 }
 
 //--------------------------
-// sum expr and const char*
+/** sum expr and const C* */
 template< typename C, class ExprL >
 _strPlus< C, _strExpr< C, ExprL >, _strWrapCharPtr< C > >
 operator+
@@ -762,7 +770,7 @@ operator+
     _strPlus< C, ltype, rtype > expr(l, rtype(r));
     return expr;
 }
-// dircat
+/** dircat expr and const char */
 template< typename C, class ExprL >
 _strSlash< C, _strExpr< C, ExprL >, _strWrapCharPtr< C > >
 operator/
@@ -778,7 +786,7 @@ operator/
 }
 
 //--------------------------
-// sum const char* and expr
+/** sum const C* and expr */
 template< typename C, class ExprR >
 _strPlus< C, _strExpr< C, ExprR >, _strWrapCharPtr< C > >
 operator+
@@ -792,7 +800,7 @@ operator+
     _strPlus< C, ltype, rtype > expr(ltype(l), r);
     return expr;
 }
-// dircat
+/** dircat const C* and expr */
 template< typename C, class ExprR >
 _strSlash< C, _strExpr< C, ExprR >, _strWrapCharPtr< C > >
 operator/
@@ -813,18 +821,30 @@ operator/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** a CRTP base implementation for string member methods.
- * Derived classes must have the following members:
- *   -m_str
- *   -m_size
- *   -npos.
- * Derived classes must have the following methods:
- *   -resize()
- *   -reserve()
+/** A CRTP base implementation for string member methods.
+ *
+ * @tparam C the character type
+ * @tparam SizeType the size type
+ * @tparam StrType the final string type.
+ * @tparam SubStrType a substring type to be used in all selection methods.
+ *         When StrType is an owning type, this provides savings in number
+ *         of allocations over the alternative of returning the StrType
+ *         directly.
+ *
+ * The final string type must have the following static member:
+ *  - npos
+ * and the following methods:
+ *  - size()
+ *  - data()
+ *  - resize()
+ *  - reserve()
+ *
+ * @todo this class should be separated into a non-modifying and a modifying class
  */
 template< typename C, typename SizeType, class StrType, class SubStrType >
-class string_impl
+class _str_crtp
 {
+// utility defines; undefined below
 #define _c4this     static_cast< StrType      * >(this)
 #define _c4thisSZ   static_cast< StrType      * >(this)->size()
 #define _c4thisSTR  static_cast< StrType      * >(this)->data()
@@ -834,9 +854,11 @@ class string_impl
 #define _c4cthisSTR static_cast< StrType const* >(this)->data()
 #define _c4cthatSZ  static_cast< StrType const* >(&that)->size()
 #define _c4cthatSTR static_cast< StrType const* >(&that)->data()
-#define _c4CCAST(ty) (ty)const_cast< string_impl const* >(this)
+#define _c4CCAST(ty) (ty)const_cast< _str_crtp const* >(this)
 #define _c4cSZ(ptr)  static_cast< StrType const* >(ptr)->size()
 #define _c4cSTR(ptr) static_cast< StrType const* >(ptr)->data()
+
+    C4_STATIC_ASSERT(std::is_integral< SizeType >::value);
 
 public:
 
@@ -850,10 +872,10 @@ public:
 
 protected:
 
-    // protect the dtor to prevent creation of bare string_impl
-    string_impl(){}
+    // protect the dtor to prevent creation of bare _str_crtp
+    _str_crtp(){}
     // protect the dtor to prevent destruction through a base pointer
-    ~string_impl(){}
+    ~_str_crtp(){}
 
 public:
 
@@ -1069,7 +1091,7 @@ public:
     template< size_t N >
     size_type C4_ALWAYS_INLINE find(const C (&pat)[N], size_type pos = 0) const { return find(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find(C c, size_type pos = 0) const { return find(&c, 1, pos); }
-    size_type C4_ALWAYS_INLINE find(string_impl const& that, size_type pos = 0) const { return find(_c4cthatSTR, _c4cthatSZ, pos); }
+    size_type C4_ALWAYS_INLINE find(_str_crtp const& that, size_type pos = 0) const { return find(_c4cthatSTR, _c4cthatSZ, pos); }
     size_type C4_ALWAYS_INLINE find(const C *pat, size_type pos = 0) const { return find(pat, szconv< size_type >(traits_type::length(pat)), pos); }
     size_type find(const C *pat, size_type len, size_type pos) const 
     {
@@ -1101,7 +1123,7 @@ public:
     template< size_t N >
     size_type C4_ALWAYS_INLINE find_first_of(const C (&pat)[N], size_type pos = 0) const { return find_first_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_first_of(C c, size_type pos = 0) const { return find_first_of(&c, 1, pos); }
-    size_type C4_ALWAYS_INLINE find_first_of(string_impl const& that, size_type pos = 0) const { return find_first_of(_c4cthatSTR, _c4cthatSZ, pos); }
+    size_type C4_ALWAYS_INLINE find_first_of(_str_crtp const& that, size_type pos = 0) const { return find_first_of(_c4cthatSTR, _c4cthatSZ, pos); }
     size_type C4_ALWAYS_INLINE find_first_of(const C *pat, size_type pos = 0) const { return find_first_of(pat, szconv< size_type >(traits_type::length(pat)), pos); }
     size_type find_first_of(const C *pat, size_type len, size_type pos) const
     {
@@ -1123,7 +1145,7 @@ public:
     template< size_t N >
     size_type C4_ALWAYS_INLINE find_first_not_of(const C (&pat)[N], size_type pos = 0) const { return find_first_not_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_first_not_of(C c, size_type pos = 0) const { return find_first_not_of(&c, 1, pos); }
-    size_type C4_ALWAYS_INLINE find_first_not_of(string_impl const& that, size_type pos = 0) const { return find_first_not_of(_c4cthatSTR, _c4cthatSZ, pos); }
+    size_type C4_ALWAYS_INLINE find_first_not_of(_str_crtp const& that, size_type pos = 0) const { return find_first_not_of(_c4cthatSTR, _c4cthatSZ, pos); }
     size_type C4_ALWAYS_INLINE find_first_not_of(const C *pat, size_type pos = 0) const { return find_first_not_of(pat, szconv< size_type >(traits_type::length(pat)), pos); }
     size_type find_first_not_of(const C *pat, size_type len, size_type pos) const
     {
@@ -1152,7 +1174,7 @@ public:
     template< size_t N >
     size_type C4_ALWAYS_INLINE find_last_of(const C (&pat)[N], size_type pos = StrType::npos) const { return find_last_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_last_of(C c, size_type pos = StrType::npos) const { return find_last_of(&c, 1, pos); }
-    size_type C4_ALWAYS_INLINE find_last_of(string_impl const& that, size_type pos = StrType::npos) const { return find_last_of(_c4cthatSTR, _c4cthatSZ, pos); }
+    size_type C4_ALWAYS_INLINE find_last_of(_str_crtp const& that, size_type pos = StrType::npos) const { return find_last_of(_c4cthatSTR, _c4cthatSZ, pos); }
     size_type C4_ALWAYS_INLINE find_last_of(const C *pat, size_type pos = StrType::npos) const { return find_last_of(pat, szconv< size_type >(traits_type::length(pat)), pos); }
     size_type find_last_of(const C *pat, size_type len, size_type pos) const
     {
@@ -1178,7 +1200,7 @@ public:
     template< size_t N >
     size_type C4_ALWAYS_INLINE find_last_not_of(const C (&pat)[N], size_type pos = StrType::npos) const { return find_last_not_of(pat, N-1, pos); }
     size_type C4_ALWAYS_INLINE find_last_not_of(C c, size_type pos = StrType::npos) const { return find_last_not_of(&c, 1, pos); }
-    size_type C4_ALWAYS_INLINE find_last_not_of(string_impl const& that, size_type pos = StrType::npos) const { return find_last_not_of(_c4cthatSTR, _c4cthatSZ, pos); }
+    size_type C4_ALWAYS_INLINE find_last_not_of(_str_crtp const& that, size_type pos = StrType::npos) const { return find_last_not_of(_c4cthatSTR, _c4cthatSZ, pos); }
     size_type C4_ALWAYS_INLINE find_last_not_of(const C *pat, size_type pos = StrType::npos) const { return find_last_not_of(pat, szconv< size_type >(traits_type::length(pat)), pos); }
     size_type find_last_not_of(const C *pat, size_type len, size_type pos) const
     {
@@ -1211,7 +1233,7 @@ public:
     template< size_t N >
     bool C4_ALWAYS_INLINE begins_with(const C (&pat)[N]) const { return begins_with(pat, N-1); }
     bool C4_ALWAYS_INLINE begins_with(C c) const { return begins_with(&c, 1); }
-    bool C4_ALWAYS_INLINE begins_with(string_impl const& that) const { return begins_with(_c4cthatSTR, _c4cthatSZ); }
+    bool C4_ALWAYS_INLINE begins_with(_str_crtp const& that) const { return begins_with(_c4cthatSTR, _c4cthatSZ); }
     bool C4_ALWAYS_INLINE begins_with(const C *pat) const { return begins_with(pat, szconv< size_type >(traits_type::length(pat))); }
     bool begins_with(const C *pat, size_type len) const
     {
@@ -1232,7 +1254,7 @@ public:
     template< size_t N >
     bool C4_ALWAYS_INLINE ends_with(const C (&pat)[N]) const { return ends_with(pat, N-1); }
     bool C4_ALWAYS_INLINE ends_with(C c) const { return ends_with(&c, 1); }
-    bool C4_ALWAYS_INLINE ends_with(string_impl const& that) const { return ends_with(_c4cthatSTR, _c4cthatSZ); }
+    bool C4_ALWAYS_INLINE ends_with(_str_crtp const& that) const { return ends_with(_c4cthatSTR, _c4cthatSZ); }
     bool C4_ALWAYS_INLINE ends_with(const C *pat) const { return ends_with(pat, szconv< size_type >(traits_type::length(pat))); }
     bool ends_with(const C *pat, size_type len) const
     {
@@ -1276,7 +1298,7 @@ public:
 
     bool next_split(C sep, size_type *C4_RESTRICT start_pos, SubStrType *C4_RESTRICT out) const
     {
-        return const_cast<string_impl*>(this)->next_split(sep, start_pos, out); // FIXME
+        return const_cast<_str_crtp*>(this)->next_split(sep, start_pos, out); // FIXME
     }
     /** returns true if the string has not been exhausted yet, meaning it's
      * ok to call next_split() again. When no instance of sep exists in
@@ -1442,7 +1464,7 @@ public:
     template< size_t N >
     SubStrType C4_ALWAYS_INLINE triml(const C (&pat)[N]) const { return triml(pat, N-1); }
     SubStrType C4_ALWAYS_INLINE triml(C c) const { return triml(&c, 1); }
-    SubStrType C4_ALWAYS_INLINE triml(string_impl const& that) const { return triml(_c4cthatSTR, _c4cthatSZ); }
+    SubStrType C4_ALWAYS_INLINE triml(_str_crtp const& that) const { return triml(_c4cthatSTR, _c4cthatSZ); }
     SubStrType C4_ALWAYS_INLINE triml(const C *pat) const { return triml(pat, szconv< size_type >(traits_type::length(pat))); }
     /** trim the given characters from the left of the string, return resulting trimmed substring. */
     SubStrType triml(const C* str, size_type len) const
@@ -1459,7 +1481,7 @@ public:
     template< size_t N >
     SubStrType C4_ALWAYS_INLINE trimr(const C (&pat)[N]) const { return trimr(pat, N-1); }
     SubStrType C4_ALWAYS_INLINE trimr(C c) const { return trimr(&c, 1); }
-    SubStrType C4_ALWAYS_INLINE trimr(string_impl const& that) const { return trimr(_c4cthatSTR, _c4cthatSZ); }
+    SubStrType C4_ALWAYS_INLINE trimr(_str_crtp const& that) const { return trimr(_c4cthatSTR, _c4cthatSZ); }
     SubStrType C4_ALWAYS_INLINE trimr(const C *pat) const { return trimr(pat, szconv< size_type >(traits_type::length(pat))); }
     /** trim the given characters from the right of the string, return resulting trimmed substring. */
     SubStrType trimr(const C* str, size_type len) const
@@ -1476,7 +1498,7 @@ public:
     template< size_t N >
     SubStrType C4_ALWAYS_INLINE trim(const C (&pat)[N]) const { return trim(pat, N-1); }
     SubStrType C4_ALWAYS_INLINE trim(C c) const { return trim(&c, 1); }
-    SubStrType C4_ALWAYS_INLINE trim(string_impl const& that) const { return trim(_c4cthatSTR, _c4cthatSZ); }
+    SubStrType C4_ALWAYS_INLINE trim(_str_crtp const& that) const { return trim(_c4cthatSTR, _c4cthatSZ); }
     SubStrType C4_ALWAYS_INLINE trim(const C *pat) const { return trim(pat, szconv< size_type >(traits_type::length(pat))); }
     /** trim the given characters from the right and left of the string, return resulting trimmed substring. */
     SubStrType trim(const C* str, size_type len) const
@@ -1698,13 +1720,13 @@ public:
 
 public:
 
-    int compare(string_impl const& that) const
+    int compare(_str_crtp const& that) const
     {
         size_type mx = _c4cthisSZ > _c4cthatSZ ? _c4cthisSZ : _c4cthatSZ;
         return traits_type::compare(_c4cthisSTR, _c4cthatSTR, mx);
     }
     template< typename OSize, class OStr, class OSub >
-    int compare(string_impl< C, OSize, OStr, OSub > const& that) const
+    int compare(_str_crtp< C, OSize, OStr, OSub > const& that) const
     {
         auto cthat = static_cast< OStr const& >(that);
         C const* str = cthat.data();
@@ -1730,24 +1752,24 @@ public:
         return traits_type::compare(_c4cthisSTR, a, _c4cthisSZ);
     }
 
-    bool operator== (string_impl const& that) const
+    bool operator== (_str_crtp const& that) const
     {
         if(_c4cthatSZ != _c4cthisSZ) return false;
         if(_c4cthisSTR == _c4cthatSTR) return true;
         return traits_type::compare(_c4cthisSTR, _c4cthatSTR, _c4cthisSZ) == 0;
     }
-    C4_ALWAYS_INLINE bool operator!= (string_impl const& that) const { return !this->operator== (that); }
-    C4_ALWAYS_INLINE bool operator>= (string_impl const& that) const { return compare(that) >= 0; }
-    C4_ALWAYS_INLINE bool operator<= (string_impl const& that) const { return compare(that) <= 0; }
-    C4_ALWAYS_INLINE bool operator>  (string_impl const& that) const { return compare(that) >  0; }
-    C4_ALWAYS_INLINE bool operator<  (string_impl const& that) const { return compare(that) <  0; }
+    C4_ALWAYS_INLINE bool operator!= (_str_crtp const& that) const { return !this->operator== (that); }
+    C4_ALWAYS_INLINE bool operator>= (_str_crtp const& that) const { return compare(that) >= 0; }
+    C4_ALWAYS_INLINE bool operator<= (_str_crtp const& that) const { return compare(that) <= 0; }
+    C4_ALWAYS_INLINE bool operator>  (_str_crtp const& that) const { return compare(that) >  0; }
+    C4_ALWAYS_INLINE bool operator<  (_str_crtp const& that) const { return compare(that) <  0; }
 
-    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator== (string_impl< C, OSize, OStr, OSub > const& that) const { return compare(that) == 0; }
-    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator!= (string_impl< C, OSize, OStr, OSub > const& that) const { return compare(that) != 0; }
-    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator>= (string_impl< C, OSize, OStr, OSub > const& that) const { return compare(that) >= 0; }
-    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator<= (string_impl< C, OSize, OStr, OSub > const& that) const { return compare(that) <= 0; }
-    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator>  (string_impl< C, OSize, OStr, OSub > const& that) const { return compare(that) >  0; }
-    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator<  (string_impl< C, OSize, OStr, OSub > const& that) const { return compare(that) <  0; }
+    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator== (_str_crtp< C, OSize, OStr, OSub > const& that) const { return compare(that) == 0; }
+    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator!= (_str_crtp< C, OSize, OStr, OSub > const& that) const { return compare(that) != 0; }
+    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator>= (_str_crtp< C, OSize, OStr, OSub > const& that) const { return compare(that) >= 0; }
+    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator<= (_str_crtp< C, OSize, OStr, OSub > const& that) const { return compare(that) <= 0; }
+    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator>  (_str_crtp< C, OSize, OStr, OSub > const& that) const { return compare(that) >  0; }
+    template< typename OSize, class OStr, class OSub > C4_ALWAYS_INLINE bool operator<  (_str_crtp< C, OSize, OStr, OSub > const& that) const { return compare(that) <  0; }
 
     bool operator== (const C *a) const
     {
@@ -1761,12 +1783,12 @@ public:
     C4_ALWAYS_INLINE bool operator>  (const C *a) const { return compare(a) >  0; }
     C4_ALWAYS_INLINE bool operator<  (const C *a) const { return compare(a) <  0; }
 
-    C4_ALWAYS_INLINE friend bool operator== (const C *s, string_impl const& n) { return (n == s); }
-    C4_ALWAYS_INLINE friend bool operator!= (const C *s, string_impl const& n) { return (n != s); }
-    C4_ALWAYS_INLINE friend bool operator>= (const C *s, string_impl const& n) { return (n <= s); }
-    C4_ALWAYS_INLINE friend bool operator<= (const C *s, string_impl const& n) { return (n >= s); }
-    C4_ALWAYS_INLINE friend bool operator>  (const C *s, string_impl const& n) { return (n <  s); }
-    C4_ALWAYS_INLINE friend bool operator<  (const C *s, string_impl const& n) { return (n >  s); }
+    C4_ALWAYS_INLINE friend bool operator== (const C *s, _str_crtp const& n) { return (n == s); }
+    C4_ALWAYS_INLINE friend bool operator!= (const C *s, _str_crtp const& n) { return (n != s); }
+    C4_ALWAYS_INLINE friend bool operator>= (const C *s, _str_crtp const& n) { return (n <= s); }
+    C4_ALWAYS_INLINE friend bool operator<= (const C *s, _str_crtp const& n) { return (n >= s); }
+    C4_ALWAYS_INLINE friend bool operator>  (const C *s, _str_crtp const& n) { return (n <  s); }
+    C4_ALWAYS_INLINE friend bool operator<  (const C *s, _str_crtp const& n) { return (n >  s); }
 
     template< size_t N >
     bool operator== (const C (&a)[N]) const
@@ -1781,21 +1803,21 @@ public:
     template< size_t N > C4_ALWAYS_INLINE bool operator>  (const C (&a)[N]) const { return compare(a) >  0; }
     template< size_t N > C4_ALWAYS_INLINE bool operator<  (const C (&a)[N]) const { return compare(a) <  0; }
 
-    template< size_t N > C4_ALWAYS_INLINE friend bool operator== (const C (&s)[N], string_impl const& n) { return (n == s); }
-    template< size_t N > C4_ALWAYS_INLINE friend bool operator!= (const C (&s)[N], string_impl const& n) { return (n != s); }
-    template< size_t N > C4_ALWAYS_INLINE friend bool operator>= (const C (&s)[N], string_impl const& n) { return (n <= s); }
-    template< size_t N > C4_ALWAYS_INLINE friend bool operator<= (const C (&s)[N], string_impl const& n) { return (n >= s); }
-    template< size_t N > C4_ALWAYS_INLINE friend bool operator>  (const C (&s)[N], string_impl const& n) { return (n <  s); }
-    template< size_t N > C4_ALWAYS_INLINE friend bool operator<  (const C (&s)[N], string_impl const& n) { return (n >  s); }
+    template< size_t N > C4_ALWAYS_INLINE friend bool operator== (const C (&s)[N], _str_crtp const& n) { return (n == s); }
+    template< size_t N > C4_ALWAYS_INLINE friend bool operator!= (const C (&s)[N], _str_crtp const& n) { return (n != s); }
+    template< size_t N > C4_ALWAYS_INLINE friend bool operator>= (const C (&s)[N], _str_crtp const& n) { return (n <= s); }
+    template< size_t N > C4_ALWAYS_INLINE friend bool operator<= (const C (&s)[N], _str_crtp const& n) { return (n >= s); }
+    template< size_t N > C4_ALWAYS_INLINE friend bool operator>  (const C (&s)[N], _str_crtp const& n) { return (n <  s); }
+    template< size_t N > C4_ALWAYS_INLINE friend bool operator<  (const C (&s)[N], _str_crtp const& n) { return (n >  s); }
 
 public:
 
     C4_ALWAYS_INLINE void append(C const* str) { append(str, szconv< size_type >(traits_type::length(str))); }
     template< size_t N >
     C4_ALWAYS_INLINE void append(C const (&str)[N]) { append(&str[0], N-1); }
-    C4_ALWAYS_INLINE void append(string_impl const& that) { append(_c4cthatSTR, _c4cthatSZ); }
+    C4_ALWAYS_INLINE void append(_str_crtp const& that) { append(_c4cthatSTR, _c4cthatSZ); }
     template< typename OSize, class OStrType, class OSub >
-    C4_ALWAYS_INLINE void append(string_impl< C, OSize, OStrType, OSub > const& that)
+    C4_ALWAYS_INLINE void append(_str_crtp< C, OSize, OStrType, OSub > const& that)
     {
         auto cthat = static_cast< OStrType const& >(that);
         C const* str = cthat.data();
@@ -1821,9 +1843,9 @@ public:
     C4_ALWAYS_INLINE void prepend(C const* str) { prepend(str, szconv< size_type >(traits_type::length(str))); }
     template< size_t N >
     C4_ALWAYS_INLINE void prepend(C const (&str)[N]) { prepend(&str[0], N-1); }
-    C4_ALWAYS_INLINE void prepend(string_impl const& that) { prepend(_c4cthatSTR, _c4cthatSZ); }
+    C4_ALWAYS_INLINE void prepend(_str_crtp const& that) { prepend(_c4cthatSTR, _c4cthatSZ); }
     template< typename OSize, class OStrType, class OSub >
-    C4_ALWAYS_INLINE void prepend(string_impl< C, OSize, OStrType, OSub > const& that)
+    C4_ALWAYS_INLINE void prepend(_str_crtp< C, OSize, OStrType, OSub > const& that)
     {
         auto cthat = static_cast< OStrType const& >(that);
         C const* str = cthat.data();
@@ -1851,9 +1873,9 @@ public:
     C4_ALWAYS_INLINE void pushr(C const* str, C sep=C('/')) { pushr(str, szconv< size_type >(traits_type::length(str)), sep); }
     template< size_t N >
     C4_ALWAYS_INLINE void pushr(C const (&str)[N], C sep=C('/')) { pushr(&str[0], N-1, sep); }
-    C4_ALWAYS_INLINE void pushr(string_impl const& that, C sep=C('/')) { pushr(_c4cthatSTR, _c4cthatSZ, sep); }
+    C4_ALWAYS_INLINE void pushr(_str_crtp const& that, C sep=C('/')) { pushr(_c4cthatSTR, _c4cthatSZ, sep); }
     template< typename OSize, class OStrType, class OSub >
-    C4_ALWAYS_INLINE void pushr(string_impl< C, OSize, OStrType, OSub > const& that, C sep=C('/'))
+    C4_ALWAYS_INLINE void pushr(_str_crtp< C, OSize, OStrType, OSub > const& that, C sep=C('/'))
     {
         auto cthat = static_cast< OStrType const& >(that);
         C const* str = cthat.data();
@@ -1887,9 +1909,9 @@ public:
     C4_ALWAYS_INLINE void pushl(C const* str, C sep=C('/')) { pushl(str, szconv< size_type >(traits_type::length(str)), sep); }
     template< size_t N >
     C4_ALWAYS_INLINE void pushl(C const (&str)[N], C sep=C('/')) { pushl(&str[0], N-1, sep); }
-    C4_ALWAYS_INLINE void pushl(string_impl const& that, C sep=C('/')) { pushl(_c4cthatSTR, _c4cthatSZ, sep); }
+    C4_ALWAYS_INLINE void pushl(_str_crtp const& that, C sep=C('/')) { pushl(_c4cthatSTR, _c4cthatSZ, sep); }
     template< typename OSize, class OStrType, class OSub >
-    C4_ALWAYS_INLINE void pushl(string_impl< C, OSize, OStrType, OSub > const& that, C sep=C('/'))
+    C4_ALWAYS_INLINE void pushl(_str_crtp< C, OSize, OStrType, OSub > const& that, C sep=C('/'))
     {
         auto cthat = static_cast< OStrType const& >(that);
         C const* str = cthat.data();
@@ -1940,9 +1962,9 @@ public:
     template< size_t N >
     C4_ALWAYS_INLINE void erase(C const (&str)[N]) { erase(&str[0], N-1); }
     C4_ALWAYS_INLINE void erase(C const *chars) { erase(chars, szconv< size_type >(traits_type::length(chars))); }
-    C4_ALWAYS_INLINE void erase(string_impl const& that) { erase(_c4cthatSTR, _c4cthatSZ); }
+    C4_ALWAYS_INLINE void erase(_str_crtp const& that) { erase(_c4cthatSTR, _c4cthatSZ); }
     template< typename OSize, class OStrType, class OSub >
-    C4_ALWAYS_INLINE void erase(string_impl< C, OSize, OStrType, OSub > const& that)
+    C4_ALWAYS_INLINE void erase(_str_crtp< C, OSize, OStrType, OSub > const& that)
     {
         auto cthat = static_cast< OStrType const& >(that);
         C const* str = cthat.data();
@@ -2015,9 +2037,9 @@ public:
 #undef _c4cthatSTR
 #undef _c4CCAST
 
-}; // string_impl
+}; // _str_crtp
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(
-    c4::string_impl< C C4_COMMA SizeType C4_COMMA StrType C4_COMMA SubStrType >,
+    c4::_str_crtp< C C4_COMMA SizeType C4_COMMA StrType C4_COMMA SubStrType >,
     typename C, typename SizeType, class StrType, class SubStrType)
 
 
@@ -2026,19 +2048,19 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(
 //-----------------------------------------------------------------------------
 // comparison operators
 
-template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator== (const C *s, string_impl< C, Size, Str, Sub > const& n) { return (n == s); }
-template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator!= (const C *s, string_impl< C, Size, Str, Sub > const& n) { return (n != s); }
-template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>= (const C *s, string_impl< C, Size, Str, Sub > const& n) { return (n <= s); }
-template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<= (const C *s, string_impl< C, Size, Str, Sub > const& n) { return (n >= s); }
-template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>  (const C *s, string_impl< C, Size, Str, Sub > const& n) { return (n <  s); }
-template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<  (const C *s, string_impl< C, Size, Str, Sub > const& n) { return (n >  s); }
+template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator== (const C *s, _str_crtp< C, Size, Str, Sub > const& n) { return (n == s); }
+template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator!= (const C *s, _str_crtp< C, Size, Str, Sub > const& n) { return (n != s); }
+template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>= (const C *s, _str_crtp< C, Size, Str, Sub > const& n) { return (n <= s); }
+template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<= (const C *s, _str_crtp< C, Size, Str, Sub > const& n) { return (n >= s); }
+template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>  (const C *s, _str_crtp< C, Size, Str, Sub > const& n) { return (n <  s); }
+template< typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<  (const C *s, _str_crtp< C, Size, Str, Sub > const& n) { return (n >  s); }
 
-template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator== (const C (&s)[N], string_impl< C, Size, Str, Sub > const& n) { return (n == s); }
-template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator!= (const C (&s)[N], string_impl< C, Size, Str, Sub > const& n) { return (n != s); }
-template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>= (const C (&s)[N], string_impl< C, Size, Str, Sub > const& n) { return (n <= s); }
-template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<= (const C (&s)[N], string_impl< C, Size, Str, Sub > const& n) { return (n >= s); }
-template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>  (const C (&s)[N], string_impl< C, Size, Str, Sub > const& n) { return (n <  s); }
-template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<  (const C (&s)[N], string_impl< C, Size, Str, Sub > const& n) { return (n >  s); }
+template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator== (const C (&s)[N], _str_crtp< C, Size, Str, Sub > const& n) { return (n == s); }
+template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator!= (const C (&s)[N], _str_crtp< C, Size, Str, Sub > const& n) { return (n != s); }
+template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>= (const C (&s)[N], _str_crtp< C, Size, Str, Sub > const& n) { return (n <= s); }
+template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<= (const C (&s)[N], _str_crtp< C, Size, Str, Sub > const& n) { return (n >= s); }
+template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator>  (const C (&s)[N], _str_crtp< C, Size, Str, Sub > const& n) { return (n <  s); }
+template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_INLINE bool operator<  (const C (&s)[N], _str_crtp< C, Size, Str, Sub > const& n) { return (n >  s); }
 
 
 //-----------------------------------------------------------------------------
@@ -2048,14 +2070,14 @@ template< size_t N, typename C, typename Size, class Str, class Sub > C4_ALWAYS_
 
 template< class StreamStringType, typename C, typename Size, class Str, class Sub >
 C4_ALWAYS_INLINE
-c4::sstream< StreamStringType >& operator<< (c4::sstream< StreamStringType >& os, string_impl< C, Size, Str, Sub > const& n)
+c4::sstream< StreamStringType >& operator<< (c4::sstream< StreamStringType >& os, _str_crtp< C, Size, Str, Sub > const& n)
 {
     os.write(n.data(), n.size());
     return os;
 }
 
 template< class StreamStringType, typename C, typename Size, class Str, class Sub >
-c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is, string_impl< C, Size, Str, Sub > & n)
+c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is, _str_crtp< C, Size, Str, Sub > & n)
 {
     decltype(is.remg()) pos = 0;
     // skip leading whitespace
@@ -2090,9 +2112,10 @@ c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is
  *  -CANNOT be read into with input streams unless the read value
  *    is guaranteed to be smaller.
  * @see basic_substringrs if you need to augment the size up to a capacity.
- * @ingroup string_classes */
+ * @ingroup string_classes
+ * @ingroup nonowning_containers */
 template< class C, class SizeType >
-class basic_substring : public string_impl< C, SizeType, basic_substring< C, SizeType >, basic_substring< C, SizeType > >
+class basic_substring : public _str_crtp< C, SizeType, basic_substring< C, SizeType >, basic_substring< C, SizeType > >
 {
 public:
 
@@ -2187,9 +2210,10 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substring< C C4_COMMA SizeType >, typen
  * can be modified with methods that change its size such as append(), prepend(),
  * or read with input streams (again, up to capacity).
  * @see basic_substring
- * @ingroup string_classes */
+ * @ingroup string_classes
+ * @ingroup nonowning_containers */
 template< class C, class SizeType >
-class basic_substringrs : public string_impl< C, SizeType, basic_substringrs< C, SizeType >, basic_substringrs< C, SizeType > >
+class basic_substringrs : public _str_crtp< C, SizeType, basic_substringrs< C, SizeType >, basic_substringrs< C, SizeType > >
 {
 public:
 
@@ -2277,7 +2301,7 @@ private:
 }; // basic_substringrs
 
 template< class C, class SizeType >
-const SizeType basic_substringrs< C, SizeType >::npos;
+constexpr const SizeType basic_substringrs< C, SizeType >::npos;
 
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substringrs< C C4_COMMA SizeType >, typename C, typename SizeType)
 
@@ -2288,9 +2312,9 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substringrs< C C4_COMMA SizeType >, typ
  * string optimization
  * @ingroup string_classes */
 template< class C, class SizeType, class Alloc >
-class basic_text : public string_impl< C, SizeType, basic_text< C, SizeType, Alloc >, basic_substring< C, SizeType > >
+class basic_text : public _str_crtp< C, SizeType, basic_text< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
-    using impl_type = string_impl< C, SizeType, basic_text< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
+    using impl_type = _str_crtp< C, SizeType, basic_text< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
 public:
 
     using char_type = C;
@@ -2517,7 +2541,7 @@ public:
 };
 
 template< class C, class SizeType, class Alloc >
-const SizeType basic_text< C, SizeType, Alloc >::npos;
+constexpr const SizeType basic_text< C, SizeType, Alloc >::npos;
 
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_text< C C4_COMMA SizeType C4_COMMA Alloc >,
     typename C, typename SizeType, class Alloc);
@@ -2533,9 +2557,9 @@ template< size_t N > struct _shortstr< wchar_t, N > { char flag_n_sz; char __pad
 /** a string class with the small string optimization
  * @ingroup string_classes */
 template< class C, class SizeType, class Alloc >
-class basic_string : public string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
+class basic_string : public _str_crtp< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
-    using impl_type = string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
+    using impl_type = _str_crtp< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
 
     struct _long
     {
@@ -2636,10 +2660,10 @@ public:
         resize(that.size());
         traits_type::copy(data(), that.data(), that.size());
     }
-    // keep the current long status, even though the short array
-    // would be enough to hold the string. This is because the
-    // memory is already allocated, so there's little cost in
-    // keeping using it. If explicit resizing is desired, call shrink_to_fit()
+    /** keep the current long status, even though the short array
+     * would be enough to hold the string. This is because the
+     * memory is already allocated, so there's little cost in
+     * keeping using it. If explicit resizing is desired, call shrink_to_fit() */
     void assign(basic_string && that)
     {
         if(&that == this) return;
@@ -2882,10 +2906,10 @@ private:
 };
 
 template< class C, class SizeType, class Alloc >
-const SizeType basic_string< C, SizeType, Alloc >::npos;
+constexpr const SizeType basic_string< C, SizeType, Alloc >::npos;
 
-_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Allocator >,
-    typename C, typename SizeType, class Allocator)
+_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Alloc >,
+    typename C, typename SizeType, class Alloc)
 
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
@@ -2895,30 +2919,30 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Al
 
 // binary operators: basic_text + basic_text
 _C4STR_DEFINE_BINOPS1TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
+    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
 
 // binary operators: basic_text + const char*
 _C4STR_DEFINE_BINOPS2TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
     const char*,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
 
 // binary operators: basic_text + basic_substring
 _C4STR_DEFINE_BINOPS2TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
     basic_substring< C C4_COMMA SizeType > const&,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
 
 // binary operators: basic_text + basic_substringrs
 _C4STR_DEFINE_BINOPS2TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
     basic_substringrs< C C4_COMMA SizeType > const&,
-    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
 #endif
 
 //--------------------------------------------------------------------------------------
@@ -2960,8 +2984,8 @@ void ws2s(spanrs<wchar_t const, WI > const& wstr, spanrs< char, I > *output)
 template< class I, class Impl, class SubStrType, class WI, class WImpl, class WSubStrType >
 void s2ws
 (
-    string_impl<char   ,  I,  Impl,  SubStrType > const& mbstr,
-    string_impl<wchar_t, WI, WImpl, WSubStrType >      * output
+    _str_crtp<char   ,  I,  Impl,  SubStrType > const& mbstr,
+    _str_crtp<wchar_t, WI, WImpl, WSubStrType >      * output
 )
 {
     static_cast< WImpl* >(output)->resize(szconv< WI >(mbstr.size()));
@@ -2970,8 +2994,8 @@ void s2ws
 template< class I, class Impl, class SubStrType, class WI, class WImpl, class WSubStrType >
 void ws2s
 (
-    string_impl<wchar_t, WI, WImpl, WSubStrType > const& wstr,
-    string_impl<char   ,  I,  Impl,  SubStrType >      * output
+    _str_crtp<wchar_t, WI, WImpl, WSubStrType > const& wstr,
+    _str_crtp<char   ,  I,  Impl,  SubStrType >      * output
 )
 {
     static_cast< Impl* >(output)->resize(wstr.size());
@@ -2979,7 +3003,7 @@ void ws2s
 }
 
 template< class I, class Impl, class SubStrType >
-basic_string< wchar_t, I > s2ws(string_impl<char, I, Impl, SubStrType > const& mbstr)
+basic_string< wchar_t, I > s2ws(_str_crtp<char, I, Impl, SubStrType > const& mbstr)
 {
     basic_string< wchar_t, I > output;
     output.resize(mbstr.size());
@@ -2987,7 +3011,7 @@ basic_string< wchar_t, I > s2ws(string_impl<char, I, Impl, SubStrType > const& m
     return output;
 }
 template< class I, class Impl, class SubStrType >
-basic_string< char, I > ws2s(string_impl<wchar_t, I, Impl, SubStrType > const& wstr)
+basic_string< char, I > ws2s(_str_crtp<wchar_t, I, Impl, SubStrType > const& wstr)
 {
     basic_string< char, I > output;
     output.resize(wstr.size());
