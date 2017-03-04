@@ -5,39 +5,43 @@
 
 /** @defgroup string_classes String classes
  *
- * Provides string classes for owned (c4::string, c4::text)
- * and non-owned (c4::substring and c4::substringrs) strings.
- * These classes are mostly stl compatible, with some additions,
- * like begins_with()/ends_with(), trim()/trimws(), or notably
- * split() and related methods such as popr()/popl(), gpopr()/gpopl(),
- * pushr()/pushl(), basename()/dirname() and the / operator for path
- * concatenation. Unlike STL's string_view, the substrings are writeable;
- * they are essentially a span retaining all the string methods.
+ * Provides strings: owned (c4::string, c4::text) and non-owned
+ * (c4::substring and c4::substringrs). These classes are mostly stl
+ * compatible, with some additions, like begins_with()/ends_with(),
+ * trim()/trimws(), or notably split() and related methods such as
+ * popr()/popl(), gpopr()/gpopl(), pushr()/pushl(),
+ * basename()/dirname() and the / operator for path
+ * concatenation. Unlike STL's string_view, the substrings are
+ * writeable; they are essentially a span retaining all the string
+ * methods.
  *
- * The string types are implementated with a CRTP nonvirtual base class
- * which provides the actual string methods such as find(), leaving
- * only the resource management and sizing information for the derived
- * classes. A significant improvement over the STL design is that
- * sub-selection methods return a substring instead of a string of the same
- * type; this provides significant savings of allocations. Expression
- * templates are used for string concatenation either via + or /, which has
- * the advantage of allowing concatenation of substrings (and specifically,
- * much less memory allocations).
+ * The string types are implementated with a CRTP base class without
+ * any virtual methods. It provides the actual string methods such as
+ * find(), leaving only the resource management and sizing information
+ * for the derived classes. A significant improvement over the STL
+ * design is that sub-selection methods return a non-owning substring
+ * instead of a string of the same type; this provides significant
+ * savings of allocations.
+ *
+ * Expression templates are used for string concatenation either via +
+ * or /, which has the advantage of allowing concatenation of
+ * substrings (and specifically, much less memory allocations).
  *
  *
  *------------------------------------
  * A word of caution
- * Disabling expression templates (not advised):
  *
- * The default is to have string expression templates enabled.
- * Define C4_STR_DISABLE_EXPR_TPL to disable string expression templates.
- * This will cause switching to greedy evaluation of the concatenation
- * operations + and /. It will also disable some of the binary overloads.
- * DO NOT ADD VANILLA BINARY OPERATORS FOR NON-OWNED STRINGS
- * such as substring and substringrs. IT IS DANGEROUS. When expression
- * templates are not used, we must evaluate each operation immediately.
- * So summing two substrings must result in an allocated string. For example,
- * this would work:
+ * Do not assign string concatenation operations to non-owning strings
+ * unless you are sure they have room to write into, AND that string
+ * expression templates are enabled.
+ *
+ * The default is to have string expression templates enabled. They
+ * can be disabled by defining C4_STR_DISABLE_EXPR_TPL. This will
+ * cause switching to greedy evaluation of the concatenation
+ * operations + and /. It will also disable some of the binary
+ * overloads. When expression templates are not used, each operation
+ * must be evaluated immediately.  So summing two substrings will
+ * result in an allocated string. For example, this would work:
  *
  * @code
  * csubstring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
@@ -45,24 +49,32 @@
  * r = ss1 + ss2; // OK, r is "foobar" and owns the memory
  * @endcode
  *
- * BUT if we assign the sum to a substring instead, we would get a stale
- * pointer:
+ * BUT if we assign the sum to a substring instead, we will get a stale
+ * pointer when expression templates are disabled:
  *
  * @code
- * substring ss3;
- * ss3 = ss1 + ss2; // BAD, ss3 points at deallocated memory
+ * // with expression templates:
+ * char buf[16] = {0};     // must be big enough to hold "foobar\0"
+ * substring ss3(buf, 16); // ss3 is pointing to buf
+ * ss3 = ss1 + ss2; // OK, "foo" is copied into buf, then "bar" then \0
  * @endcode
  *
- * The result of ss1+ss2 is an owned string. Because
- * ss3 is not an owned string, it is set to point at the contents of the
- * owned string (ss1+ss2), which gets destroyed after the assignment.
- * So after the statement ss3 is pointed at deallocated memory.
+ * @code
+ * // without expression templates:
+ * char buf[16] = {0};     // must be big enough to hold "foobar\0"
+ * substring ss3(buf, 16); // ss3 is pointing to buf
+ * ss3 = ss1 + ss2; // BAD, ss3 now points at deallocated memory
+ * @endcode
  *
- * For this reason, it is better to disable binary operators (+,/)
- * between non-owned strings. But these binary operators are fine
- * when any owned string is involved. To avoid the difficulties
- * inherent in greedily evaluating substring operations, the use of
- * expression templates is advised.
+ * The result of ss1+ss2 is an owned string. Because ss3 is not an
+ * owned string, it is set to point at the contents of the owned
+ * string (ss1+ss2), which gets destroyed after the assignment.  So
+ * after the statement ss3 is pointed at deallocated memory.
+ *
+ * For the reason above, it's better to use expression templates. This can
+ * be fixed in the future if a proxy (greedy) class is created to represent
+ * the result of a binary operation. Then copy-assignment could be overloaded
+ * to prevent substrings from pointing at temporary memory.
  */
 
 #ifndef _C4_CONFIG_HPP_
@@ -824,8 +836,8 @@ operator/
 /** A CRTP base implementation for string member methods.
  *
  * @tparam C the character type
- * @tparam SizeType the size type
- * @tparam StrType the final string type.
+ * @tparam SizeType an integral size type
+ * @tparam StrType the final string type - must inherit from this class.
  * @tparam SubStrType a substring type to be used in all selection methods.
  *         When StrType is an owning type, this provides savings in number
  *         of allocations over the alternative of returning the StrType
