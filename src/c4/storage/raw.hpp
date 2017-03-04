@@ -9,10 +9,12 @@
 #include <memory>
 
 C4_BEGIN_NAMESPACE(c4)
-C4_BEGIN_NAMESPACE(stg)
 
 // external forward declarations
 template< class T > class Allocator;
+
+C4_BEGIN_NAMESPACE(stg)
+
 struct growth_default;
 
 /** @defgroup raw_storage_classes Raw storage classes
@@ -23,9 +25,8 @@ struct growth_default;
  * elements contiguously in memory, but its elements are paged, so it still
  * offers a contiguous index range with constant-time access. Note the following:
  *
- * - The memory used by these objects is NOT automatically allocated or
- *   freed. Allocation and deallocation requires explicit calls the
- *   member functions _raw_reserve(I n) and _raw_trim(I n)
+ * - The memory used by these objects is automatically freed. Allocation
+ *   requires explicit calls to the function _raw_resize(I n).
  * - The elements contained in the raw storage are NOT automatically constructed
  *   or destroyed.
  */
@@ -37,11 +38,15 @@ template< class Storage, class... > struct raw_storage_util;
 template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
 struct raw_fixed;
 
-template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator< T >, class GrowthPolicy = growth_default >
+template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
 struct raw;
 
 template< class T, size_t PageSize = 256, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
 struct raw_paged;
+
+/** raw paged with page size determined at runtime. */
+template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
+using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 /** Type traits for raw storage classes.
@@ -142,7 +147,7 @@ struct raw_storage_util< Storage, _c4_rsu_require(raw_storage_traits< Storage >:
 {
     using storage_type = Storage;
     using traits_type = raw_storage_traits< Storage >;
-    using alloc_traits = std::allocator_traits< typename Storage::allocator_type >;
+    using alloc_traits = typename Storage::allocator_traits;
 
     using T = typename raw_storage_traits< Storage >::value_type;
     using I = typename raw_storage_traits< Storage >::size_type;
@@ -150,6 +155,7 @@ struct raw_storage_util< Storage, _c4_rsu_require(raw_storage_traits< Storage >:
     template< class ...Args >
     C4_ALWAYS_INLINE static void construct(Storage& dest, I first, I n, Args&&... args)
     {
+        /// @todo use alloc_traits here and in the other functions
         dest.m_allocator.construct_n(dest.data() + first, n, std::forward< Args >(args)...);
     }
 
@@ -256,8 +262,7 @@ struct raw_fixed
     C4_ALWAYS_INLINE constexpr I      capacity()      const noexcept { return N; }
     C4_ALWAYS_INLINE constexpr I next_capacity(I cap) const noexcept { return N; }
 
-    void _raw_reserve(I n) const C4_NOEXCEPT_A { C4_ASSERT(n <= N); }
-    void _raw_trim   (I n) const C4_NOEXCEPT_A { C4_ASSERT(n <= N); }
+    void _raw_resize(I n) const C4_NOEXCEPT_A { C4_ASSERT(n <= N); }
 };
 
 //-----------------------------------------------------------------------------
@@ -280,6 +285,7 @@ struct raw
     _c4_DEFINE_ARRAY_TYPES(T, I)
 
     using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
 
     raw() : raw(0) {}
     raw(Alloc const& a) : raw(0, a) {}
@@ -287,14 +293,10 @@ struct raw
     raw(I cap) : m_ptr(nullptr), m_capacity(0), m_allocator() { _raw_resize(cap); }
     raw(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(0), m_allocator(a) { _raw_resize(cap); }
 
-protected: // protect the destructor to prevent destruction with base pointer type
-
     ~raw()
     {
         _raw_resize(0);
     }
-
-public:
 
     /** @todo implement this */
     raw(raw const& that) = delete;
@@ -319,7 +321,16 @@ public:
 
     void _raw_resize(I cap)
     {
-        if(cap == m_capacity) return;
+        if(m_ptr)
+        {
+            m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+            m_ptr = nullptr;
+        }
+        if(cap > 0)
+        {
+            m_ptr = m_allocator.allocate(cap, Alignment);
+        }
+        m_capacity = cap;
     }
 
 };
@@ -336,20 +347,21 @@ template< class T, class I, I Alignment, class RawPaged >
 struct _raw_paged_crtp
 {
 #define _c4this static_cast< RawPaged* >(this)
-protected:
-
-    void _raw_reserve(I cap);
+#define _c4cthis static_cast< RawPaged const* >(this)
 
     C4_ALWAYS_INLINE static constexpr I max_capacity() noexcept { return std::numeric_limits< I >::max() - 1; }
-    C4_ALWAYS_INLINE I capacity() const noexcept { return _c4this->m_num_pages * _c4this->page_size(); }
-    C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_num_pages; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_num_pages * _c4cthis->page_size(); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I next_capacity(I desired) const C4_NOEXCEPT_A
     {
         I cap = capacity();
-        I np = desired / _c4this->m_num_pages;
-        cap = np * _c4this->m_num_pages;
+        I np = desired / _c4cthis->m_num_pages;
+        cap = np * _c4cthis->m_num_pages;
         C4_ASSERT(cap >= desired);
         return cap;
     }
+
+protected:
 
     void _raw_resize(I cap);
 };
@@ -358,7 +370,9 @@ template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
 {
     const I ps = _c4this->page_size();
-    const I np = cap / ps;
+    // http://stackoverflow.com/questions/17005364/dividing-two-integers-and-rounding-up-the-result-without-using-floating-pont
+    const I np = (cap + ps - 1) / ps;
+    C4_ASSERT(np * ps >= cap);
     auto at = _c4this->m_allocator.template rebound< T* >();
     if(np >= _c4this->m_num_pages)
     {
@@ -388,6 +402,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
 }
 
 #undef _c4this
+#undef _c4cthis
 
 //-----------------------------------------------------------------------------
 /** raw paged storage, allocatable. This is NOT a contiguous storage structure.
@@ -421,6 +436,7 @@ public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
     using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
 
     raw_paged() : raw_paged(0) {}
     raw_paged(Alloc const& a) : raw_paged(0, a) {}
@@ -434,14 +450,10 @@ public:
         crtp_base::_raw_resize(cap);
     }
 
-protected: // protect the destructor to prevent destruction with base pointer type
-
     ~raw_paged()
     {
         crtp_base::_raw_resize(0);
     }
-
-public:
 
     raw_paged(raw_paged const& that) = delete;
     raw_paged(raw_paged     && that) = default;
@@ -472,9 +484,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-/** raw paged with page size determined at runtime. */
-template< class T, class I, I Alignment, class Alloc >
-using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
 
 /** specialization of raw_paged for dynamic page size */
 template< class T, class I, I Alignment, class Alloc >
@@ -491,6 +500,7 @@ public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
     using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
 
     raw_paged() : raw_paged(0, 256) {}
     raw_paged(Alloc const& a) : raw_paged(0, 256, a) {}
@@ -511,14 +521,10 @@ public:
         crtp_base::_raw_resize(cap);
     }
 
-protected: // protect the destructor to prevent destruction with base pointer type
-
     ~raw_paged()
     {
-        crtp_base::_raw_trim(0);
+        crtp_base::_raw_resize(0);
     }
-
-public:
 
     raw_paged(raw_paged const& that) = delete;
     raw_paged(raw_paged     && that) = default;
@@ -544,7 +550,7 @@ public:
         return m_pages[pg][id];
     }
 
-    C4_ALWAYS_INLINE I page_size() const noexcept { return m_page_size; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I page_size() const noexcept { return m_page_size; }
 
 };
 
