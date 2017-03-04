@@ -80,8 +80,7 @@ if(C4STL_BUILD_TESTS)
     )
 
     function(c4stl_add_test name)
-        set(n c4stl-test-${name})
-        c4stl_add_target(${n} EXECUTABLE SANITIZE
+        c4stl_add_target(${name} EXECUTABLE SANITIZE
             SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
             LIBS c4test ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
             INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
@@ -96,12 +95,12 @@ if(C4STL_BUILD_TESTS)
             # consider doing this for valgrind:
             # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
             # for now we explicitly run it:
-            add_test(NAME c4stl-test-${name}-valgrind
-                COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
+            add_test(NAME ${name}-valgrind
+                COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
         endif()
     endfunction(c4stl_add_test)
 
-    c4stl_add_test(core
+    c4stl_add_test(c4stl-test-core
         c4/char_traits.test.cpp
         c4/error.test.cpp
         c4/log.test.cpp
@@ -115,8 +114,8 @@ if(C4STL_BUILD_TESTS)
         c4/types.test.cpp
     )
 
-    c4stl_add_test(sstream c4/sstream.test.cpp)
-    c4stl_add_test(string  c4/string.test.cpp c4/string.test.hpp)
+    c4stl_add_test(c4stl-test-sstream c4/sstream.test.cpp)
+    c4stl_add_test(c4stl-test-string  c4/string.test.cpp c4/string.test.hpp)
     if(WIN32)
         if(MSVC)
             set_property(SOURCE c4/sstream.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
