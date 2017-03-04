@@ -9,34 +9,34 @@ C4_BEGIN_NAMESPACE(c4)
 /** this function was made a friend to have access to member names */
 void test_string_member_alignment()
 {
-    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::substring   , m_str     ));
-    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::substringrs , m_str     ));
-    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::substring   , m_size    ));
-    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::substringrs , m_size    ));
-    EXPECT_EQ(offsetof(c4::string, m_capacity), offsetof(c4::substringrs , m_capacity));
-    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::csubstring  , m_str     ));
-    EXPECT_EQ(offsetof(c4::string, m_str     ), offsetof(c4::csubstringrs, m_str     ));
-    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::csubstring  , m_size    ));
-    EXPECT_EQ(offsetof(c4::string, m_size    ), offsetof(c4::csubstringrs, m_size    ));
-    EXPECT_EQ(offsetof(c4::string, m_capacity), offsetof(c4::csubstringrs, m_capacity));
+    EXPECT_EQ(offsetof(c4::text, m_str     ), offsetof(c4::substring   , m_str     ));
+    EXPECT_EQ(offsetof(c4::text, m_str     ), offsetof(c4::substringrs , m_str     ));
+    EXPECT_EQ(offsetof(c4::text, m_size    ), offsetof(c4::substring   , m_size    ));
+    EXPECT_EQ(offsetof(c4::text, m_size    ), offsetof(c4::substringrs , m_size    ));
+    EXPECT_EQ(offsetof(c4::text, m_capacity), offsetof(c4::substringrs , m_capacity));
+    EXPECT_EQ(offsetof(c4::text, m_str     ), offsetof(c4::csubstring  , m_str     ));
+    EXPECT_EQ(offsetof(c4::text, m_str     ), offsetof(c4::csubstringrs, m_str     ));
+    EXPECT_EQ(offsetof(c4::text, m_size    ), offsetof(c4::csubstring  , m_size    ));
+    EXPECT_EQ(offsetof(c4::text, m_size    ), offsetof(c4::csubstringrs, m_size    ));
+    EXPECT_EQ(offsetof(c4::text, m_capacity), offsetof(c4::csubstringrs, m_capacity));
 
-    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::wsubstring  , m_str     ));
-    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::wsubstringrs, m_str     ));
-    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::wsubstring  , m_size    ));
-    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::wsubstringrs, m_size    ));
-    EXPECT_EQ(offsetof(c4::wstring, m_capacity), offsetof(c4::wsubstringrs, m_capacity));
+    EXPECT_EQ(offsetof(c4::wtext, m_str     ), offsetof(c4::wsubstring  , m_str     ));
+    EXPECT_EQ(offsetof(c4::wtext, m_str     ), offsetof(c4::wsubstringrs, m_str     ));
+    EXPECT_EQ(offsetof(c4::wtext, m_size    ), offsetof(c4::wsubstring  , m_size    ));
+    EXPECT_EQ(offsetof(c4::wtext, m_size    ), offsetof(c4::wsubstringrs, m_size    ));
+    EXPECT_EQ(offsetof(c4::wtext, m_capacity), offsetof(c4::wsubstringrs, m_capacity));
 
-    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::cwsubstring  , m_str     ));
-    EXPECT_EQ(offsetof(c4::wstring, m_str     ), offsetof(c4::cwsubstringrs, m_str     ));
-    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::cwsubstring  , m_size    ));
-    EXPECT_EQ(offsetof(c4::wstring, m_size    ), offsetof(c4::cwsubstringrs, m_size    ));
-    EXPECT_EQ(offsetof(c4::wstring, m_capacity), offsetof(c4::cwsubstringrs, m_capacity));
+    EXPECT_EQ(offsetof(c4::wtext, m_str     ), offsetof(c4::cwsubstring  , m_str     ));
+    EXPECT_EQ(offsetof(c4::wtext, m_str     ), offsetof(c4::cwsubstringrs, m_str     ));
+    EXPECT_EQ(offsetof(c4::wtext, m_size    ), offsetof(c4::cwsubstring  , m_size    ));
+    EXPECT_EQ(offsetof(c4::wtext, m_size    ), offsetof(c4::cwsubstringrs, m_size    ));
+    EXPECT_EQ(offsetof(c4::wtext, m_capacity), offsetof(c4::cwsubstringrs, m_capacity));
 }
 
 template< class C, class I >
 void test_small_string_flag_alignment()
 {
-    basic_small_string< C, I > ss;
+    basic_string< C, I > ss;
     EXPECT_EQ((char*)&ss.m_short.flag_n_sz, (char*)&ss.m_long.flag_n_sz);
 
     ss.m_short.flag_n_sz = 0;
@@ -100,7 +100,7 @@ TEST(small_string, flag_alignment)
 _C4_TEST_STRINGBASE_DERIVED_NON_RESIZEABLE(substring, substring)
 _C4_TEST_STRINGBASE_DERIVED(substringrs, substringrs)
 _C4_TEST_STRINGBASE_DERIVED(string, string)
-_C4_TEST_STRINGBASE_DERIVED(small_string, small_string)
+_C4_TEST_STRINGBASE_DERIVED(text, text)
 //WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u8 , basic_small_string< char C4_COMMA uint8_t  >)
 //WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u16, basic_small_string< char C4_COMMA uint16_t >)
 //WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u32, basic_small_string< char C4_COMMA uint32_t >)
@@ -112,7 +112,7 @@ _C4_TEST_STRINGBASE_DERIVED(small_string, small_string)
 
 TEST(StringTrimOverflow, trim)
 {
-    using tstring = basic_string< char, uint8_t >;
+    using tstring = basic_text< char, uint8_t >;
     // assign a 255 char 
     tstring s(' ', 254); // (+1 for the null character)
 }

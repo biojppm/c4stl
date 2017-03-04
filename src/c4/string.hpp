@@ -1,7 +1,10 @@
 #ifndef _C4_STRING_HPP_
 #define _C4_STRING_HPP_
 
-/** \file string.hpp
+/** @file string.hpp Provides string classes. */
+
+/** @defgroup string_classes String classes
+ *
  * Provides string classes for owned (c4::string) and non-owned (c4::substring
  * and c4::substringrs) writeable strings. These classes are mostly stl
  * compatible, with some additions, like begins_with()/ends_with(),
@@ -33,15 +36,19 @@
  * So summing two substrings must result in an allocated string. So eg
  * this would work:
  *
+ * @code
  * substring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
  * string r;
  * r = ss1 + ss2; // OK, r is "foobar" and owns the memory
+ * @endcode
  *
  * BUT if we assign the sum to a substring instead, we would get a stale
  * pointer:
  *
+ * @code
  * substring ss3;
  * ss3 = ss1 + ss2; // BAD, ss3 points at deallocated memory
+ * @endcode
  *
  * The result of ss1+ss2 is an owned string. Because
  * ss3 is not an owned string, it is set to point at the contents of the
@@ -2082,7 +2089,8 @@ c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is
  *  -Can be written to output streams.
  *  -CANNOT be read into with input streams unless the read value
  *    is guaranteed to be smaller.
- *  @see basic_substringrs if you need to augment the size up to a capacity. */
+ * @see basic_substringrs if you need to augment the size up to a capacity.
+ * @ingroup string_classes */
 template< class C, class SizeType >
 class basic_substring : public string_impl< C, SizeType, basic_substring< C, SizeType >, basic_substring< C, SizeType > >
 {
@@ -2120,7 +2128,7 @@ public:
     C4_ALWAYS_INLINE basic_substring(C *p) : m_str(p), m_size(szconv< size_type >(traits_type::length(p))) {}
     C4_ALWAYS_INLINE void assign(C *p) { m_str = p; m_size = szconv< size_type >(traits_type::length(p)); }
     C4_ALWAYS_INLINE basic_substring& operator= (C *p) { m_str = p; m_size = szconv< size_type >(traits_type::length(p)); return *this; }
-    
+
     template< SizeType N > C4_ALWAYS_INLINE basic_substring(C (&a)[N]) : m_str(a), m_size(N-1) {} //< the size of C arrays includes the \0, so take off one
     template< SizeType N > C4_ALWAYS_INLINE void assign(C (&a)[N]) { m_str = &a[0]; m_size = N-1; } //< the size of C arrays includes the \0, so take off one
     template< SizeType N > C4_ALWAYS_INLINE basic_substring& operator= (C (&a)[N]) { m_str = &a[0]; m_size = N-1; return *this; } //< the size of C arrays includes the \0, so take off one
@@ -2178,7 +2186,8 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substring< C C4_COMMA SizeType >, typen
  * max capacity, so it can be resizeable up to capacity. Therefore, it
  * can be modified with methods that change its size such as append(), prepend(),
  * or read with input streams (again, up to capacity).
- * @see basic_substring */
+ * @see basic_substring
+ * @ingroup string_classes */
 template< class C, class SizeType >
 class basic_substringrs : public string_impl< C, SizeType, basic_substringrs< C, SizeType >, basic_substringrs< C, SizeType > >
 {
@@ -2275,11 +2284,13 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substringrs< C C4_COMMA SizeType >, typ
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-
+/** a string which always allocates memory, ie, without the small
+ * string optimization
+ * @ingroup string_classes */
 template< class C, class SizeType, class Alloc >
-class basic_string : public string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
+class basic_text : public string_impl< C, SizeType, basic_text< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
-    using impl_type = string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
+    using impl_type = string_impl< C, SizeType, basic_text< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
 public:
 
     using char_type = C;
@@ -2291,7 +2302,7 @@ public:
     using ssize_type = typename std::make_signed< SizeType >::type;
 
     template< class C_ >
-    using parameterized_string_type = basic_string< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
+    using parameterized_string_type = basic_text< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
 
     static constexpr const SizeType npos = SizeType(-1);
 
@@ -2319,33 +2330,33 @@ public:
 
 public:
 
-    _C4STR_ASSIGNOPS(C, basic_string)
+    _C4STR_ASSIGNOPS(C, basic_text)
 
-    C4_ALWAYS_INLINE basic_string() : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() {}
-    C4_ALWAYS_INLINE basic_string(Alloc const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) {}
-    C4_ALWAYS_INLINE ~basic_string()
+    C4_ALWAYS_INLINE basic_text() : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() {}
+    C4_ALWAYS_INLINE basic_text(Alloc const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) {}
+    C4_ALWAYS_INLINE ~basic_text()
     {
         free();
     }
 
-    C4_ALWAYS_INLINE basic_string(SizeType sz) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() { resize(sz); }
-    C4_ALWAYS_INLINE basic_string(SizeType sz, Alloc const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) { resize(sz); }
+    C4_ALWAYS_INLINE basic_text(SizeType sz) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() { resize(sz); }
+    C4_ALWAYS_INLINE basic_text(SizeType sz, Alloc const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) { resize(sz); }
 
-    C4_ALWAYS_INLINE basic_string(SizeType sz, SizeType cap) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() { reserve(cap); resize(sz); }
-    C4_ALWAYS_INLINE basic_string(SizeType sz, SizeType cap, Alloc const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) { reserve(cap); resize(sz); }
+    C4_ALWAYS_INLINE basic_text(SizeType sz, SizeType cap) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc() { reserve(cap); resize(sz); }
+    C4_ALWAYS_INLINE basic_text(SizeType sz, SizeType cap, Alloc const& a) : m_str(nullptr), m_size(0), m_capacity(0), m_alloc(a) { reserve(cap); resize(sz); }
 
-    C4_ALWAYS_INLINE basic_string(basic_string const& s) : basic_string() { assign(s); }
-    C4_ALWAYS_INLINE basic_string(basic_string     && s) : basic_string() { assign(std::move(s)); }
-    C4_ALWAYS_INLINE basic_string(basic_string const& s, Alloc const& a) : basic_string(a) { assign(s); }
-    C4_ALWAYS_INLINE basic_string(basic_string     && s, Alloc const& a) : basic_string(a) { assign(std::move(s)); }
-    C4_ALWAYS_INLINE basic_string& operator= (basic_string const& s) { assign(s); return *this; }
-    C4_ALWAYS_INLINE basic_string& operator= (basic_string     && s) { assign(std::move(s)); return *this; }
-    void assign(basic_string const& s)
+    C4_ALWAYS_INLINE basic_text(basic_text const& s) : basic_text() { assign(s); }
+    C4_ALWAYS_INLINE basic_text(basic_text     && s) : basic_text() { assign(std::move(s)); }
+    C4_ALWAYS_INLINE basic_text(basic_text const& s, Alloc const& a) : basic_text(a) { assign(s); }
+    C4_ALWAYS_INLINE basic_text(basic_text     && s, Alloc const& a) : basic_text(a) { assign(std::move(s)); }
+    C4_ALWAYS_INLINE basic_text& operator= (basic_text const& s) { assign(s); return *this; }
+    C4_ALWAYS_INLINE basic_text& operator= (basic_text     && s) { assign(std::move(s)); return *this; }
+    void assign(basic_text const& s)
     {
         resize(s.m_size);
         assign(s.m_str, s.m_size);
     }
-    void assign(basic_string     && s)
+    void assign(basic_text     && s)
     {
         free();
         m_str = s.m_str;
@@ -2356,22 +2367,22 @@ public:
         s.m_capacity = 0;
     }
 
-    C4_ALWAYS_INLINE basic_string(substring const& s) : basic_string() { assign(s.data(), s.size()); }
-    C4_ALWAYS_INLINE basic_string(substring const& s, Alloc const& a) : basic_string(a) { assign(s.data(), s.size()); }
-    C4_ALWAYS_INLINE basic_string& operator= (substring const& s) { assign(s.data(), s.size()); return *this; }
+    C4_ALWAYS_INLINE basic_text(substring const& s) : basic_text() { assign(s.data(), s.size()); }
+    C4_ALWAYS_INLINE basic_text(substring const& s, Alloc const& a) : basic_text(a) { assign(s.data(), s.size()); }
+    C4_ALWAYS_INLINE basic_text& operator= (substring const& s) { assign(s.data(), s.size()); return *this; }
     C4_ALWAYS_INLINE void assign(substring const& s) { assign(s.data(), s.size()); }
 
     /** @warning assumes the string is null-terminated */
-    C4_ALWAYS_INLINE basic_string(const C *s) : basic_string() { assign(s, szconv< size_type >(traits_type::length(s))); }
+    C4_ALWAYS_INLINE basic_text(const C *s) : basic_text() { assign(s, szconv< size_type >(traits_type::length(s))); }
     /** @warning assumes the string is null-terminated */
-    C4_ALWAYS_INLINE basic_string(const C *s, Alloc const& a) : basic_string(a) { assign(s, szconv< size_type >(traits_type::length(s))); }
+    C4_ALWAYS_INLINE basic_text(const C *s, Alloc const& a) : basic_text(a) { assign(s, szconv< size_type >(traits_type::length(s))); }
     /** @warning assumes the string is null-terminated */
-    C4_ALWAYS_INLINE basic_string& operator= (const C  *s) { assign(s, szconv< size_type >(traits_type::length(s))); return *this; }
+    C4_ALWAYS_INLINE basic_text& operator= (const C  *s) { assign(s, szconv< size_type >(traits_type::length(s))); return *this; }
     /** @warning assumes the string is null-terminated */
     void assign(const C *s) { assign(s, szconv< size_type >(traits_type::length(s))); }
 
-    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n) : basic_string() { assign(s, n); }
-    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, Alloc const& a) : basic_string(a) { assign(s, n); }
+    C4_ALWAYS_INLINE basic_text(const C *s, SizeType n) : basic_text() { assign(s, n); }
+    C4_ALWAYS_INLINE basic_text(const C *s, SizeType n, Alloc const& a) : basic_text(a) { assign(s, n); }
     C4_ALWAYS_INLINE void assign(const C *s, SizeType n)
     {
         resize(n);
@@ -2379,22 +2390,22 @@ public:
         m_str[m_size] = '\0';
     }
 
-    template< int N > C4_ALWAYS_INLINE basic_string(const C (&s)[N]) : basic_string() { assign(&s[0], N-1); }
-    template< int N > C4_ALWAYS_INLINE basic_string(const C (&s)[N], Alloc const& a) : basic_string(a) { assign(&s[0], N-1); }
-    template< int N > C4_ALWAYS_INLINE basic_string& operator= (const C (&s)[N]) { assign(&s[0], N-1); return *this; }
+    template< int N > C4_ALWAYS_INLINE basic_text(const C (&s)[N]) : basic_text() { assign(&s[0], N-1); }
+    template< int N > C4_ALWAYS_INLINE basic_text(const C (&s)[N], Alloc const& a) : basic_text(a) { assign(&s[0], N-1); }
+    template< int N > C4_ALWAYS_INLINE basic_text& operator= (const C (&s)[N]) { assign(&s[0], N-1); return *this; }
     template< int N > C4_ALWAYS_INLINE void assign(const C (&s)[N]) { assign(&s[0], N-1); }
     template< int N > C4_ALWAYS_INLINE void assign(const C (&s)[N], SizeType n) { assign(&s[0], n); }
 
-    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, SizeType cap)                 : basic_string()  { assign(s, n, cap); }
-    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, SizeType cap, Alloc const& a) : basic_string(a) { assign(s, n, cap); }
+    C4_ALWAYS_INLINE basic_text(const C *s, SizeType n, SizeType cap)                 : basic_text()  { assign(s, n, cap); }
+    C4_ALWAYS_INLINE basic_text(const C *s, SizeType n, SizeType cap, Alloc const& a) : basic_text(a) { assign(s, n, cap); }
     void assign(const C *s, SizeType n, SizeType cap) { C4_ASSERT(cap >= n); reserve(cap); assign(s, n); }
 
-    C4_ALWAYS_INLINE basic_string(C c, SizeType n)                 : basic_string()  { assign(c, n, n); }
-    C4_ALWAYS_INLINE basic_string(C c, SizeType n, Alloc const& a) : basic_string(a) { assign(c, n, n); }
+    C4_ALWAYS_INLINE basic_text(C c, SizeType n)                 : basic_text()  { assign(c, n, n); }
+    C4_ALWAYS_INLINE basic_text(C c, SizeType n, Alloc const& a) : basic_text(a) { assign(c, n, n); }
     C4_ALWAYS_INLINE void assign(C c, SizeType n) { assign(c, n, n); }
 
-    C4_ALWAYS_INLINE basic_string(C c, SizeType n, SizeType cap)                 : basic_string()  { assign(c, n, cap); }
-    C4_ALWAYS_INLINE basic_string(C c, SizeType n, SizeType cap, Alloc const& a) : basic_string(a) { assign(c, n, cap); }
+    C4_ALWAYS_INLINE basic_text(C c, SizeType n, SizeType cap)                 : basic_text()  { assign(c, n, cap); }
+    C4_ALWAYS_INLINE basic_text(C c, SizeType n, SizeType cap, Alloc const& a) : basic_text(a) { assign(c, n, cap); }
     void assign(C c, SizeType n, SizeType cap)
     {
         C4_ASSERT(cap >= n);
@@ -2408,11 +2419,11 @@ public:
     }
 
     template< class OtherSize, class Al_ >
-    C4_ALWAYS_INLINE basic_string(basic_string< C, OtherSize, Al_ > const& that) { assign(that); }
+    C4_ALWAYS_INLINE basic_text(basic_text< C, OtherSize, Al_ > const& that) { assign(that); }
     template< class OtherSize, class Al_ >
-    C4_ALWAYS_INLINE void assign(basic_string< C, OtherSize, Al_ > const& that) { assign(that.m_str, szconv< size_type >(that.m_size)); }
+    C4_ALWAYS_INLINE void assign(basic_text< C, OtherSize, Al_ > const& that) { assign(that.m_str, szconv< size_type >(that.m_size)); }
     template< class OtherSize, class Al_ >
-    C4_ALWAYS_INLINE basic_string& operator= (basic_string< C, OtherSize, Al_ > const& that) { assign(that); return *this; }
+    C4_ALWAYS_INLINE basic_text& operator= (basic_text< C, OtherSize, Al_ > const& that) { assign(that); return *this; }
 
 public:
 
@@ -2506,9 +2517,9 @@ public:
 };
 
 template< class C, class SizeType, class Alloc >
-const SizeType basic_string< C, SizeType, Alloc >::npos;
+const SizeType basic_text< C, SizeType, Alloc >::npos;
 
-_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Alloc >,
+_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_text< C C4_COMMA SizeType C4_COMMA Alloc >,
     typename C, typename SizeType, class Alloc);
 
 //-----------------------------------------------------------------------------
@@ -2519,11 +2530,12 @@ template< class _Char, size_t N > struct _shortstr;
 template< size_t N > struct _shortstr< char   , N > { char flag_n_sz;             char    arr[(N - 1)/sizeof(char)   ]; };
 template< size_t N > struct _shortstr< wchar_t, N > { char flag_n_sz; char __pad; wchar_t arr[(N - 1)/sizeof(wchar_t)]; };
 
-/** a string class with the small string optimization */
+/** a string class with the small string optimization
+ * @ingroup string_classes */
 template< class C, class SizeType, class Alloc >
-class basic_small_string : public string_impl< C, SizeType, basic_small_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
+class basic_string : public string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >
 {
-    using impl_type = string_impl< C, SizeType, basic_small_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
+    using impl_type = string_impl< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
 
     struct _long
     {
@@ -2544,7 +2556,7 @@ public:
     using ssize_type = typename std::make_signed< SizeType >::type;
 
     template< class C_ >
-    using parameterized_string_type = basic_small_string< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
+    using parameterized_string_type = basic_string< C_, SizeType, typename alloc_traits::template rebind_alloc< C_ > >;
 
     static constexpr const SizeType npos = SizeType(-1);
     static constexpr const SizeType arr_size = C4_COUNTOF(_short::arr);
@@ -2575,10 +2587,10 @@ public:
     C4_ALWAYS_INLINE operator bool () const { return size() > 0; }
 
     C4_ALWAYS_INLINE operator const basic_substring  < const C, SizeType > () const { return basic_substring  < const C, SizeType >(data(), size()); }
-    C4_ALWAYS_INLINE operator const basic_substring  <       C, SizeType > ()       { return basic_substring  < const C, SizeType >(data(), size()); }
+    C4_ALWAYS_INLINE operator const basic_substring  <       C, SizeType > ()       { return basic_substring  <       C, SizeType >(data(), size()); }
     C4_ALWAYS_INLINE operator const basic_substringrs< const C, SizeType > () const { return basic_substringrs< const C, SizeType >(data(), size()); }
-    C4_ALWAYS_INLINE operator const basic_substringrs<       C, SizeType > ()       { return basic_substringrs< const C, SizeType >(data(), size()); }
-    
+    C4_ALWAYS_INLINE operator const basic_substringrs<       C, SizeType > ()       { return basic_substringrs<       C, SizeType >(data(), size()); }
+
 public:
 
     C4_ALWAYS_INLINE char is_long() const { return m_short.flag_n_sz & 1; }
@@ -2597,28 +2609,28 @@ public:
 
 public:
 
-    _C4STR_ASSIGNOPS(C, basic_small_string)
+    _C4STR_ASSIGNOPS(C, basic_string)
 
-    C4_ALWAYS_INLINE basic_small_string() : m_alloc() { memset(m_raw, 0, sizeof(m_raw)); }
-    C4_ALWAYS_INLINE basic_small_string(Alloc const& a) : m_alloc(a) { memset(m_raw, 0, sizeof(m_raw)); }
-    C4_ALWAYS_INLINE ~basic_small_string()
+    C4_ALWAYS_INLINE basic_string() : m_alloc() { memset(m_raw, 0, sizeof(m_raw)); }
+    C4_ALWAYS_INLINE basic_string(Alloc const& a) : m_alloc(a) { memset(m_raw, 0, sizeof(m_raw)); }
+    C4_ALWAYS_INLINE ~basic_string()
     {
         this->_free();
     }
 
-    C4_ALWAYS_INLINE basic_small_string(SizeType sz)                 : basic_small_string()  { resize(sz); }
-    C4_ALWAYS_INLINE basic_small_string(SizeType sz, Alloc const& a) : basic_small_string(a) { resize(sz); }
+    C4_ALWAYS_INLINE basic_string(SizeType sz)                 : basic_string()  { resize(sz); }
+    C4_ALWAYS_INLINE basic_string(SizeType sz, Alloc const& a) : basic_string(a) { resize(sz); }
 
-    C4_ALWAYS_INLINE basic_small_string(SizeType sz, SizeType cap)                 : basic_small_string()  { reserve(cap); resize(sz); }
-    C4_ALWAYS_INLINE basic_small_string(SizeType sz, SizeType cap, Alloc const& a) : basic_small_string(a) { reserve(cap); resize(sz); }
+    C4_ALWAYS_INLINE basic_string(SizeType sz, SizeType cap)                 : basic_string()  { reserve(cap); resize(sz); }
+    C4_ALWAYS_INLINE basic_string(SizeType sz, SizeType cap, Alloc const& a) : basic_string(a) { reserve(cap); resize(sz); }
 
-    C4_ALWAYS_INLINE basic_small_string(basic_small_string const& s)                 : basic_small_string(s.m_alloc) { assign(s); }
-    C4_ALWAYS_INLINE basic_small_string(basic_small_string     && s)                 : basic_small_string(s.m_alloc) { assign(std::move(s)); }
-    C4_ALWAYS_INLINE basic_small_string(basic_small_string const& s, Alloc const& a) : basic_small_string(a) { assign(s); }
-    C4_ALWAYS_INLINE basic_small_string(basic_small_string     && s, Alloc const& a) : basic_small_string(a) { assign(std::move(s)); }
-    C4_ALWAYS_INLINE basic_small_string& operator= (basic_small_string const& s) { assign(s); return *this; }
-    C4_ALWAYS_INLINE basic_small_string& operator= (basic_small_string     && s) { assign(std::move(s)); return *this; }
-    void assign(basic_small_string const& that)
+    C4_ALWAYS_INLINE basic_string(basic_string const& s)                 : basic_string(s.m_alloc) { assign(s); }
+    C4_ALWAYS_INLINE basic_string(basic_string     && s)                 : basic_string(s.m_alloc) { assign(std::move(s)); }
+    C4_ALWAYS_INLINE basic_string(basic_string const& s, Alloc const& a) : basic_string(a) { assign(s); }
+    C4_ALWAYS_INLINE basic_string(basic_string     && s, Alloc const& a) : basic_string(a) { assign(std::move(s)); }
+    C4_ALWAYS_INLINE basic_string& operator= (basic_string const& s) { assign(s); return *this; }
+    C4_ALWAYS_INLINE basic_string& operator= (basic_string     && s) { assign(std::move(s)); return *this; }
+    void assign(basic_string const& that)
     {
         if(&that == this) return;
         resize(that.size());
@@ -2628,7 +2640,7 @@ public:
     // would be enough to hold the string. This is because the
     // memory is already allocated, so there's little cost in
     // keeping using it. If explicit resizing is desired, call shrink_to_fit()
-    void assign(basic_small_string && that)
+    void assign(basic_string && that)
     {
         if(&that == this) return;
         if(that.is_long())
@@ -2660,22 +2672,22 @@ public:
         }
     }
 
-    C4_ALWAYS_INLINE basic_small_string(substring const& s)                 : basic_small_string()  { assign(s.data(), s.size()); }
-    C4_ALWAYS_INLINE basic_small_string(substring const& s, Alloc const& a) : basic_small_string(a) { assign(s.data(), s.size()); }
-    C4_ALWAYS_INLINE basic_small_string& operator= (substring const& s) { assign(s.data(), s.size()); return *this; }
+    C4_ALWAYS_INLINE basic_string(substring const& s)                 : basic_string()  { assign(s.data(), s.size()); }
+    C4_ALWAYS_INLINE basic_string(substring const& s, Alloc const& a) : basic_string(a) { assign(s.data(), s.size()); }
+    C4_ALWAYS_INLINE basic_string& operator= (substring const& s) { assign(s.data(), s.size()); return *this; }
     C4_ALWAYS_INLINE void assign(substring const& s) { assign(s.data(), s.size()); }
 
     /** construct from a null-terminated string */
-    C4_ALWAYS_INLINE basic_small_string(const C *s) : basic_small_string() { assign(s, szconv< size_type >(traits_type::length(s))); }
+    C4_ALWAYS_INLINE basic_string(const C *s) : basic_string() { assign(s, szconv< size_type >(traits_type::length(s))); }
     /** construct from a null-terminated string */
-    C4_ALWAYS_INLINE basic_small_string(const C *s, Alloc const& a) : basic_small_string(a) { assign(s, szconv< size_type >(traits_type::length(s))); }
+    C4_ALWAYS_INLINE basic_string(const C *s, Alloc const& a) : basic_string(a) { assign(s, szconv< size_type >(traits_type::length(s))); }
     /** construct from a null-terminated string */
-    C4_ALWAYS_INLINE basic_small_string& operator= (const C  *s) { assign(s, szconv< size_type >(traits_type::length(s))); return *this; }
+    C4_ALWAYS_INLINE basic_string& operator= (const C  *s) { assign(s, szconv< size_type >(traits_type::length(s))); return *this; }
     /** assign from a null-terminated string */
     void assign(const C *s) { assign(s, szconv< size_type >(traits_type::length(s))); }
 
-    C4_ALWAYS_INLINE basic_small_string(const C *s, SizeType n)                 : basic_small_string()  { assign(s, n); }
-    C4_ALWAYS_INLINE basic_small_string(const C *s, SizeType n, Alloc const& a) : basic_small_string(a) { assign(s, n); }
+    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n)                 : basic_string()  { assign(s, n); }
+    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, Alloc const& a) : basic_string(a) { assign(s, n); }
     C4_ALWAYS_INLINE void assign(const C *s, SizeType n)
     {
         resize(n);
@@ -2684,22 +2696,22 @@ public:
         d[n] = C(0);
     }
 
-    template< int N > C4_ALWAYS_INLINE basic_small_string(const C (&s)[N])                 : basic_small_string()  { assign(&s[0], N-1); }
-    template< int N > C4_ALWAYS_INLINE basic_small_string(const C (&s)[N], Alloc const& a) : basic_small_string(a) { assign(&s[0], N-1); }
-    template< int N > C4_ALWAYS_INLINE basic_small_string& operator= (const C (&s)[N]) { assign(&s[0], N-1); return *this; }
+    template< int N > C4_ALWAYS_INLINE basic_string(const C (&s)[N])                 : basic_string()  { assign(&s[0], N-1); }
+    template< int N > C4_ALWAYS_INLINE basic_string(const C (&s)[N], Alloc const& a) : basic_string(a) { assign(&s[0], N-1); }
+    template< int N > C4_ALWAYS_INLINE basic_string& operator= (const C (&s)[N]) { assign(&s[0], N-1); return *this; }
     template< int N > C4_ALWAYS_INLINE void assign(const C (&s)[N])              { assign(&s[0], N-1); }
 
-    C4_ALWAYS_INLINE basic_small_string(const C *s, SizeType n, SizeType cap)                 : basic_small_string()  { assign(s, n, cap); }
-    C4_ALWAYS_INLINE basic_small_string(const C *s, SizeType n, SizeType cap, Alloc const& a) : basic_small_string(a) { assign(s, n, cap); }
+    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, SizeType cap)                 : basic_string()  { assign(s, n, cap); }
+    C4_ALWAYS_INLINE basic_string(const C *s, SizeType n, SizeType cap, Alloc const& a) : basic_string(a) { assign(s, n, cap); }
     void assign(const C *s, SizeType n, SizeType cap) { C4_ASSERT(cap >= n); reserve(cap); assign(s, n); }
 
-    C4_ALWAYS_INLINE basic_small_string(C c, SizeType n)                 : basic_small_string()  { assign(c, n, n); }
-    C4_ALWAYS_INLINE basic_small_string(C c, SizeType n, Alloc const& a) : basic_small_string(a) { assign(c, n, n); }
+    C4_ALWAYS_INLINE basic_string(C c, SizeType n)                 : basic_string()  { assign(c, n, n); }
+    C4_ALWAYS_INLINE basic_string(C c, SizeType n, Alloc const& a) : basic_string(a) { assign(c, n, n); }
     C4_ALWAYS_INLINE void assign(C c, SizeType n) { assign(c, n, n); }
     C4_ALWAYS_INLINE void assign(C c) { assign(c, size(), capacity()); }
 
-    C4_ALWAYS_INLINE basic_small_string(C c, SizeType n, SizeType cap)                 : basic_small_string()  { assign(c, n, cap); }
-    C4_ALWAYS_INLINE basic_small_string(C c, SizeType n, SizeType cap, Alloc const& a) : basic_small_string(a) { assign(c, n, cap); }
+    C4_ALWAYS_INLINE basic_string(C c, SizeType n, SizeType cap)                 : basic_string()  { assign(c, n, cap); }
+    C4_ALWAYS_INLINE basic_string(C c, SizeType n, SizeType cap, Alloc const& a) : basic_string(a) { assign(c, n, cap); }
     void assign(C c, SizeType n, SizeType cap)
     {
         C4_ASSERT(cap >= n);
@@ -2713,10 +2725,10 @@ public:
         d[n] = C(0);
     }
 
-    template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_small_string(basic_small_string< C, Sz_, Al_ > const& that) { assign(that); }
-    template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_small_string& operator= (basic_small_string< C, Sz_, Al_ > const& that) { assign(that); return *this; }
-    template< class Sz_, class Al_ > C4_ALWAYS_INLINE void assign(basic_small_string< C, Sz_, Al_ > const& that) { assign(that.data(), szconv< size_type >(that.size())); }
-   
+    template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_string(basic_string< C, Sz_, Al_ > const& that) { assign(that); }
+    template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_string& operator= (basic_string< C, Sz_, Al_ > const& that) { assign(that); return *this; }
+    template< class Sz_, class Al_ > C4_ALWAYS_INLINE void assign(basic_string< C, Sz_, Al_ > const& that) { assign(that.data(), szconv< size_type >(that.size())); }
+
 public:
 
     void push_back(C c)
@@ -2725,7 +2737,7 @@ public:
         grow(1);
         data()[sz] = c;
     }
- 
+
 public:
 
     void resize(SizeType sz)
@@ -2870,9 +2882,9 @@ private:
 };
 
 template< class C, class SizeType, class Alloc >
-const SizeType basic_small_string< C, SizeType, Alloc >::npos;
+const SizeType basic_string< C, SizeType, Alloc >::npos;
 
-_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_small_string< C C4_COMMA SizeType C4_COMMA Allocator >,
+_C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Allocator >,
     typename C, typename SizeType, class Allocator)
 
 //--------------------------------------------------------------------------------------
@@ -2881,38 +2893,38 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_small_string< C C4_COMMA SizeType C4_CO
 
 #if defined(C4_STR_DISABLE_EXPR_TPL)
 
-// binary operators: basic_string + basic_string
+// binary operators: basic_text + basic_text
 _C4STR_DEFINE_BINOPS1TY_TPL(
     template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator > const&,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
 
-// binary operators: basic_string + const char*
+// binary operators: basic_text + const char*
 _C4STR_DEFINE_BINOPS2TY_TPL(
     template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
     const char*,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
 
-// binary operators: basic_string + basic_substring
+// binary operators: basic_text + basic_substring
 _C4STR_DEFINE_BINOPS2TY_TPL(
     template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
     basic_substring< C C4_COMMA SizeType > const&,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
 
-// binary operators: basic_string + basic_substringrs
+// binary operators: basic_text + basic_substringrs
 _C4STR_DEFINE_BINOPS2TY_TPL(
     template< typename C C4_COMMA typename SizeType C4_COMMA class Allocator >,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator > const&,
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator > const&,
     basic_substringrs< C C4_COMMA SizeType > const&,
-    basic_string< C C4_COMMA SizeType C4_COMMA Allocator >)
+    basic_text< C C4_COMMA SizeType C4_COMMA Allocator >)
 #endif
-   
+
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
- 
+
 void s2ws(char    const *mbstr, size_t len, wchar_t *output);
 void ws2s(wchar_t const *mbstr, size_t len, char    *output);
 

@@ -14,8 +14,8 @@ template< typename C, typename Size, class Str, class Sub > class string_impl;
 
 template< typename C, typename Size=C4_STR_SIZE_TYPE > class basic_substring;
 template< typename C, typename Size=C4_STR_SIZE_TYPE > class basic_substringrs;
+template< typename C, typename Size=C4_STR_SIZE_TYPE, class Alloc=c4::Allocator<C> > class basic_text;
 template< typename C, typename Size=C4_STR_SIZE_TYPE, class Alloc=c4::Allocator<C> > class basic_string;
-template< typename C, typename Size=C4_STR_SIZE_TYPE, class Alloc=c4::Allocator<C> > class basic_small_string;
 
 using substring     = basic_substring  < char          >;
 using substringrs   = basic_substringrs< char          >;
@@ -32,8 +32,8 @@ using cwsubstringrs = basic_substringrs< const wchar_t >;
 using string        = basic_string< char    >;
 using wstring       = basic_string< wchar_t >;
 
-using small_string  = basic_small_string< char    >;
-using small_wstring = basic_small_string< wchar_t >;
+using text          = basic_text< char    >;
+using wtext         = basic_text< wchar_t >;
 
 C4_END_NAMESPACE(c4)
 
