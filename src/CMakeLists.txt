@@ -50,19 +50,10 @@ if(MSVC)
     list(APPEND src c4stl.natvis)
 endif()
 
-add_library(c4stl ${src})
-target_include_directories(c4stl PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../extern)
-
-#------------------------------------------------------------------------------
-set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
-
-option(C4STL_BUILD_TESTS "" ON)
-option(C4STL_BUILD_BENCHMARKS "" ON)
-if(C4STL_BUILD_TESTS OR C4STL_BUILD_BENCHMARKS)
-    include(ExternalProjectUtils)
-endif()
+c4stl_add_target(c4stl LIBRARY SANITIZE
+    SOURCES ${src}
+    INC_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern
+)
 
 #------------------------------------------------------------------------------
 
@@ -77,27 +68,30 @@ if(C4STL_BUILD_TESTS)
         LIBRARIES gtest_main gtest)
     find_package(Threads)
 
-    add_library(c4testcommon
+    set(testsrc
         ../test/c4/archetypes.cpp
         ../test/c4/archetypes.hpp
         ../test/c4/test.hpp
     )
-    target_link_libraries(c4testcommon PUBLIC
-        c4stl
-        ${gtest_LIBRARIES}
-        ${CMAKE_THREAD_LIBS_INIT})
-    target_include_directories(c4testcommon PUBLIC
-        "${gtest_INCLUDE_DIRS}"
-        ${CMAKE_CURRENT_SOURCE_DIR}/../test)
+    c4stl_add_target(c4test LIBRARY SANITIZE
+        SOURCES ${testsrc}
+        LIBS c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+        INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
+    )
 
-    macro(c4stl_add_test name)
-        add_executable(c4stl-test-${name}
-            ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp
-            ${ARGN})
-        add_dependencies(unit_tests c4stl-test-${name})
-        target_link_libraries(c4stl-test-${name} c4testcommon)
-        add_test(NAME c4stl-test-${name}-run
-            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
+    function(c4stl_add_test name)
+        set(n c4stl-test-${name})
+        c4stl_add_target(${n} EXECUTABLE SANITIZE
+            SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
+            LIBS c4test ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+            INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
+            OUTPUT_TARGET_NAMES _test_targets
+        )
+        foreach(t ${_test_targets})
+            add_dependencies(unit_tests ${t})
+            add_test(NAME ${t}-run
+                COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${t})
+        endforeach()
         if(UNIX)
             # consider doing this for valgrind:
             # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
@@ -105,7 +99,7 @@ if(C4STL_BUILD_TESTS)
             add_test(NAME c4stl-test-${name}-valgrind
                 COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/c4stl-test-${name})
         endif()
-    endmacro(c4stl_add_test)
+    endfunction(c4stl_add_test)
 
     c4stl_add_test(core
         c4/char_traits.test.cpp
