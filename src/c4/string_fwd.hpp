@@ -10,8 +10,6 @@ C4_BEGIN_NAMESPACE(c4)
 using str_size_type = C4_STR_SIZE_TYPE;
 template< class T > class Allocator;
 
-//template< typename C, typename Size, class Str, class Sub > class _str_crtp;
-
 template< typename C, typename Size=C4_STR_SIZE_TYPE > class basic_substring;
 template< typename C, typename Size=C4_STR_SIZE_TYPE > class basic_substringrs;
 template< typename C, typename Size=C4_STR_SIZE_TYPE, class Alloc=c4::Allocator<C> > class basic_string;
