@@ -9,13 +9,31 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+/** @defgroup span_classes Span classes
+ *
+ * A span is a non-owning range of elements contiguously stored in memory.
+ * Unlike STL's array_view, the span allows write-access to its members.
+ *
+ * To obtain subspans from a span, the following const member functions
+ * are available:
+ *  - subspan(first, num)
+ *  - range(first, last)
+ *  - first(num)
+ *  - last(num)
+ *
+ * A span can also be resized via the following non-const member functions:
+ *  - resize(sz)
+ *  - ltrim(num)
+ *  - rtrim(num)
+*/
+
 template< class T, class I=C4_SIZE_TYPE > class span;
 template< class T, class I=C4_SIZE_TYPE > class spanrs;
 template< class T, class I=C4_SIZE_TYPE > class etched_span;
 
-template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >;
-template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >;
-template< class T, class I=C4_SIZE_TYPE > using cetched_span = etched_span< const T, I >;
+template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >; ///< @ingroup span_classes
+template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >; ///< @ingroup span_classes
+template< class T, class I=C4_SIZE_TYPE > using cetched_span = etched_span< const T, I >; ///< @ingroup span_classes
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -195,7 +213,8 @@ inline constexpr bool operator>=
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-
+/** A span of elements contiguously stored in memory.
+ * @ingroup span_classes */
 template< class T, class I >
 class span : public _span_crtp<T, I, span<T, I>>
 {
@@ -251,7 +270,10 @@ public:
  * or any of subspan() or range() when starting from the beginning will keep
  * the original capacity. OTOH, using last(), or any of subspan() or range()
  * with an offset from the start will remove from capacity by the corresponding
- * offset. If this is undesired, then consider using etched_span. */
+ * offset. If this is undesired, then consider using etched_span.
+ *
+ * @ingroup span_classes
+ */
 template< class T, class I >
 class spanrs : public _span_crtp<T, I, spanrs<T, I>>
 {
@@ -306,7 +328,10 @@ public:
  * was taken from. The resizing methods resize(), ltrim(), rtrim() as well
  * as the subselection methods subspan(), range(), first() and last() can be
  * used at will without loosing the original span, which can always
- * be recovered by calling original(). */
+ * be recovered by calling original().
+ *
+ * @ingroup span_classes
+ */
 template< class T, class I >
 class etched_span : public _span_crtp<T, I, etched_span<T, I>>
 {

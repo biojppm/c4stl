@@ -7,7 +7,9 @@
 C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
 
-/** @defgroup storage_growth_policies Storage growth policies */
+/** @defgroup storage_growth_policies Storage growth policies
+ * These are policies which can be used in dynamic growth containers.
+ */
 
 
 //-----------------------------------------------------------------------------
