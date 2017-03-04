@@ -16,14 +16,14 @@ C4_BEGIN_NAMESPACE(c4)
 
 /** when SizeOut is wider than SizeIn, assignment can occur without reservations */
 template< class SizeOut, class SizeIn >
-C4_ALWAYS_INLINE _C4FOR(>=) szconv(SizeIn sz)
+C4_ALWAYS_INLINE _C4FOR(>=) szconv(SizeIn sz) noexcept
 {
     return sz;
 }
 
 /** when SizeOut is narrower than SizeIn, narrowing will occur, so add a check for overflow */
 template< class SizeOut, class SizeIn >
-C4_ALWAYS_INLINE _C4FOR(<) szconv(SizeIn sz)
+C4_ALWAYS_INLINE _C4FOR(<) szconv(SizeIn sz) C4_NOEXCEPT_X
 {
     C4_XASSERT(sz <= std::numeric_limits< SizeOut >::max());
     SizeOut szo = (SizeOut)sz;
