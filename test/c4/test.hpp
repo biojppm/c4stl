@@ -110,28 +110,42 @@ struct Counting
         }
     };
 
-    check_num check_ctors(size_t n) { return check_num("ctor", num_ctors, n); }
-    check_num check_dtors(size_t n) { return check_num("dtor", num_dtors, n); }
-    check_num check_copy_ctors(size_t n) { return check_num("copy_ctor", num_copy_ctors, n); }
-    check_num check_move_ctors(size_t n) { return check_num("move_ctor", num_move_ctors, n); }
-    check_num check_copy_assigns(size_t n) { return check_num("copy_assign", num_copy_assigns, n); }
-    check_num check_move_assigns(size_t n) { return check_num("move_assign", num_move_assigns, n); }
+    static check_num check_ctors(size_t n) { return check_num("ctor", num_ctors, n); }
+    static check_num check_dtors(size_t n) { return check_num("dtor", num_dtors, n); }
+    static check_num check_copy_ctors(size_t n) { return check_num("copy_ctor", num_copy_ctors, n); }
+    static check_num check_move_ctors(size_t n) { return check_num("move_ctor", num_move_ctors, n); }
+    static check_num check_copy_assigns(size_t n) { return check_num("copy_assign", num_copy_assigns, n); }
+    static check_num check_move_assigns(size_t n) { return check_num("move_assign", num_move_assigns, n); }
+
+    struct check_num_ctors_dtors
+    {
+        check_num ctors, dtors;
+        check_num_ctors_dtors(size_t _ctors, size_t _dtors)
+        :
+            ctors(check_ctors(_ctors)),
+            dtors(check_dtors(_dtors))
+        {
+        }
+    };
+    static check_num_ctors_dtors check_ctors_dtors(size_t _ctors, size_t _dtors)
+    {
+        return check_num_ctors_dtors(_ctors, _dtors);
+    }
 
     struct check_num_all
     {
         check_num ctors, dtors, cp_ctors, mv_ctors, cp_assigns, mv_assigns;
-        check_num_all(Counting *c, size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _mv_ctors, size_t _cp_assigns, size_t _mv_assigns)
+        check_num_all(size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _mv_ctors, size_t _cp_assigns, size_t _mv_assigns)
         {
-            ctors = c->check_ctors(_ctors);
-            dtors = c->check_dtors(_dtors);
-            cp_ctors = c->check_copy_ctors(_cp_ctors);
-            mv_ctors = c->check_move_ctors(_mv_ctors);
-            cp_assigns = c->check_copy_assigns(_cp_assigns);
-            mv_assigns = c->check_move_assigns(_mv_assigns);
+            ctors = check_ctors(_ctors);
+            dtors = check_dtors(_dtors);
+            cp_ctors = check_copy_ctors(_cp_ctors);
+            mv_ctors = check_move_ctors(_mv_ctors);
+            cp_assigns = check_copy_assigns(_cp_assigns);
+            mv_assigns = check_move_assigns(_mv_assigns);
         }
     };
-
-    check_num_all check_all(size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _move_ctors, size_t _cp_assigns, size_t _mv_assigns)
+    static check_num_all check_all(size_t _ctors, size_t _dtors, size_t _cp_ctors, size_t _move_ctors, size_t _cp_assigns, size_t _mv_assigns)
     {
         return check_num_all(_ctors, _dtors, _cp_ctors, _move_ctors, _cp_assigns, _mv_assigns);
     }
@@ -208,6 +222,7 @@ Counting< T >& Counting< T >::operator= (Counting && that)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** @todo refactor to use RAII @see Counting */
 struct AllocationCountsChecker : public ScopedMemoryResourceCounts
 {
     AllocationCounts first;

@@ -252,6 +252,9 @@ struct raw_fixed
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
 
+    C4_ALWAYS_INLINE raw_fixed() {}
+    C4_ALWAYS_INLINE ~raw_fixed() {}
+
     C4_ALWAYS_INLINE T      & operator[] (I i)       noexcept { return m_ptr[i]; }
     C4_ALWAYS_INLINE T const& operator[] (I i) const noexcept { return m_ptr[i]; }
 
@@ -410,10 +413,13 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
   * range indices. This is useful for minimizing allocations and data copies in
   * dynamic array-based containers like flat_list or split_list.
   *
-  * @tparam PageSize The page size, in number of elements. Must be a power of two.
+  * @tparam T the stored type
+  * @tparam PageSize The page size, in number of elements (ie, not in bytes). Must be a power of two.
+  * @tparam I the size type. Must be integral
+  * @tparam Alignment the alignment at which the stored type should be aligned
+  * @tparam Alloc an allocator
   *
-  * @ingroup raw_storage_classes
-  * @todo add a raw structure with a runtime-determined page size */
+  * @ingroup raw_storage_classes */
 template< class T, size_t PageSize, class I, I Alignment, class Alloc >
 struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSize, I, Alignment, Alloc > >
 {
@@ -421,6 +427,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSiz
 
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
+    static_assert(std::is_integral< I >::value, "");
 
     //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
     constexpr static const I _raw_idmask = I(PageSize) - I(1);
@@ -490,6 +497,7 @@ template< class T, class I, I Alignment, class Alloc >
 struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >
 {
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >;
+    static_assert(std::is_integral< I >::value, "");
 
     T    **m_pages;      //< array containing the pages
     I      m_num_pages;  //< number of current pages in the array
