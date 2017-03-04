@@ -1,6 +1,13 @@
 #ifndef _C4_UTIL_HPP_
 #define _C4_UTIL_HPP_
 
+/** @defgroup basic_headers Basic headers
+ * Headers providing basic macros, platform+cpu+compiler information,
+ * C++ facilities and basic typedefs. */
+
+/** @file config.hpp Contains configuration defines and includes the basic_headers.
+ * @ingroup basic_headers */
+
 //#define C4_DEBUG
 #define C4_USE_XASSERT
 #define C4_ERROR_SHOWS_FILELINE

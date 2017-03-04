@@ -5,7 +5,8 @@
 #include <stddef.h>
 #include <type_traits>
 
-//! @file types.hpp basic types, and utility macros and traits for types.
+/** @file types.hpp basic types, and utility macros and traits for types.
+ * @ingroup basic_headers */
 
 C4_BEGIN_NAMESPACE(c4)
 

@@ -1,6 +1,17 @@
 #ifndef _C4_MEMORY_RESOURCE_HPP_
 #define _C4_MEMORY_RESOURCE_HPP_
 
+/** @file memory_resource.hpp Provides facilities to allocate memory, via
+ *  the memory resource model consecrated with C++17. */
+
+/** @defgroup raw_memory_alloc Raw memory allocation
+ *
+ */
+
+/** @defgroup memory_resources Memory resources
+ *
+ */
+
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 
@@ -57,7 +68,8 @@ arealloc_type get_arealloc();
 
 // c++-style allocation -------------------------------------------------------
 
-/** C++17-style memory_resource. See http://en.cppreference.com/w/cpp/experimental/memory_resource */
+/** C++17-style memory_resource base class. See http://en.cppreference.com/w/cpp/experimental/memory_resource
+ * @ingroup memory_resources */
 struct MemoryResource
 {
     const char *name = nullptr;
@@ -88,13 +100,18 @@ protected:
 
 };
 
+/** get the current global memory resource. To avoid static initialization
+ * order problems, this is implemented using a function call to ensure
+ * that it is available on when first used.
+ * @ingroup memory_resources */
 C4_ALWAYS_INLINE MemoryResource* get_memory_resource()
 {
-    /* to avoid static initialization order problems, this is implemented
-     * using a function call to ensure that it is available on when first used. */
+    /* T */
     return detail::get_memory_resource();
 }
 
+/** set the global memory resource
+ * @ingroup memory_resources */
 C4_ALWAYS_INLINE void set_memory_resource(MemoryResource* mr)
 {
     C4_ASSERT(mr != nullptr);
@@ -105,7 +122,8 @@ C4_ALWAYS_INLINE void set_memory_resource(MemoryResource* mr)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** A c4::aalloc-based memory resource. Thread-safe if the implementation called by
- * c4::aalloc() is safe. */
+ * c4::aalloc() is safe.
+ * @ingroup memory_resources */
 struct MemoryResourceMalloc : public MemoryResource
 {
 
@@ -133,6 +151,8 @@ protected:
 
 };
 
+/** returns a malloc-based memory resource
+ *  @ingroup memory_resources */
 C4_ALWAYS_INLINE MemoryResourceMalloc* get_memory_resource_malloc()
 {
     static MemoryResourceMalloc mr;
@@ -242,7 +262,8 @@ struct AllocationCounts
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** a MemoryResource which latches onto another MemoryResource
- * and counts allocations and sizes. */
+ * and counts allocations and sizes.
+ * @ingroup memory_resources */
 class MemoryResourceCounts : public MemoryResource
 {
 public:
@@ -297,6 +318,8 @@ protected:
 };
 
 //-----------------------------------------------------------------------------
+/** RAII class which binds a memory resource with a scope duration.
+ * @ingroup memory_resources */
 struct ScopedMemoryResource
 {
     MemoryResource *m_original;
@@ -315,6 +338,9 @@ struct ScopedMemoryResource
 };
 
 //-----------------------------------------------------------------------------
+/** RAII class which counts allocations and frees inside a scope. Can
+ * optionally set also the memory resource to be used.
+ * @ingroup memory_resources */
 struct ScopedMemoryResourceCounts
 {
     MemoryResourceCounts mr;

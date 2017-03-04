@@ -1,6 +1,9 @@
 #ifndef _C4_COMPILER_HPP_
 #define _C4_COMPILER_HPP_
 
+/** @file compiler.hpp Provides compiler information macros
+ * @ingroup basic_headers */
+
 #include "c4/platform.hpp"
 
 // Compilers:

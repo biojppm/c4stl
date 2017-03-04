@@ -1,6 +1,9 @@
 #ifndef _C4_PLATFORM_HPP_
 #define _C4_PLATFORM_HPP_
 
+/** @file platform.hpp Provides platform information macros
+ * @ingroup basic_headers */
+
 // see also https://sourceforge.net/p/predef/wiki/OperatingSystems/
 
 #if defined(_WIN64)

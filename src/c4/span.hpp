@@ -1,6 +1,21 @@
 #ifndef _C4_SPAN_HPP_
 #define _C4_SPAN_HPP_
 
+/** @defgroup containers Containers
+ * @see storage_growth_policies
+ * @see raw_storage_classes
+*/
+
+/** @defgroup contiguous_containers Contiguous containers */
+/** @defgroup nonowning_containers Non-owning containers */
+
+/** @file span.hpp Provides span classes.
+ * @see span_classes
+ * @ingroup containers
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers
+ */
+
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 #include "c4/szconv.hpp"
@@ -213,8 +228,11 @@ inline constexpr bool operator>=
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** A span of elements contiguously stored in memory.
- * @ingroup span_classes */
+/** A non-owning span of elements contiguously stored in memory.
+ * @ingroup span_classes
+ * @ingroup containers
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers */
 template< class T, class I >
 class span : public _span_crtp<T, I, span<T, I>>
 {
@@ -248,11 +266,7 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_size; }
 
-    C4_ALWAYS_INLINE void resize(I sz) C4_NOEXCEPT_A
-    {
-        C4_XASSERT(sz <= m_size);
-        m_size = sz;
-    }
+    C4_ALWAYS_INLINE void resize(I sz) C4_NOEXCEPT_A { C4_ASSERT(sz <= m_size); m_size = sz; }
 
     C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; }
     C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; }
@@ -262,17 +276,22 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** A span resizeable up to a capacity. Subselection or resizing will keep
- * the original provided it starts at begin(). If subselection or resizing
- * change the pointer, then the original capacity information will be lost.
+/** A non-owning span resizeable up to a capacity. Subselection or resizing
+ * will keep the original provided it starts at begin(). If subselection or
+ * resizing change the pointer, then the original capacity information will
+ * be lost.
  *
  * Thus, resizing via resize() and ltrim() and subselecting via first()
  * or any of subspan() or range() when starting from the beginning will keep
  * the original capacity. OTOH, using last(), or any of subspan() or range()
- * with an offset from the start will remove from capacity by the corresponding
- * offset. If this is undesired, then consider using etched_span.
+ * with an offset from the start will remove from capacity (shifting the
+ * pointer) by the corresponding offset. If this is undesired, then consider
+ * using etched_span.
  *
  * @ingroup span_classes
+ * @ingroup containers
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers
  */
 template< class T, class I >
 class spanrs : public _span_crtp<T, I, spanrs<T, I>>
@@ -310,11 +329,7 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
-    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A
-    {
-        C4_ASSERT(sz <= m_capacity);
-        m_size = sz;
-    }
+    C4_ALWAYS_INLINE I resize(I sz) C4_NOEXCEPT_A { C4_ASSERT(sz <= m_capacity); m_size = sz; }
 
     C4_ALWAYS_INLINE void rtrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; }
     C4_ALWAYS_INLINE void ltrim(I n) C4_NOEXCEPT_A { C4_ASSERT(n >= 0 && n < m_size); m_size -= n; m_ptr += n; m_capacity -= n; }
@@ -324,13 +339,17 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** A span which always retains the information about the original range it
- * was taken from. The resizing methods resize(), ltrim(), rtrim() as well
+/** A non-owning span which always retains the capacity of the original
+ * range it was taken from (though it may loose its original size).
+ * The resizing methods resize(), ltrim(), rtrim() as well
  * as the subselection methods subspan(), range(), first() and last() can be
- * used at will without loosing the original span, which can always
- * be recovered by calling original().
+ * used at will without loosing the original capacity; the full capacity span
+ * can always be recovered by calling original().
  *
  * @ingroup span_classes
+ * @ingroup containers
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers
  */
 template< class T, class I >
 class etched_span : public _span_crtp<T, I, etched_span<T, I>>

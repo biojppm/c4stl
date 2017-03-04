@@ -1,6 +1,8 @@
 #ifndef _C4_ERROR_HPP_
 #define _C4_ERROR_HPP_
 
+/** @file error.hpp Facilities for error reporting and runtime assertions. */
+
 #include "c4/config.hpp"
 
 /** @def C4_ERROR_THROWS_EXCEPTION if this is defined and exceptions are

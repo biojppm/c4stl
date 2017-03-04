@@ -1,6 +1,11 @@
 #ifndef _C4_LANGUAGE_HPP_
 #define _C4_LANGUAGE_HPP_
 
+/** @file language.hpp Provides language standard information macros and
+ * compiler agnostic utility macros: namespace facilities, function attributes,
+ * variable attributes, etc.
+ * @ingroup basic_headers */
+
 #include "c4/preprocessor.hpp"
 #include "c4/compiler.hpp"
 

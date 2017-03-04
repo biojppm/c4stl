@@ -1,6 +1,9 @@
 #ifndef _C4_CPU_HPP_
 #define _C4_CPU_HPP_
 
+/** @file cpu.hpp Provides processor information macros
+ * @ingroup basic_headers */
+
 // some of this is adapted from Qt's processor detection code:
 // see http://code.qt.io/cgit/qt/qtbase.git/tree/src/corelib/global/qprocessordetection.h
 // see also https://sourceforge.net/p/predef/wiki/Architectures/

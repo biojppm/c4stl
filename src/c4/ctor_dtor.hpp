@@ -8,6 +8,9 @@
 #include <type_traits>
 #include <utility> // std::forward
 
+/** @file ctor_dtor.hpp object construction and destruction facilities.
+ * Some of these are not yet available in C++11. */
+
 C4_BEGIN_NAMESPACE(c4)
 
 #define _C4REQUIRE(cond) \

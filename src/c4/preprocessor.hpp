@@ -1,6 +1,8 @@
 #ifndef _C4_PREPROCESSOR_HPP_
 #define _C4_PREPROCESSOR_HPP_
 
+/** @file preprocessor.hpp Contains basic macros and preprocessor utilities.
+ * @ingroup basic_headers */
 
 #ifdef __clang__
     /* NOTE: using , ## __VA_ARGS__ to deal with zero-args calls to
