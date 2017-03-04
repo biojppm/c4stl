@@ -89,6 +89,7 @@ if(C4STL_BUILD_TESTS)
             add_dependencies(unit_tests ${t})
             add_test(NAME ${t}-run
                 COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${t})
+            # TODO: ubsan needs this to show the stacktraces: UBSAN_OPTIONS=print_stacktrace=1
         endforeach()
         if(UNIX)
             # consider doing this for valgrind:

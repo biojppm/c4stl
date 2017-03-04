@@ -106,6 +106,7 @@ public:
 
 public:
 
+    template< class U > friend class Allocator;
     template< class U > struct rebind
     {
         using other = Allocator< U >;
@@ -165,6 +166,7 @@ class SmallAllocator : public AllocatorBase
 
 public:
 
+    template< class U > friend class SmallAllocator;
     template< class U > struct rebind
     {
         using other = SmallAllocator< U >;
