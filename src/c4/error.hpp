@@ -3,19 +3,27 @@
 
 /** @file error.hpp Facilities for error reporting and runtime assertions. */
 
+/** @defgroup error_checking Error checking */
+
 #include "c4/config.hpp"
 
-/** @def C4_ERROR_THROWS_EXCEPTION if this is defined and exceptions are
- * enabled, then calls to C4_ERROR() will throw an exception */
+#ifdef _DOXYGEN_
+/** if this is defined and exceptions are enabled, then calls to C4_ERROR()
+ * will throw an exception
+ * @ingroup error_checking */
+#   define C4_EXCEPTIONS_ENABLED
 
-/** @def C4_NOEXCEPT evaluates to noexcept when C4_ERROR might be called
- * and exceptions are disabled. Otherwise, defaults to nothing. */
+/** if this is defined and exceptions are enabled, then calls to C4_ERROR()
+ *  will throw an exception
+ * @see C4_EXCEPTIONS_ENABLED
+ * @ingroup error_checking */
+#   define C4_ERROR_THROWS_EXCEPTION
 
-/** @def C4_NOEXCEPT_A evaluates to noexcept when C4_ASSERT is disabled.
- * Otherwise, defaults to nothing. */
-
-/** @def C4_NOEXCEPT_X evaluates to noexcept when C4_XASSERT is disabled.
- * Otherwise, defaults to nothing.  */
+/** evaluates to noexcept when C4_ERROR might be called and
+ * exceptions are disabled. Otherwise, defaults to nothing.
+ * @ingroup error_checking */
+#   define C4_NOEXCEPT
+#endif // _DOXYGEN_
 
 #if defined(C4_EXCEPTIONS_ENABLED) && defined(C4_ERROR_THROWS_EXCEPTION)
 #   define C4_NOEXCEPT
@@ -25,9 +33,21 @@
 
 //-----------------------------------------------------------------------------
 
+#ifdef _DOXYGEN_
+/** utility macro that triggers a breakpoint when
+ * the debugger is attached and NDEBUG is not defined.
+ * @ingroup error_checking
+ */
+#   define C4_DEBUG_BREAK()
+#endif // _DOXYGEN_
+
+
 #ifdef NDEBUG
 #   define C4_DEBUG_BREAK()
 #else
+C4_BEGIN_NAMESPACE(c4)
+bool is_debugger_attached();
+C4_END_NAMESPACE(c4)
 #   include <debugbreak/debugbreak.h>
 #   define C4_DEBUG_BREAK() if(c4::is_debugger_attached()) { ::debug_break(); }
 #endif
@@ -54,9 +74,6 @@
 //-----------------------------------------------------------------------------
 
 C4_BEGIN_NAMESPACE(c4)
-
-bool is_debugger_attached();
-
 
 typedef enum {
     /** when an error happens and the debugger is attached, call C4_DEBUG_BREAK().
@@ -86,7 +103,7 @@ error_callback_type get_error_callback();
 
 
 //-----------------------------------------------------------------------------
-/** RAII to control the error settings inside a scope. */
+/** RAII class controling the error settings inside a scope. */
 struct ScopedErrorSettings
 {
     error_flags m_flags;
@@ -161,19 +178,77 @@ void handle_warning(const char *fmt, ...);
 #endif
 
 //-----------------------------------------------------------------------------
-// assertions - only in debug builds
-#ifdef NDEBUG // turn off assertions
-#   define C4_ASSERT(cond)
-#   define C4_ASSERT_MSG(cond, fmt, ...)
-#   define C4_NOEXCEPT_A noexcept
-#else
+// assertions
+
+#ifdef _DOXYGEN_
+/** Explicitly enables assertions, independently of NDEBUG status.
+ * This is meant to allow enabling assertions even when NDEBUG is defined.
+ * Defaults to undefined.
+ * @ingroup error_checking */
+#   define C4_USE_ASSERT
+
+/** assert that a condition is true; this is turned off when NDEBUG
+ * is defined and C4_USE_ASSERT is not defined.
+ * @ingroup error_checking  */
+#   define C4_ASSERT
+
+/** like C4_ASSERT, and additionally prints a
+ * printf-formatted message
+ * @ingroup error_checking */
+#   define C4_ASSERT_MSG
+
+/** evaluates to C4_NOEXCEPT when C4_XASSERT is disabled; otherwise, defaults
+ * to noexcept
+ * @ingroup error_checking */
+#   define C4_NOEXCEPT_A
+#endif // _DOXYGEN_
+
+#ifndef C4_USE_ASSERT
+#   ifndef NDEBUG
+#       define C4_USE_ASSERT
+#   endif
+#endif
+
+#ifdef C4_USE_ASSERT
 #   define C4_ASSERT(cond) C4_CHECK(cond)
 #   define C4_ASSERT_MSG(cond, fmt, ...) C4_CHECK_MSG(cond, fmt, ## __VA_ARGS__)
 #   define C4_NOEXCEPT_A C4_NOEXCEPT
+#else
+#   define C4_ASSERT(cond)
+#   define C4_ASSERT_MSG(cond, fmt, ...)
+#   define C4_NOEXCEPT_A noexcept
 #endif
 
-// Extreme assertion: can be switched off independently of the regular assertion.
-// Use eg for bounds checking in hot code.
+//-----------------------------------------------------------------------------
+// extreme assertions
+
+#ifdef _DOXYGEN_
+/** Explicitly enables extreme assertions; this is meant to allow enabling
+ * assertions even when NDEBUG is defined. Defaults to undefined.
+ * @ingroup error_checking */
+#   define C4_USE_XASSERT
+
+/** extreme assertion: can be switched off independently of
+ * the regular assertion; use for example for bounds checking in hot code.
+ * Turned on only when C4_USE_XASSERT is defined
+ * @ingroup error_checking */
+#   define C4_XASSERT
+
+/** like C4_XASSERT, and additionally prints a printf-formatted message
+ * @ingroup error_checking */
+#   define C4_XASSERT_MSG
+
+/** evaluates to C4_NOEXCEPT when C4_XASSERT is disabled; otherwise, defaults to noexcept
+ * @ingroup error_checking */
+#   define C4_NOEXCEPT_X
+#endif // _DOXYGEN_
+
+#ifndef C4_USE_XASSERT
+#   ifdef C4_USE_ASSERT
+#       define C4_USE_XASSERT
+#   endif
+#endif
+
 #ifdef C4_USE_XASSERT
 #   define C4_XASSERT(cond) C4_CHECK(cond)
 #   define C4_XASSERT_MSG(cond, fmt, ...) C4_CHECK_MSG(cond, fmt, ## __VA_ARGS__)
@@ -186,10 +261,14 @@ void handle_warning(const char *fmt, ...);
 
 
 //-----------------------------------------------------------------------------
+// checks: never switched-off
+
 /** Check that a condition is true, or raise an error when not
- *  true. Unlike C4_ASSERT, this check is not omitted in non-debug
- *  builds.
- *  @see C4_ASSERT */
+ * true. Unlike C4_ASSERT(), this check is not omitted in non-debug
+ * builds.
+ * @see C4_ASSERT
+ * @ingroup error_checking
+ */
 #define C4_CHECK(cond)                          \
     if(C4_UNLIKELY(!(cond)))                    \
     {                                           \
@@ -197,7 +276,8 @@ void handle_warning(const char *fmt, ...);
     }
 
 /** like C4_CHECK(), and additionally log a printf-style message.
- * @see C4_CHECK */
+ * @see C4_CHECK
+ * @ingroup error_checking */
 #define C4_CHECK_MSG(cond, fmt, ...)                                \
     if(C4_UNLIKELY(!(cond)))                                        \
     {                                                               \

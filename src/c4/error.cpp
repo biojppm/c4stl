@@ -125,6 +125,7 @@ void handle_warning(const char *fmt, ...)
 }
 
 //-----------------------------------------------------------------------------
+#ifndef NDEBUG
 bool is_debugger_attached()
 {
 #if defined(C4_PS4)
@@ -167,6 +168,7 @@ bool is_debugger_attached()
     C4_NOT_IMPLEMENTED();
     return false;
 #endif
-}
+} // is_debugger_attached()
+#endif // NDEBUG
 
 C4_END_NAMESPACE(c4)
