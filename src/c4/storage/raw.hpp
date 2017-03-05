@@ -372,11 +372,22 @@ protected:
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
 {
+    auto at = _c4this->m_allocator.template rebound< T* >();
     const I ps = _c4this->page_size();
+    if(cap == 0)
+    {
+        for(I i = 0; i < _c4this->m_num_pages; ++i)
+        {
+            _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
+        }
+        at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
+        _c4this->m_pages = nullptr;
+        return;
+    }
+
     // http://stackoverflow.com/questions/17005364/dividing-two-integers-and-rounding-up-the-result-without-using-floating-pont
     const I np = (cap + ps - 1) / ps;
     C4_ASSERT(np * ps >= cap);
-    auto at = _c4this->m_allocator.template rebound< T* >();
     if(np >= _c4this->m_num_pages)
     {
         _c4this->m_pages = at.reallocate(_c4this->m_pages, _c4this->m_num_pages, np);
@@ -391,15 +402,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
         {
             _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
         }
-        if(cap == 0)
-        {
-            at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
-            _c4this->m_pages = nullptr;
-        }
-        else
-        {
-            _c4this->m_pages = at.reallocate(_c4this->m_pages, _c4this->m_num_pages, np);
-        }
+        _c4this->m_pages = at.reallocate(_c4this->m_pages, _c4this->m_num_pages, np);
     }
     _c4this->m_num_pages = np;
 }
