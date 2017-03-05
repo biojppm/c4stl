@@ -1,5 +1,3 @@
-enable_testing()
-
 add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
 
 ExternalProject_Import(gtest
