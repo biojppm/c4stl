@@ -5,20 +5,20 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(CreateSourceGroup)
+include(SanitizeTarget)
+setup_sanitize(C4STL)
 
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
+
+if(NOT MSVC)
+    list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+endif()
 
 option(C4STL_BUILD_TESTS "" ON)
 option(C4STL_BUILD_BENCHMARKS "" ON)
 if(C4STL_BUILD_TESTS OR C4STL_BUILD_BENCHMARKS)
     include(ExternalProjectUtils)
 endif()
-if(C4STL_BUILD_TESTS)
-    enable_testing()
-endif()
-
-include(SanitizeTarget)
-setup_sanitize(C4STL)
 
 function(c4stl_add_target name)
     set(options0arg
@@ -68,3 +68,12 @@ endfunction()
 
 
 add_subdirectory(src)
+if(C4STL_BUILD_TESTS)
+    add_subdirectory(test)
+endif()
+if(C4STL_BUILD_BENCHMARKS)
+    ExternalProject_Import(gbenchmark
+        PREFIX ${C4STL_EXTERN_DIR}
+        INCLUDES benchmark/benchmark.h
+        LIBRARIES benchmark)
+endif(C4STL_BUILD_BENCHMARKS)

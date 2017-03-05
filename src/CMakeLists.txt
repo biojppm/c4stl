@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_CXX_STANDARD 11)
-
 set(src
     c4/allocator.hpp
     c4/char_traits.cpp
@@ -40,98 +38,12 @@ set(src
     c4/time.cpp
     c4/types.hpp
     c4/windows.hpp
+    c4stl.natvis
 )
 
 create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
-
-if(MSVC)
-    list(APPEND src c4stl.natvis)
-endif()
 
 c4stl_add_target(c4stl LIBRARY SANITIZE
     SOURCES ${src}
     INC_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern
 )
-
-#------------------------------------------------------------------------------
-include(PrintVar)
-
-if(C4STL_BUILD_TESTS)
-
-    add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
-
-    ExternalProject_Import(gtest
-        PREFIX ${C4STL_EXTERN_DIR}
-        INCLUDES gtest/gtest.h
-        LIBRARIES gtest_main gtest)
-    find_package(Threads REQUIRED)
-
-    set(testsrc
-        ../test/c4/archetypes.cpp
-        ../test/c4/archetypes.hpp
-        ../test/c4/test.hpp
-    )
-    c4stl_add_target(c4test LIBRARY SANITIZE
-        SOURCES ${testsrc}
-        LIBS c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-        INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
-    )
-
-    function(c4stl_add_test name)
-        c4stl_add_target(${name} EXECUTABLE SANITIZE
-            SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
-            LIBS c4test ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-            INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
-        )
-        add_dependencies(unit_tests ${name})
-        add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
-        foreach(s asan msan tsan ubsan)
-            set(t ${name}-${s})
-            if(TARGET ${t})
-                add_dependencies(unit_tests ${t})
-                sanitize_get_target_command(${CMAKE_CURRENT_BINARY_DIR}/${t} C4STL ${s} cmd)
-                add_test(NAME ${t}-run COMMAND ${cmd})
-            endif()
-        endforeach()
-        if(UNIX)
-            # consider doing this for valgrind:
-            # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
-            # for now we explicitly run it:
-            add_test(NAME ${name}-valgrind
-                COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
-        endif()
-    endfunction(c4stl_add_test)
-
-    c4stl_add_test(c4stl-test-core
-        c4/char_traits.test.cpp
-        c4/error.test.cpp
-        c4/log.test.cpp
-        c4/memory_resource.test.cpp
-        c4/memory_util.test.cpp
-        c4/preprocessor.test.cpp
-        c4/span.test.cpp
-        c4/storage/raw.test.cpp
-        c4/storage/raw.test.hpp
-        c4/storage/growth.test.cpp
-        c4/types.test.cpp
-    )
-
-    c4stl_add_test(c4stl-test-sstream c4/sstream.test.cpp)
-    c4stl_add_test(c4stl-test-string  c4/string.test.cpp c4/string.test.hpp)
-    if(WIN32)
-        if(MSVC)
-            set_property(SOURCE c4/sstream.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-            set_property(SOURCE c4/string.test.cpp  APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        endif()
-    endif()
-
-endif(C4STL_BUILD_TESTS)
-
-#------------------------------------------------------------------------------
-
-if(C4STL_BUILD_BENCHMARKS)
-    ExternalProject_Import(gbenchmark
-        PREFIX ${C4STL_EXTERN_DIR}
-        INCLUDES benchmark/benchmark.h
-        LIBRARIES benchmark)
-endif(C4STL_BUILD_BENCHMARKS)
