@@ -40,8 +40,6 @@ set(src
     c4/time.cpp
     c4/types.hpp
     c4/windows.hpp
-
-    c4/util.hpp
 )
 
 create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
@@ -56,6 +54,7 @@ c4stl_add_target(c4stl LIBRARY SANITIZE
 )
 
 #------------------------------------------------------------------------------
+include(PrintVar)
 
 if(C4STL_BUILD_TESTS)
 
@@ -65,7 +64,7 @@ if(C4STL_BUILD_TESTS)
         PREFIX ${C4STL_EXTERN_DIR}
         INCLUDES gtest/gtest.h
         LIBRARIES gtest_main gtest)
-    find_package(Threads)
+    find_package(Threads REQUIRED)
 
     set(testsrc
         ../test/c4/archetypes.cpp
@@ -83,13 +82,16 @@ if(C4STL_BUILD_TESTS)
             SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
             LIBS c4test ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
             INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
-            OUTPUT_TARGET_NAMES _test_targets
         )
-        foreach(t ${_test_targets})
-            add_dependencies(unit_tests ${t})
-            add_test(NAME ${t}-run
-                COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${t})
-            # TODO: ubsan needs this to show the stacktraces: UBSAN_OPTIONS=print_stacktrace=1
+        add_dependencies(unit_tests ${name})
+        add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
+        foreach(s asan msan tsan ubsan)
+            set(t ${name}-${s})
+            if(TARGET ${t})
+                add_dependencies(unit_tests ${t})
+                sanitize_get_target_command(${CMAKE_CURRENT_BINARY_DIR}/${t} C4STL ${s} cmd)
+                add_test(NAME ${t}-run COMMAND ${cmd})
+            endif()
         endforeach()
         if(UNIX)
             # consider doing this for valgrind:
