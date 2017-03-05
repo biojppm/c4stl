@@ -166,7 +166,7 @@ class SmallAllocator : public AllocatorBase
 
 public:
 
-    template< class U > friend class SmallAllocator;
+    template< class U, size_t, size_t > friend class SmallAllocator;
     template< class U > struct rebind
     {
         using other = SmallAllocator< U >;
