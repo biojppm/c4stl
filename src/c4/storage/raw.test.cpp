@@ -6,6 +6,7 @@
 C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
 
+//-----------------------------------------------------------------------------
 TEST(raw_fixed, instantiation)
 {
     using ci = Counting< int >;
@@ -31,7 +32,7 @@ TEST(raw_fixed, instantiation)
     }
 }
 
-
+//-----------------------------------------------------------------------------
 TEST(raw, instantiation)
 {
     using ci = Counting< int >;
@@ -67,7 +68,25 @@ TEST(raw, instantiation)
     }
 }
 
+//-----------------------------------------------------------------------------
+template< class T >
+struct raw_inheriting : public raw< T >
+{
+    using raw< T >::raw;
+};
+TEST(raw, inheriting)
+{
+    using ci = Counting< raw_inheriting< int > >;
+    {
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(10);
+            EXPECT_EQ(rf.obj.capacity(), 10);
+        }
+    }
+}
 
+//-----------------------------------------------------------------------------
 TEST(raw_paged, instantiation)
 {
     using ci = Counting< int >;
@@ -110,6 +129,7 @@ TEST(raw_paged, instantiation)
     }
 }
 
+//-----------------------------------------------------------------------------
 TEST(raw_paged_rt, instantiation)
 {
     using ci = Counting< int >;
@@ -173,6 +193,42 @@ TEST(raw_paged_rt, instantiation)
         }
     }
 
+}
+
+//-----------------------------------------------------------------------------
+template< class T >
+struct raw_inheriting_paged : public raw_paged< T >
+{
+    using raw_paged< T >::raw_paged;
+};
+TEST(raw_paged, inheriting)
+{
+    using ci = Counting< raw_inheriting_paged< int > >;
+    {
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(10);
+            EXPECT_EQ(rf.obj.capacity(), 256);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+template< class T >
+struct raw_inheriting_paged_rt : public raw_paged_rt< T >
+{
+    using raw_paged_rt< T >::raw_paged_rt;
+};
+TEST(raw_paged_rt, inheriting)
+{
+    using ci = Counting< raw_inheriting_paged_rt< int > >;
+    {
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(10);
+            EXPECT_EQ(rf.obj.capacity(), 256);
+        }
+    }
 }
 
 C4_END_NAMESPACE(stg)
