@@ -192,8 +192,7 @@ void handle_warning(const char *fmt, ...);
  * @ingroup error_checking  */
 #   define C4_ASSERT
 
-/** like C4_ASSERT, and additionally prints a
- * printf-formatted message
+/** same as C4_ASSERT(), additionally prints a printf-formatted message
  * @ingroup error_checking */
 #   define C4_ASSERT_MSG
 
@@ -234,7 +233,7 @@ void handle_warning(const char *fmt, ...);
  * @ingroup error_checking */
 #   define C4_XASSERT
 
-/** like C4_XASSERT, and additionally prints a printf-formatted message
+/** same as C4_XASSERT(), and additionally prints a printf-formatted message
  * @ingroup error_checking */
 #   define C4_XASSERT_MSG
 

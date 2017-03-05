@@ -1,8 +1,7 @@
 #ifndef _C4_STRING_FWD_HPP_
 #define _C4_STRING_FWD_HPP_
 
-/** \file string_fwd.hpp forward declarations for string classes,
- * and basic string type definitions */
+/** \file string_fwd.hpp forward declarations for string types */
 #include "c4/config.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
