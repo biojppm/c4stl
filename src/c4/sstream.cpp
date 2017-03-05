@@ -2,11 +2,15 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
-#define _C4_DEFINE_FMT_TAG(_ty)                       \
-constexpr const char fmt_tag< char, _ty >::fmt[];     \
-constexpr const char fmt_tag< char, _ty >::fmtn[];    \
-constexpr const wchar_t fmt_tag< wchar_t, _ty >::fmt[];  \
-constexpr const wchar_t fmt_tag< wchar_t, _ty >::fmtn[]
+#define _C4_DEFINE_FMT_TAG(_ty)                               \
+constexpr const char fmt_tag< char, _ty >::fmt_pri  [];       \
+constexpr const char fmt_tag< char, _ty >::fmt_pri_n[];       \
+constexpr const char fmt_tag< char, _ty >::fmt_scn  [];       \
+constexpr const char fmt_tag< char, _ty >::fmt_scn_n[];       \
+constexpr const wchar_t fmt_tag< wchar_t, _ty >::fmt_pri  []; \
+constexpr const wchar_t fmt_tag< wchar_t, _ty >::fmt_pri_n[]; \
+constexpr const wchar_t fmt_tag< wchar_t, _ty >::fmt_scn  []; \
+constexpr const wchar_t fmt_tag< wchar_t, _ty >::fmt_scn_n[]
 
 _C4_DEFINE_FMT_TAG(void*   );
 _C4_DEFINE_FMT_TAG(char    );

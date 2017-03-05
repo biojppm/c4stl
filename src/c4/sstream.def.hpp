@@ -182,7 +182,7 @@ void sstream< StringType >::read_(char *str, size_type sz, wchar_t /*overload ta
 
     auto *b = buf_();
     ::memcpy(str, b + m_getpos, sz);
-    ::memset(((char*)str) + sz, 0, wsz*sizeof(char_type) - sz);
+    //::memset(((char*)str) + sz, 0, wsz*sizeof(char_type) - sz);
     m_getpos += wsz;
 }
 
@@ -311,8 +311,7 @@ void sstream< StringType >::vprintf_(const char_type *fmt, va_list args, wchar_t
      * terminating null wide character) if successful or negative value if an
      * encoding error occurred or if the number of characters to be generated
      * was equal or greater than size.
-     * @see http://en.cppreference.com/w/cpp/io/c/vfwprintf *
-     */
+     * @see http://en.cppreference.com/w/cpp/io/c/vfwprintf */
     int inum = ::vswprintf(b + m_putpos, remp(), fmt, args);
     size_type snum = size_type(inum >= 0 ? inum : -inum);
 
@@ -366,7 +365,7 @@ lack_of_space:
     if(C4_UNLIKELY(inum <= 0 || snum + 1 > remp()))
     {
         // get some fail-safe max size to avoid eating up all memory
-        size_t max_size = traits_type::length(fmt) * 2;
+        size_t max_size = traits_type::length(fmt) * 8;
 
         bool dup_is_clean = true;
         while(1)
@@ -404,7 +403,6 @@ lack_of_space:
 
         C4_ASSERT(inum >= 0 && size_type(inum) < remp());
     }
-
 #endif
 
     // phew, we're done

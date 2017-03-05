@@ -58,7 +58,7 @@ public:
 public:
 
     template< class... Args >
-    sstream(Args&&... string_ctor_args);
+    sstream(Args && ...string_ctor_args);
     ~sstream() = default;
 
     sstream(sstream const& that) = default;
@@ -178,11 +178,15 @@ public:
 
     /** R-style: append several arguments, formatting them each as a string
      * and writing them together separated by the given character */
+
+    /// put the given arguments into the stream, without any separation character
     template <class... Args>
     C4_ALWAYS_INLINE void catsep(char_type sep, Args&& ...args)
     {
         catsep_(sep, std::forward<Args>(args)...);
     }
+
+    /// read the given arguments from the stream, without any separation character
     template <class... Args>
     C4_ALWAYS_INLINE void uncatsep(char_type sep, Args&& ...args)
     {
@@ -313,38 +317,42 @@ public: /// @todo make scanf____ private
 
 //-----------------------------------------------------------------------------
 /** a utility class for dispatching template types to their printf/scanf formats */
-template< class CharType, class T > struct fmt_tag {};
+template< class CharType, class T > struct fmt_tag;
 
 /** define printf formats for a scalar (intrinsic) type */
-#define _C4_DECLARE_FMT_TAG(_ty, fmtstr)                                 \
+#define _C4_DECLARE_FMT_TAG(_ty, pri_fmt, scn_fmt)                       \
 template<>                                                               \
 struct fmt_tag< char, _ty >                                              \
 {                                                                        \
-    static constexpr const char fmt[] = fmtstr;                          \
-    static constexpr const char fmtn[] = fmtstr "%n";                    \
+    static constexpr const char fmt_pri  [] = pri_fmt;                   \
+    static constexpr const char fmt_pri_n[] = pri_fmt "%n";              \
+    static constexpr const char fmt_scn  [] = scn_fmt;                   \
+    static constexpr const char fmt_scn_n[] = scn_fmt "%n";              \
 };                                                                       \
 template<>                                                               \
 struct fmt_tag< wchar_t, _ty >                                           \
 {                                                                        \
-    static constexpr const wchar_t fmt[] = C4_WIDEN(fmtstr);             \
-    static constexpr const wchar_t fmtn[] = C4_WIDEN(fmtstr "%n");       \
+    static constexpr const wchar_t fmt_pri  [] = C4_WIDEN(pri_fmt);      \
+    static constexpr const wchar_t fmt_pri_n[] = C4_WIDEN(pri_fmt "%n"); \
+    static constexpr const wchar_t fmt_scn  [] = C4_WIDEN(scn_fmt);      \
+    static constexpr const wchar_t fmt_scn_n[] = C4_WIDEN(scn_fmt "%n"); \
 }
 
-_C4_DECLARE_FMT_TAG(void*   , "%p"                );
-_C4_DECLARE_FMT_TAG(char    , "%c"                );
-_C4_DECLARE_FMT_TAG(wchar_t , "%c"                );
-_C4_DECLARE_FMT_TAG(char*   , "%s"                );
-_C4_DECLARE_FMT_TAG(wchar_t*, "%s"                );
-_C4_DECLARE_FMT_TAG(double  , "%lg"               );
-_C4_DECLARE_FMT_TAG(float   , "%g"                );
-_C4_DECLARE_FMT_TAG( int8_t , "%" PRId8 /*"%hhd"*/);
-_C4_DECLARE_FMT_TAG(uint8_t , "%" PRIu8 /*"%hhu"*/);
-_C4_DECLARE_FMT_TAG( int16_t, "%" PRId16/*"%hd" */);
-_C4_DECLARE_FMT_TAG(uint16_t, "%" PRIu16/*"%hu" */);
-_C4_DECLARE_FMT_TAG( int32_t, "%" PRId32/*"%d"  */);
-_C4_DECLARE_FMT_TAG(uint32_t, "%" PRIu32/*"%u"  */);
-_C4_DECLARE_FMT_TAG( int64_t, "%" PRId64/*"%lld"*/);
-_C4_DECLARE_FMT_TAG(uint64_t, "%" PRIu64/*"%llu"*/);
+_C4_DECLARE_FMT_TAG(void*   , "%p"                , "%p"                );
+_C4_DECLARE_FMT_TAG(char    , "%c"                , "%c"                );
+_C4_DECLARE_FMT_TAG(wchar_t , "%c"                , "%c"                );
+_C4_DECLARE_FMT_TAG(char*   , "%s"                , "%s"                );
+_C4_DECLARE_FMT_TAG(wchar_t*, "%s"                , "%s"                );
+_C4_DECLARE_FMT_TAG(double  , "%lg"               , "%lg"               );
+_C4_DECLARE_FMT_TAG(float   , "%g"                , "%g"                );
+_C4_DECLARE_FMT_TAG( int8_t , "%" PRId8 /*"%hhd"*/, "%" SCNd8 /*"%hhd"*/);
+_C4_DECLARE_FMT_TAG(uint8_t , "%" PRIu8 /*"%hhu"*/, "%" SCNu8 /*"%hhu"*/);
+_C4_DECLARE_FMT_TAG( int16_t, "%" PRId16/*"%hd" */, "%" SCNd16/*"%hd" */);
+_C4_DECLARE_FMT_TAG(uint16_t, "%" PRIu16/*"%hu" */, "%" SCNu16/*"%hu" */);
+_C4_DECLARE_FMT_TAG( int32_t, "%" PRId32/*"%d"  */, "%" SCNd32/*"%d"  */);
+_C4_DECLARE_FMT_TAG(uint32_t, "%" PRIu32/*"%u"  */, "%" SCNu32/*"%u"  */);
+_C4_DECLARE_FMT_TAG( int64_t, "%" PRId64/*"%lld"*/, "%" SCNd64/*"%lld"*/);
+_C4_DECLARE_FMT_TAG(uint64_t, "%" PRIu64/*"%llu"*/, "%" SCNu64/*"%llu"*/);
 
 
 /** define chevron IO operators for a scalar (intrinsic) type */
@@ -353,14 +361,14 @@ template<class StringType>                                               \
 C4_ALWAYS_INLINE                                                         \
 sstream<StringType>& operator<< (sstream<StringType>& ss, ty var)        \
 {                                                                        \
-    ss.printf(fmt_tag< typename StringType::value_type, ty >::fmt, var); \
+    ss.printf(fmt_tag< typename StringType::value_type, ty >::fmt_pri, var); \
     return ss;                                                           \
 }                                                                        \
 template<class StringType>                                               \
 C4_ALWAYS_INLINE                                                         \
 sstream<StringType>& operator>> (sstream<StringType>& ss, ty& var)       \
 {                                                                        \
-    ss.scanf____(fmt_tag< typename StringType::value_type, ty >::fmtn, &var, typename sstream<StringType>::char_type()); \
+    ss.scanf____(fmt_tag< typename StringType::value_type, ty >::fmt_scn_n, &var, typename sstream<StringType>::char_type()); \
     return ss;                                                           \
 }
 
