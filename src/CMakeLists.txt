@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
 
 set(src
     c4/allocator.hpp
@@ -38,7 +37,7 @@ set(src
     c4/time.cpp
     c4/types.hpp
     c4/windows.hpp
-    c4stl.natvis
+    c4/c4stl.natvis
 )
 
 create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
