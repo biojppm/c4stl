@@ -68,8 +68,9 @@ C4_ALWAYS_INLINE constexpr SizeType num_needed_chars(SizeType num_bytes)
 /** get the given text string as either char or wchar_t according to the given type */
 #define C4_TXTTY(txt, type) \
     /* is there a smarter way to do this? */\
-    c4::literal_as< type >::get(txt, C4_WIDEN(txt))
+    c4::detail::literal_as< type >::get(txt, C4_WIDEN(txt))
 
+C4_BEGIN_NAMESPACE(detail)
 template< typename C >
 struct literal_as;
 
@@ -89,6 +90,7 @@ struct literal_as< wchar_t >
         return wstr;
     }
 };
+C4_END_NAMESPACE(detail)
 
 C4_END_NAMESPACE(c4)
 

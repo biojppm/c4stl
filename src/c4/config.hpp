@@ -24,6 +24,10 @@
 #   define C4_STR_SIZE_TYPE C4_SIZE_TYPE
 #endif
 
+#ifndef C4_TIME_TYPE
+#   define C4_TIME_TYPE double
+#endif
+
 /** Define this to disable string expression templates. */
 //#define C4_STR_DISABLE_EXPR_TPL
 
@@ -36,10 +40,6 @@
 #endif
 #ifndef C4_LOG_BUFFER_REF_SIZE
 #   define C4_LOG_BUFFER_REF_SIZE 256
-#endif
-
-#ifndef C4_TIME_TYPE
-#   define C4_TIME_TYPE double
 #endif
 
 #include "c4/preprocessor.hpp"
