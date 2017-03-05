@@ -126,7 +126,7 @@ void handle_error(const char *file, int line, const char *func, const char *fmt,
 void handle_warning(const char *file, int line, const char *func, const char *fmt, ...);
 
 #   define C4_ERROR(msg, ...)                             \
-    if(c4::get_error_flags() & ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
+    if(c4::get_error_flags() & c4::ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
     c4::handle_error(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
 
 #   define C4_WARNING(msg, ...)                                         \
