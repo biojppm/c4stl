@@ -3,6 +3,44 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+string sstest()
+{
+    csubstring ss1("ssa"), ss2("ssb");
+    string r;
+    r = ss1 + ss2;
+    return r;
+}
+static string caralho = sstest();
+string sstest2()
+{
+    char buf1[] = "ssa";
+    char buf2[] = "ssb";
+    substring ss1(buf1), ss2(buf2);
+    string r;
+    r = ss1 + ss2;
+    return r;
+}
+static string caralho2 = sstest2();
+string sstest3()
+{
+    csubstringrs ss1("ssa"), ss2("ssb");
+    string r;
+    r = ss1 + ss2;
+    return r;
+}
+static string caralho3 = sstest3();
+string sstest4()
+{
+    char buf1[] = "ssa";
+    char buf2[] = "ssb";
+    substringrs ss1(buf1), ss2(buf2);
+    string r;
+    r = ss1 + ss2;
+    return r;
+}
+static string caralho4 = sstest4();
+
+
 void s2ws(char const* mbstr, size_t len, wchar_t *output)
 {
     std::mbstate_t state = std::mbstate_t();

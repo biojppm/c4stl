@@ -31,22 +31,14 @@
  *------------------------------------
  * A word of caution
  *
- * Do not assign string concatenation operations to non-owning strings
- * unless you are sure they have room to write into, AND that string
- * expression templates are enabled.
- *
- * The default is to have string expression templates enabled. They
- * can be disabled by defining C4_STR_DISABLE_EXPR_TPL. This will
- * cause switching to greedy evaluation of the concatenation
- * operations + and /. It will also disable some of the binary
- * overloads. When expression templates are not used, each operation
- * must be evaluated immediately.  So summing two substrings will
- * result in an allocated string. For example, this would work:
+ * Do not assign string concatenation operations (operators + and /)
+ * to non-owning strings unless you are sure they have room to write into.
  *
  * @code
  * csubstring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
  * string r;
- * r = ss1 + ss2; // OK, r is "foobar" and owns the memory
+ * r = ss1 + ss2; // OK, r is "foobar" and owns the memory, copied
+ *                // over from ss1 and ss2
  * @endcode
  *
  * BUT if we assign the sum to a substring instead, we will get a stale
@@ -63,18 +55,26 @@
  * // without expression templates:
  * char buf[16] = {0};     // must be big enough to hold "foobar\0"
  * substring ss3(buf, 16); // ss3 is pointing to buf
- * ss3 = ss1 + ss2; // BAD, ss3 now points at deallocated memory
+ * ss3 = ss1 + ss2;        // BAD, ss3 is now pointing at deallocated memory
  * @endcode
  *
  * The result of ss1+ss2 is an owned string. Because ss3 is not an
  * owned string, it is set to point at the contents of the owned
- * string (ss1+ss2), which gets destroyed after the assignment.  So
- * after the statement ss3 is pointed at deallocated memory.
+ * temporary string (ss1+ss2), which gets destroyed after the
+ * assignment. So after the statement ss3 is pointed at deallocated memory.
  *
- * For the reason above, it's better to use expression templates. This can
+ * The default is to have string expression templates enabled. They
+ * can be disabled by defining C4_STR_DISABLE_EXPR_TPL. This will
+ * cause switching to greedy evaluation of the concatenation
+ * operations + and /. So summing two substrings will
+ * result in an allocated string. For example, this would work:
+
+ * For the reason above, it's better to use expression templates.
+ *
+ * @todo This can
  * be fixed in the future if a proxy (greedy) class is created to represent
  * the result of a binary operation. Then copy-assignment could be overloaded
- * to prevent substrings from pointing at temporary memory.
+ * to prevent substring classes from pointing at stale temporary memory.
  */
 
 #ifndef _C4_CONFIG_HPP_
@@ -121,6 +121,53 @@ C4_ALWAYS_INLINE size_t strsz(StrType const& s)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+template< class StringClass >
+struct string_traits;
+
+template< typename C, typename SizeType >
+struct string_traits< basic_substring<C, SizeType> >
+{
+    enum {
+        is_owning = false,
+        is_increasable = false,
+        has_upper_capacity = true,
+        is_allocatable = false,
+    };
+};
+template< typename C, typename Size >
+struct string_traits< basic_substringrs<C, Size> >
+{
+    enum {
+        is_owning = false,
+        is_increasable = true,
+        has_upper_capacity = true,
+        is_allocatable = false,
+    };
+};
+template< typename C, typename Size, class Alloc >
+struct string_traits< basic_string<C, Size, Alloc> >
+{
+    enum {
+        is_owning = true,
+        is_increasable = true,
+        has_upper_capacity = true,
+        is_allocatable = true,
+    };
+};
+template< typename C, typename Size, class Alloc >
+struct string_traits< basic_text<C, Size, Alloc> >
+{
+    enum {
+        is_owning = true,
+        is_increasable = true,
+        has_upper_capacity = true,
+        is_allocatable = true,
+    };
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 /** specialize std::hash for the given _str_crtp-derived type. Search
  for uses of this to find out how to use it. */
@@ -156,24 +203,24 @@ C4_BEGIN_NAMESPACE(c4)
 
 #define _C4STR_ASSIGNOPS_ANY(charname, classname)                       \
                                                                         \
-C4_ALWAYS_INLINE classname& operator+= (const char* str)                \
+C4_ALWAYS_INLINE classname& operator+= (const charname* str)            \
 {                                                                       \
     this->append(str);                                                  \
     return *this;                                                       \
 }                                                                       \
-C4_ALWAYS_INLINE classname& operator/= (const char* str)                \
+C4_ALWAYS_INLINE classname& operator/= (const charname* str)            \
 {                                                                       \
     this->pushr(str, '/');                                              \
     return *this;                                                       \
 }                                                                       \
 template< size_t N >                                                    \
-C4_ALWAYS_INLINE classname& operator+= (const char (&str)[N])           \
+C4_ALWAYS_INLINE classname& operator+= (const charname (&str)[N])       \
 {                                                                       \
     this->append(str, N-1);                                             \
     return *this;                                                       \
 }                                                                       \
 template< size_t N >                                                    \
-C4_ALWAYS_INLINE classname& operator/= (const char (&str)[N])           \
+C4_ALWAYS_INLINE classname& operator/= (const charname (&str)[N])       \
 {                                                                       \
     this->pushr(str, N-1, '/');                                         \
     return *this;                                                       \
@@ -196,7 +243,28 @@ C4_ALWAYS_INLINE classname& operator/= (_str_crtp< charname, OSize, OStr, OSub >
 
 #if defined(C4_STR_DISABLE_EXPR_TPL)
 
+
+/** wraps the result of a string concatenation + or / operation
+ * Use of this class is needed so that the
+ * semantics of assigning a concatenation operation to a non-owning
+ * string are the same as with expression templates: with this class,
+ * we can define special construction and assignment operators,
+ * so we are sure that a copy will be performed when assignment from a
+ * concatenation operation occurs. This prevents substrings from
+ * pointing at stale memory from a temporary object which is destroyed
+ * after asssignment. */
+template< class Str >
+struct _strCatRes
+{
+    using StrType = typename std::remove_reference< typename std::remove_const< Str >::type >::type;
+    StrType tmp;
+};
+
+
+/** define string assignment operations. */
 #define _C4STR_ASSIGNOPS(charname, classname)                           \
+                                                                        \
+_C4STR_ASSIGNOPS_ANY(charname, classname)                               \
                                                                         \
 /** allow other _str_crtp derived classes access to our members.        \
  * @warning the ::c4:: qualifier is needed as a workaround to           \
@@ -204,103 +272,371 @@ C4_ALWAYS_INLINE classname& operator/= (_str_crtp< charname, OSize, OStr, OSub >
 template< typename sifC, typename sifSize, class sifStr, class sifSub > \
 friend class ::c4::_str_crtp;                                           \
                                                                         \
-_C4STR_ASSIGNOPS_ANY(charname, classname)
+/** @todo add a move assignment; it will need to be SFINAEd based on    \
+ * whether the current class is owning or non-owning. */                \
+template< class Str >                                                   \
+C4_ALWAYS_INLINE classname& operator= (_strCatRes< Str > const& that)   \
+{                                                                       \
+    C4_ASSERT_SAME_TYPE(typename Str::char_type, char_type);            \
+    SizeType sz = szconv< SizeType >(that.tmp.size());                  \
+    this->assign(that.tmp.data(), sz);                                  \
+    return *this;                                                       \
+}                                                                       \
+                                                                        \
+template< class Str >                                                   \
+C4_ALWAYS_INLINE void append_res(_strCatRes< Str > const& that)         \
+{                                                                       \
+    C4_ASSERT_SAME_TYPE(typename Str::char_type, char_type);            \
+    this->append(that.tmp);                                             \
+}                                                                       \
+template< class Str >                                                   \
+C4_ALWAYS_INLINE void append_res_dir(_strCatRes< Str > const& that)     \
+{                                                                       \
+    C4_ASSERT_SAME_TYPE(typename Str::char_type, char_type);            \
+    this->pushr(that.tmp, '/');                                         \
+}                                                                       \
+                                                                        \
+template< class Str >                                                   \
+C4_ALWAYS_INLINE classname& operator+= (_strCatRes< Str > const& that)  \
+{                                                                       \
+    C4_ASSERT_SAME_TYPE(typename Str::char_type, char_type);            \
+    this->append(that.tmp);                                             \
+    return *this;                                                       \
+}                                                                       \
+template< class Str >                                                   \
+C4_ALWAYS_INLINE classname& operator/= (_strCatRes< Str > const& that)  \
+{                                                                       \
+    C4_ASSERT_SAME_TYPE(typename Str::char_type, char_type);            \
+    this->pushr(that.tmp, '/');                                         \
+    return *this;                                                       \
+}
 
 
+
+/** define binary string concatenation operators for same-type operands */
 #define _C4STR_DEFINE_BINOPS1TY(ty, tyr) \
     _C4STR_DEFINE_BINOPS1TY_TPL( , ty, tyr)
 
-#define _C4STR_DEFINE_BINOPS1TY_TPL(template_spec, ty, tyr) \
-                                                            \
-template_spec                                               \
-C4_ALWAYS_INLINE tyr operator+                              \
-(                                                           \
-    ty lhs,                                                 \
-    ty rhs                                                  \
-)                                                           \
-{                                                           \
-    tyr result;                                             \
-    result.reserve(strsz(lhs) + strsz(rhs));                \
-    result.append(lhs);                                     \
-    result.append(rhs);                                     \
-    return result;                                          \
-}                                                           \
-template_spec                                               \
-C4_ALWAYS_INLINE tyr operator/                              \
-(                                                           \
-    ty lhs,                                                 \
-    ty rhs                                                  \
-)                                                           \
-{                                                           \
-    tyr result;                                             \
-    result.reserve(strsz(lhs) + 1 + strsz(rhs));            \
-    result.append(lhs);                                     \
-    result.append_dir(rhs);                                 \
-    return result;                                          \
+
+
+/** define binary string concatenation operators for same-type
+ * operands - template version for when any of the classes are
+ * templates */
+#define _C4STR_DEFINE_BINOPS1TY_TPL(template_spec, ty, tyr)             \
+                                                                        \
+template_spec                                                           \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                              \
+(                                                                       \
+    ty lhs,                                                             \
+    ty rhs                                                              \
+)                                                                       \
+{                                                                       \
+    _strCatRes<tyr> result;                                             \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs));                        \
+    result.tmp.append(lhs);                                             \
+    result.tmp.append(rhs);                                             \
+    return result;                                                      \
+}                                                                       \
+                                                                        \
+template_spec                                                           \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                              \
+(                                                                       \
+    ty lhs,                                                             \
+    ty rhs                                                              \
+)                                                                       \
+{                                                                       \
+    _strCatRes<tyr> result;                                             \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));                    \
+    result.tmp.append(lhs);                                             \
+    result.tmp.append_dir(rhs);                                         \
+    return result;                                                      \
 }
 
 
+
+/** define binary string concatenation operators for different-type
+ * operands. Commutativity is enabled via both in lhs+rhs and rhs+lhs
+ * versions.*/
 #define _C4STR_DEFINE_BINOPS2TY(ty1, ty2, tyr) \
 _C4STR_DEFINE_BINOPS2TY_TPL( , ty1, ty2, tyr)
 
+
+/** define binary string concatenation operators for different-type
+ * operands - template version for when any of the classes are
+ * templates. Commutativity is enabled via both in lhs+rhs and rhs+lhs
+ * versions. */
 #define _C4STR_DEFINE_BINOPS2TY_TPL(template_spec, ty1, ty2, tyr)   \
                                                                     \
+                                                                    \
+/* 4 WRAPPED ty1 + WRAPPED ty2 =================================*/  \
+                                                                    \
+/* 4.1 lhs=wty1 rhs=wty2 -------------------------------------*/    \
+                                                                    \
+/* 4.1.1 wty1+wty2 */                                               \
 template_spec                                                       \
-C4_ALWAYS_INLINE tyr operator+                                      \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    ty1 lhs,                                                        \
-    ty2 rhs                                                         \
+    _strCatRes<ty1> const& lhs,                                            \
+    _strCatRes<ty2> const& rhs                                             \
 )                                                                   \
 {                                                                   \
-    tyr result;                                                     \
-    result.reserve(strsz(lhs) + strsz(rhs));                        \
-    result.append(lhs);                                             \
-    result.append(rhs);                                             \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + strsz(rhs.tmp));            \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append(rhs.tmp);                                     \
     return result;                                                  \
 }                                                                   \
+/* 4.1.2 wty1/wty2 */                                               \
 template_spec                                                       \
-C4_ALWAYS_INLINE tyr operator+                                      \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    ty2 lhs,                                                        \
-    ty1 rhs                                                         \
+    _strCatRes<ty1> const& lhs,                                            \
+    _strCatRes<ty2> const& rhs                                             \
 )                                                                   \
 {                                                                   \
-    tyr result;                                                     \
-    result.reserve(strsz(lhs) + strsz(rhs));                        \
-    result.append(lhs);                                             \
-    result.append(rhs);                                             \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs.tmp));        \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append_dir(rhs.tmp);                                 \
     return result;                                                  \
 }                                                                   \
                                                                     \
+                                                                    \
+/* 4.2 lhs=wty2 rhs=wty1 ----------------------------------------*/ \
+                                                                    \
+/* 4.2.1 wty2+wty1 */                                               \
 template_spec                                                       \
-C4_ALWAYS_INLINE tyr operator/                                      \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    ty1 lhs,                                                        \
-    ty2 rhs                                                         \
+    _strCatRes<ty2> const& lhs,                                            \
+    _strCatRes<ty1> const& rhs                                             \
 )                                                                   \
 {                                                                   \
-    tyr result;                                                     \
-    result.reserve(strsz(lhs) + 1 + strsz(rhs));                    \
-    result.append(lhs);                                             \
-    result.append_dir(rhs);                                         \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + strsz(rhs.tmp));            \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append(rhs.tmp);                                     \
     return result;                                                  \
 }                                                                   \
+/* 4.2.2 wty2/wty1 */                                               \
 template_spec                                                       \
-C4_ALWAYS_INLINE tyr operator/                                      \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    ty2 lhs,                                                        \
-    ty1 rhs                                                         \
+    _strCatRes<ty2> const& lhs,                                            \
+    _strCatRes<ty1> const& rhs                                             \
 )                                                                   \
 {                                                                   \
-    tyr result;                                                     \
-    result.reserve(strsz(lhs) + 1 + strsz(rhs));                    \
-    result.append(lhs);                                             \
-    result.append_dir(rhs);                                         \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs.tmp));        \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append_dir(rhs.tmp);                                 \
+    return result;                                                  \
+}                                                                   \
+                                                                    \
+                                                                    \
+/* 3 BARE ty1 + WRAPPED ty2 =================================*/     \
+                                                                    \
+/* 3.1 lhs=ty1 rhs=wty2 -------------------------------------*/     \
+                                                                    \
+/* 3.1.1 ty1+wty2 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
+(                                                                   \
+    ty1 const& lhs,                                                        \
+    _strCatRes<ty2> const& rhs                                             \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs.tmp));                \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append(rhs.tmp);                                     \
+    return result;                                                  \
+}                                                                   \
+/* 3.1.2 ty1/wty2 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
+(                                                                   \
+    ty1 const& lhs,                                                        \
+    _strCatRes<ty2> const& rhs                                             \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs.tmp));            \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append_dir(rhs.tmp);                                 \
+    return result;                                                  \
+}                                                                   \
+                                                                    \
+                                                                    \
+/* 3.2 lhs=wty2 rhs=ty1 ----------------------------------------*/  \
+                                                                    \
+/* 3.2.1 wty2+ty1 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
+(                                                                   \
+    _strCatRes<ty2> const& lhs,                                            \
+    ty1 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + strsz(rhs));                \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append(rhs);                                         \
+    return result;                                                  \
+}                                                                   \
+/* 3.2.2 wty2/ty1 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
+(                                                                   \
+    _strCatRes<ty2> const& lhs,                                            \
+    ty1 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs));            \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append_dir(rhs);                                     \
+    return result;                                                  \
+}                                                                   \
+                                                                    \
+                                                                    \
+/* 2 WRAPPED ty1 + BARE ty2 =================================*/     \
+                                                                    \
+/* 2.1 lhs=wty1 rhs=ty2 ----------------------------------------*/  \
+                                                                    \
+/* 2.1.1 wty1+ty2 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
+(                                                                   \
+    _strCatRes<ty1> const& lhs,                                            \
+    ty2 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + strsz(rhs));                \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append(rhs);                                         \
+    return result;                                                  \
+}                                                                   \
+/* 2.1.2 wty1/ty2 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
+(                                                                   \
+    _strCatRes<ty1> const& lhs,                                            \
+    ty2 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs));            \
+    result.tmp.append(lhs.tmp);                                     \
+    result.tmp.append_dir(rhs);                                     \
+    return result;                                                  \
+}                                                                   \
+                                                                    \
+                                                                    \
+/* 2.2 lhs=ty2 rhs=wty1 ----------------------------------------*/  \
+                                                                    \
+/* 2.2.1 ty2+wty1 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
+(                                                                   \
+    ty2 const& lhs,                                                        \
+    _strCatRes<ty1> const& rhs                                             \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs.tmp));                \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append(rhs.tmp);                                     \
+    return result;                                                  \
+}                                                                   \
+/* 2.2.2 ty2/wty1 */                                                \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
+(                                                                   \
+    ty2 const& lhs,                                                        \
+    _strCatRes<ty1> const& rhs                                             \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs.tmp));            \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append_dir(rhs.tmp);                                 \
+    return result;                                                  \
+}                                                                   \
+                                                                    \
+                                                                    \
+/* 1 BARE TYPES ===============================================*/   \
+                                                                    \
+/* 1.1 lhs=ty1 rhs=ty2 ----------------------------------------*/   \
+                                                                    \
+/* 1.1.1 ty1+ty2 */                                                 \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
+(                                                                   \
+    ty1 const& lhs,                                                        \
+    ty2 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs));                    \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append(rhs);                                         \
+    return result;                                                  \
+}                                                                   \
+/* 1.1.2 ty1/ty2 */                                                 \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
+(                                                                   \
+    ty1 const& lhs,                                                        \
+    ty2 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));                \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append_dir(rhs);                                     \
+    return result;                                                  \
+}                                                                   \
+                                                                    \
+                                                                    \
+/* 1.2 lhs=ty2 rhs=ty1 ----------------------------------------*/   \
+                                                                    \
+/* 1.2.1 ty2+ty1 */                                                 \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
+(                                                                   \
+    ty2 const& lhs,                                                        \
+    ty1 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs));                    \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append(rhs);                                         \
+    return result;                                                  \
+}                                                                   \
+/* 1.2.2 ty2/ty1 */                                                 \
+template_spec                                                       \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
+(                                                                   \
+    ty2 const& lhs,                                                        \
+    ty1 const& rhs                                                         \
+)                                                                   \
+{                                                                   \
+    _strCatRes<tyr> result;                                         \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));                \
+    result.tmp.append(lhs);                                         \
+    result.tmp.append_dir(rhs);                                     \
     return result;                                                  \
 }
 
+
 #endif // defined(C4_STR_DISABLE_EXPR_TPL)
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** assignment operations with expression templates */
 
@@ -1871,10 +2207,10 @@ public:
         __nullterminate();
         C *mystr = _c4thisSTR;
         // shift current string right
-        if(mysz > 0) 
+        if(mysz > 0)
         {
             // since the memory will overlap, memmove() must be used
-            traits_type::move(mystr + sz, mystr, mysz); 
+            traits_type::move(mystr + sz, mystr, mysz);
         }
         // now put the incoming string starting at the beginning
         traits_type::copy(mystr, str, sz);
@@ -2038,6 +2374,9 @@ public:
 
 #endif // ! C4_STR_DISABLE_EXPR_TPL
 
+#ifdef C4_STR_DISABLE_EXPR_TPL
+#endif // C4_STR_DISABLE_EXPR_TPL
+
 #undef _c4this
 #undef _c4thisSZ
 #undef _c4thisSTR
@@ -2116,13 +2455,15 @@ c4::sstream< StreamStringType >& operator>> (c4::sstream< StreamStringType >& is
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** a proxy string which does not manage any memory. Basically a span, but
- * enriched with string methods.
- *  -It is in general NOT null terminated.
- *  -Can be resized, but only to smaller sizes.
- *  -Can be written to output streams.
- *  -CANNOT be read into with input streams unless the read value
+/** a proxy string which does not manage any memory. Basically a char/wchar_t
+ * span enriched with string methods.
+ *  - It is in general NOT null terminated.
+ *  - Can be resized, but only to smaller sizes.
+ *  - Can be written to output streams.
+ *  - CANNOT be read into with input streams unless the read value
  *    is guaranteed to be smaller.
+ * @see substring
+ * @see wsubstring
  * @see basic_substringrs if you need to augment the size up to a capacity.
  * @ingroup string_classes
  * @ingroup nonowning_containers */
@@ -2221,6 +2562,8 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_substring< C C4_COMMA SizeType >, typen
  * max capacity, so it can be resizeable up to capacity. Therefore, it
  * can be modified with methods that change its size such as append(), prepend(),
  * or read with input streams (again, up to capacity).
+ * @see substringrs
+ * @see wsubstringrs
  * @see basic_substring
  * @ingroup string_classes
  * @ingroup nonowning_containers */
@@ -2562,10 +2905,28 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_text< C C4_COMMA SizeType C4_COMMA Allo
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template< class _Char, size_t N > struct _shortstr;
-template< size_t N > struct _shortstr< char   , N > { char flag_n_sz;             char    arr[(N - 1)/sizeof(char)   ]; };
-template< size_t N > struct _shortstr< wchar_t, N > { char flag_n_sz; char __pad; wchar_t arr[(N - 1)/sizeof(wchar_t)]; };
+template< class _Char, size_t NumBytes >
+struct _shortstr;
 
+template< size_t NumBytes >
+struct _shortstr< char, NumBytes >
+{
+    C4_STATIC_ASSERT(sizeof(char) == 1); // maybe this isn't true in some galaxy?
+    char flag_n_sz;
+    char arr[NumBytes - 1];
+};
+
+template< size_t NumBytes >
+struct _shortstr< wchar_t, NumBytes >
+{
+    C4_STATIC_ASSERT(sizeof(char) == 1); // maybe this isn't true in some galaxy?
+    C4_STATIC_ASSERT(NumBytes % sizeof(wchar_t) == 0);
+    char flag_n_sz;
+    char __pad[sizeof(wchar_t) - 1]; // this will only work if sizeof(wchar_t) > 1
+    wchar_t arr[NumBytes/sizeof(wchar_t) - 1];
+};
+
+//-----------------------------------------------------------------------------
 /** a string class with the small string optimization
  * @ingroup string_classes */
 template< class C, class SizeType, class Alloc >
@@ -2606,7 +2967,7 @@ private:
     union {
         _short m_short;
         _long  m_long;
-        char   m_raw[sizeof(_short) > sizeof(_long) ? sizeof(_short) : sizeof(_long)];
+        //char   m_raw[sizeof(_short) > sizeof(_long) ? sizeof(_short) : sizeof(_long)];
     };
     Alloc m_alloc;
 
@@ -2647,8 +3008,8 @@ public:
 
     _C4STR_ASSIGNOPS(C, basic_string)
 
-    C4_ALWAYS_INLINE basic_string() : m_alloc() { memset(m_raw, 0, sizeof(m_raw)); }
-    C4_ALWAYS_INLINE basic_string(Alloc const& a) : m_alloc(a) { memset(m_raw, 0, sizeof(m_raw)); }
+    C4_ALWAYS_INLINE basic_string() : m_alloc() { memset(&m_short, 0, sizeof(m_short)); }
+    C4_ALWAYS_INLINE basic_string(Alloc const& a) : m_alloc(a) { memset(&m_short, 0, sizeof(m_short)); }
     C4_ALWAYS_INLINE ~basic_string()
     {
         this->_free();
@@ -2927,35 +3288,181 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Al
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
 
-#if defined(C4_STR_DISABLE_EXPR_TPL)
+#ifdef C4_STR_DISABLE_EXPR_TPL
 
-// binary operators: basic_text + basic_text
-_C4STR_DEFINE_BINOPS1TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
 
-// binary operators: basic_text + const char*
-_C4STR_DEFINE_BINOPS2TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
-    const char*,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
-
-// binary operators: basic_text + basic_substring
-_C4STR_DEFINE_BINOPS2TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
-    basic_substring< C C4_COMMA SizeType > const&,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
-
-// binary operators: basic_text + basic_substringrs
-_C4STR_DEFINE_BINOPS2TY_TPL(
-    template< typename C C4_COMMA typename SizeType C4_COMMA class Alloc >,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc > const&,
-    basic_substringrs< C C4_COMMA SizeType > const&,
-    basic_text< C C4_COMMA SizeType C4_COMMA Alloc >)
+// It's hard enough as it is. Increase readability by temporarily defining
+// a short form for C4_COMMA.
+#ifdef __
+#   error "__ is already defined - this won't go well"
 #endif
+#ifdef WC
+#   error "WC is already defined - this won't go well"
+#endif
+// don't worry - they're undefined below
+#define __ C4_COMMA
+#define WC typename std::remove_const<C>::type // non-const (writeable) version of char type C
+
+
+
+/// binary operators: basic_substring + basic_substring. return a basic_string result wrapper!!!
+_C4STR_DEFINE_BINOPS1TY_TPL(
+    template< typename C __ typename SizeType >,
+    basic_substring< C __ SizeType >,
+    basic_string< WC __ SizeType __ typename basic_string<WC>::allocator_type >)
+/// binary operators: basic_substringrs + basic_substringrs. return a basic_string result wrapper!!!
+_C4STR_DEFINE_BINOPS1TY_TPL(
+    template< typename C __ typename SizeType >,
+    basic_substringrs< C __ SizeType >,
+    basic_string< WC __ SizeType __ typename basic_string<WC>::allocator_type >)
+/// binary operators: basic_string + basic_string
+_C4STR_DEFINE_BINOPS1TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_text + basic_text
+_C4STR_DEFINE_BINOPS1TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    basic_text< C __ SizeType __ Alloc >)
+
+
+
+/// binary operators: basic_substring + const char* - will use default allocator
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType >,
+    basic_substring< C __ SizeType >,
+    const C*,
+    basic_string< C __ SizeType __ typename basic_string< C >::allocator_type >)
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType >,
+    basic_substring< const C __ SizeType >,
+    const C*,
+    basic_string< C __ SizeType __ typename basic_string< C >::allocator_type >)
+/// binary operators: basic_substringrs + const char* - will use default allocator
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType >,
+    basic_substringrs< C __ SizeType >,
+    const C*,
+    basic_string< C __ SizeType __ typename basic_string< C >::allocator_type >)
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType >,
+    basic_substringrs< const C __ SizeType >,
+    const C*,
+    basic_string< C __ SizeType __ typename basic_string< C >::allocator_type >)
+/// binary operators: basic_string + const char*
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    const C*,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_text + const char*
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    const C*,
+    basic_text< C __ SizeType __ Alloc >)
+
+
+#ifdef C4NOTTHIS
+/// binary operators: basic_substring + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_substring< C __ SizeType >,
+    _strCatRes< basic_string< C __ SizeType __ Alloc > >,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_substringrs + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_substringrs< C __ SizeType >,
+    _strCatRes< basic_string< C __ SizeType __ Alloc > >,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_string + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    _strCatRes< basic_string< C __ SizeType __ Alloc > >,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_text + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    _strCatRes< basic_string< C __ SizeType __ Alloc > >,
+    basic_string< C __ SizeType __ Alloc >)
+
+
+
+/// binary operators: basic_substring + _strCatRes< basic_text >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_substring< C __ SizeType >,
+    _strCatRes< basic_text< C __ SizeType __ Alloc > >,
+    basic_text< C __ SizeType __ Alloc >)
+/// binary operators: basic_substringrs + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_substringrs< C __ SizeType >,
+    _strCatRes< basic_text< C __ SizeType __ Alloc > >,
+    basic_text< C __ SizeType __ Alloc >)
+/// binary operators: basic_string + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    _strCatRes< basic_text< C __ SizeType __ Alloc > >,
+    basic_text< C __ SizeType __ Alloc >)
+/// binary operators: basic_text + _strCatRes< basic_string >
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    _strCatRes< basic_text< C __ SizeType __ Alloc > >,
+    basic_text< C __ SizeType __ Alloc >)
+#endif
+
+
+/// binary operators: basic_substring + basic_string
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    basic_substring< C __ SizeType >,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_substringrs + basic_string
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    basic_substringrs< C __ SizeType >,
+    basic_string< C __ SizeType __ Alloc >)
+/// binary operators: basic_text + basic_string
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    basic_string< C __ SizeType __ Alloc >)
+
+
+
+/// binary operators: basic_substring + basic_text
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    basic_substring< C __ SizeType >,
+    basic_text< C __ SizeType __ Alloc >)
+/// binary operators: basic_substringrs + basic_text
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    basic_substringrs< C __ SizeType >,
+    basic_text< C __ SizeType __ Alloc >)
+/// binary operators: basic_string + basic_text
+_C4STR_DEFINE_BINOPS2TY_TPL(
+    template< typename C __ typename SizeType __ class Alloc >,
+    basic_text< C __ SizeType __ Alloc >,
+    basic_string< C __ SizeType __ Alloc >,
+    basic_text< C __ SizeType __ Alloc >)
+
+#undef __
+#undef WC
+
+#endif // C4_STR_DISABLE_EXPR_TPL
 
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------

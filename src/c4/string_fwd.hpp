@@ -29,6 +29,9 @@ using text          = basic_text  < char    >;
 using wstring       = basic_string< wchar_t >;
 using wtext         = basic_text  < wchar_t >;
 
+//-----------------------------------------------------------------------------
+template< class StringClass > struct string_traits;
+
 C4_END_NAMESPACE(c4)
 
 #endif // _C4_STRING_FWD_HPP_
