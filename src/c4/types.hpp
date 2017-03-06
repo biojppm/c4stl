@@ -225,6 +225,11 @@ public:                                                                 \
 \
     using difference_type = ptrdiff_t;
 
+//-----------------------------------------------------------------------------
+// http://stackoverflow.com/questions/10821380/is-t-an-instance-of-a-template-in-c
+template< template < typename... > class X, typename    T > struct is_instance_of_tpl             : std::false_type {};
+template< template < typename... > class X, typename... Y > struct is_instance_of_tpl<X, X<Y...>> : std::true_type {};
+
 C4_END_NAMESPACE(c4)
 
 #endif /* _C4_TYPES_HPP_ */
