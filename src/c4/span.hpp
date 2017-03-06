@@ -110,8 +110,8 @@ public:
 
     C4_ALWAYS_INLINE SpanImpl subspan(I first, I num) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(first >= 0 && first < _c4csz);
-        C4_XASSERT(first + num >= 0 && first + num < _c4csz);
+        C4_XASSERT(first >= 0 && first < _c4csz || num == 0);
+        C4_XASSERT(first + num >= 0 && first + num <= _c4csz);
         return _c4cthis->_select(_c4cptr + first, num);
     }
     C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT_X ///< goes up until the end of the span
@@ -122,7 +122,7 @@ public:
 
     C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT_X ///< last element is NOT included
     {
-        C4_XASSERT(first >= 0 && first < _c4csz);
+        C4_XASSERT(first >= 0 && first < _c4csz || first == last);
         C4_XASSERT(last >= 0 && last <= _c4csz);
         C4_XASSERT(last >= first);
         return _c4cthis->_select(_c4cptr + first, last - first);
@@ -142,6 +142,55 @@ public:
     {
         C4_XASSERT(num >= 0 && num < _c4csz);
         return _c4cthis->_select(_c4cptr + _c4csz - num, num);
+    }
+
+    bool is_subspan(_span_crtp const& ss) const noexcept
+    {
+        if(_c4cptr == nullptr) return false;
+        auto *b = begin(), *e = end();
+        auto *ssb = ss.begin(), *sse = ss.end();
+        if(ssb >= b && sse <= e)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    /** COMPLement Left: return the complement to the left of the beginning of the given substring.
+     * If ss does not begin inside this, returns an empty substring. */
+    SpanImpl compll(_span_crtp const& ss) const C4_NOEXCEPT_X
+    {
+        auto ssb = ss.begin();
+        auto b = begin();
+        auto e = end();
+        if(ssb >= b && ssb <= e)
+        {
+            return subspan(0, ssb - b);
+        }
+        else
+        {
+            return subspan(0, 0);
+        }
+    }
+
+    /** COMPLement Right: return the complement to the right of the end of the given substring.
+     * If ss does not end inside this, returns an empty substring. */
+    SpanImpl complr(_span_crtp const& ss) const C4_NOEXCEPT_X
+    {
+        auto sse = ss.end();
+        auto b = begin();
+        auto e = end();
+        if(sse >= b && sse <= e)
+        {
+            return subspan(sse - b, e - sse);
+        }
+        else
+        {
+            return subspan(0, 0);
+        }
     }
 
     C4_ALWAYS_INLINE bool same_span(_span_crtp const& that) const noexcept

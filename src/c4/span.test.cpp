@@ -398,6 +398,123 @@ TEST(etched_span, last)
 }
 
 //-----------------------------------------------------------------------------
+template< typename S >
+void test_span_is_subspan()
+{
+    int buf10[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int buf5[]  = {0, 1, 2, 3, 4};
+
+    S n(buf10);
+    S m(buf5);
+
+    EXPECT_EQ(n.is_subspan(n.subspan(0)), true);
+    EXPECT_EQ(n.is_subspan(n.subspan(0, 3)), true);
+    EXPECT_EQ(n.is_subspan(n.subspan(0, 0)), true);
+
+    EXPECT_EQ(n.is_subspan(m.subspan(0)), false);
+    EXPECT_EQ(n.is_subspan(m.subspan(0, 3)), false);
+    EXPECT_EQ(n.is_subspan(m.subspan(0, 0)), false);
+}
+TEST(span, is_subspan)
+{
+    SCOPED_TRACE("span.is_subspan");
+    test_span_is_subspan< span<int> >();
+}
+TEST(spanrs, is_subspan)
+{
+    SCOPED_TRACE("spanrs.is_subspan");
+    test_span_is_subspan< spanrs<int> >();
+}
+TEST(etched_span, is_subspan)
+{
+    SCOPED_TRACE("etched_span.is_subspan");
+    test_span_is_subspan< etched_span<int> >();
+}
+
+//-----------------------------------------------------------------------------
+template< typename S >
+void test_span_compll()
+{
+    int buf10[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    S n(buf10);
+
+    EXPECT_EQ(n.compll(n.subspan(0)), n.subspan(0, 0));
+    EXPECT_EQ(n.is_subspan(n.compll(n.subspan(0))), true);
+    EXPECT_EQ(n.compll(n.subspan(0, 0)), n.subspan(0, 0));
+    EXPECT_EQ(n.is_subspan(n.compll(n.subspan(0, 0))), true);
+
+    EXPECT_EQ(n.compll(n.subspan(0, 1)), n.subspan(0, 0));
+    EXPECT_EQ(n.compll(n.subspan(0, 3)), n.subspan(0, 0));
+
+    EXPECT_EQ(n.compll(n.range(5, 10)), n.subspan(0, 5));
+    EXPECT_EQ(n.compll(n.range(5, 5)),  n.subspan(0, 5));
+
+    EXPECT_EQ(n.compll(n.subspan(n.size(), 0)), n);
+    EXPECT_EQ(n.compll(n.range(n.size(), n.size())), n);
+}
+TEST(span, compll)
+{
+    SCOPED_TRACE("span.compll");
+    test_span_compll< span<int> >();
+}
+TEST(spanrs, compll)
+{
+    SCOPED_TRACE("spanrs.compll");
+    test_span_compll< spanrs<int> >();
+}
+TEST(etched_span, compll)
+{
+    SCOPED_TRACE("etched_span.compll");
+    test_span_compll< etched_span<int> >();
+}
+
+
+//-----------------------------------------------------------------------------
+
+template< typename S >
+void test_span_complr()
+{
+    int buf10[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    S n(buf10);
+
+    EXPECT_EQ(n.complr(n.subspan(0)), n.subspan(0, 0));
+    EXPECT_EQ(n.is_subspan(n.complr(n.subspan(0))), true);
+    EXPECT_EQ(n.complr(n.subspan(0, 0)), n.subspan(0));
+    EXPECT_EQ(n.is_subspan(n.complr(n.subspan(0, 0))), true);
+
+    EXPECT_EQ(n.complr(n.subspan(0, 1)), n.subspan(1));
+    EXPECT_EQ(n.complr(n.subspan(0, 3)), n.subspan(3));
+
+    EXPECT_EQ(n.complr(n.subspan(5)), n.subspan(0, 0));
+    EXPECT_EQ(n.complr(n.range(5, 10)), n.subspan(0, 0));
+
+    EXPECT_EQ(n.complr(n.subspan(5, 0)), n.subspan(5));
+    EXPECT_EQ(n.complr(n.range(5, 5)), n.subspan(5));
+
+    EXPECT_EQ(n.complr(n.subspan(0, 0)), n);
+    EXPECT_EQ(n.complr(n.range(0, 0)), n);
+}
+TEST(span, complr)
+{
+    SCOPED_TRACE("span.compll");
+    test_span_complr< span<int> >();
+}
+TEST(spanrs, complr)
+{
+    SCOPED_TRACE("spanrs.complr");
+    test_span_complr< spanrs<int> >();
+}
+TEST(etched_span, complr)
+{
+    SCOPED_TRACE("etched_span.complr");
+    test_span_complr< etched_span<int> >();
+}
+
+
+
+//-----------------------------------------------------------------------------
 TEST(span, rtrim)
 {
     int arr[10];
