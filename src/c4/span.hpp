@@ -1,17 +1,14 @@
 #ifndef _C4_SPAN_HPP_
 #define _C4_SPAN_HPP_
 
-/** @defgroup containers Containers
+/** @defgroup contiguous_containers Contiguous containers
  * @see storage_growth_policies
- * @see raw_storage_classes
-*/
+ * @see raw_storage_classes */
 
-/** @defgroup contiguous_containers Contiguous containers */
 /** @defgroup nonowning_containers Non-owning containers */
 
 /** @file span.hpp Provides span classes.
  * @see span_classes
- * @ingroup containers
  * @ingroup contiguous_containers
  * @ingroup nonowning_containers
  */
@@ -46,9 +43,18 @@ template< class T, class I=C4_SIZE_TYPE > class span;
 template< class T, class I=C4_SIZE_TYPE > class spanrs;
 template< class T, class I=C4_SIZE_TYPE > class etched_span;
 
-template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >; ///< @ingroup span_classes
-template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >; ///< @ingroup span_classes
-template< class T, class I=C4_SIZE_TYPE > using cetched_span = etched_span< const T, I >; ///< @ingroup span_classes
+/** @ingroup span_classes
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers */
+template< class T, class I=C4_SIZE_TYPE > using cspan   = span< const T, I >;
+/** @ingroup span_classes
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers */
+template< class T, class I=C4_SIZE_TYPE > using cspanrs = spanrs< const T, I >;
+/** @ingroup span_classes
+ * @ingroup contiguous_containers
+ * @ingroup nonowning_containers */
+template< class T, class I=C4_SIZE_TYPE > using cetched_span = etched_span< const T, I >;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -230,7 +236,6 @@ inline constexpr bool operator>=
 //-----------------------------------------------------------------------------
 /** A non-owning span of elements contiguously stored in memory.
  * @ingroup span_classes
- * @ingroup containers
  * @ingroup contiguous_containers
  * @ingroup nonowning_containers */
 template< class T, class I >
@@ -286,7 +291,6 @@ public:
  * using etched_span.
  *
  * @ingroup span_classes
- * @ingroup containers
  * @ingroup contiguous_containers
  * @ingroup nonowning_containers
  */
@@ -342,7 +346,6 @@ public:
  * can always be recovered by calling original().
  *
  * @ingroup span_classes
- * @ingroup containers
  * @ingroup contiguous_containers
  * @ingroup nonowning_containers
  */

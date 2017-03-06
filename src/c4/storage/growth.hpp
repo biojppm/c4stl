@@ -1,6 +1,8 @@
 #ifndef _C4_STORAGE_GROWTH_HPP_
 #define _C4_STORAGE_GROWTH_HPP_
 
+/** @file growth.hpp Storage growth policies for dynamic containers. */
+
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 
@@ -8,9 +10,7 @@ C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
 
 /** @defgroup storage_growth_policies Storage growth policies
- * These are policies which can be used in dynamic growth containers.
- */
-
+ * These are policies which can be used in dynamic growth containers. */
 
 //-----------------------------------------------------------------------------
 /** Grow by the least possible amount.
