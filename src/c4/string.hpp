@@ -324,35 +324,116 @@ C4_ALWAYS_INLINE classname& operator/= (_strCatRes< Str > const& that)  \
 /** define binary string concatenation operators for same-type
  * operands - template version for when any of the classes are
  * templates */
-#define _C4STR_DEFINE_BINOPS1TY_TPL(template_spec, ty, tyr)             \
-                                                                        \
-template_spec                                                           \
-C4_ALWAYS_INLINE _strCatRes<tyr> operator+                              \
-(                                                                       \
-    ty lhs,                                                             \
-    ty rhs                                                              \
-)                                                                       \
-{                                                                       \
-    _strCatRes<tyr> result;                                             \
-    result.tmp.reserve(strsz(lhs) + strsz(rhs));                        \
-    result.tmp.append(lhs);                                             \
-    result.tmp.append(rhs);                                             \
-    return result;                                                      \
-}                                                                       \
-                                                                        \
-template_spec                                                           \
-C4_ALWAYS_INLINE _strCatRes<tyr> operator/                              \
-(                                                                       \
-    ty lhs,                                                             \
-    ty rhs                                                              \
-)                                                                       \
-{                                                                       \
-    _strCatRes<tyr> result;                                             \
-    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));                    \
-    result.tmp.append(lhs);                                             \
-    result.tmp.append_dir(rhs);                                         \
-    return result;                                                      \
+#define _C4STR_DEFINE_BINOPS1TY_TPL(template_spec, ty, tyr)     \
+                                                                \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                      \
+(                                                               \
+    ty lhs,                                                     \
+    ty rhs                                                      \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs));                \
+    result.tmp.append(lhs);                                     \
+    result.tmp.append(rhs);                                     \
+    return result;                                              \
+}                                                               \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                      \
+(                                                               \
+    ty lhs,                                                     \
+    ty rhs                                                      \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));            \
+    result.tmp.append(lhs);                                     \
+    result.tmp.pushr(rhs);                                      \
+    return result;                                              \
+}                                                               \
+                                                                \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                      \
+(                                                               \
+    _strCatRes<ty> lhs,                                         \
+    ty rhs                                                      \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs.tmp) + strsz(rhs));            \
+    result.tmp.append(lhs.tmp);                                 \
+    result.tmp.append(rhs);                                     \
+    return result;                                              \
+}                                                               \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                      \
+(                                                               \
+    _strCatRes<ty> lhs,                                         \
+    ty rhs                                                      \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs));        \
+    result.tmp.append(lhs.tmp);                                 \
+    result.tmp.pushr(rhs);                                      \
+    return result;                                              \
+}                                                               \
+                                                                \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                      \
+(                                                               \
+    ty lhs,                                                     \
+    _strCatRes<ty> rhs                                          \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs) + strsz(rhs.tmp));            \
+    result.tmp.append(lhs);                                     \
+    result.tmp.append(rhs.tmp);                                 \
+    return result;                                              \
+}                                                               \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                      \
+(                                                               \
+    ty lhs,                                                     \
+    _strCatRes<ty> rhs                                          \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs.tmp));        \
+    result.tmp.append(lhs);                                     \
+    result.tmp.pushr(rhs.tmp);                                  \
+    return result;                                              \
+}                                                               \
+                                                                \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator+                      \
+(                                                               \
+    _strCatRes<ty> lhs,                                         \
+    _strCatRes<ty> rhs                                          \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs.tmp) + strsz(rhs.tmp));        \
+    result.tmp.append(lhs.tmp);                                 \
+    result.tmp.append(rhs.tmp);                                 \
+    return result;                                              \
+}                                                               \
+template_spec                                                   \
+C4_ALWAYS_INLINE _strCatRes<tyr> operator/                      \
+(                                                               \
+    _strCatRes<ty> lhs,                                         \
+    _strCatRes<ty> rhs                                          \
+)                                                               \
+{                                                               \
+    _strCatRes<tyr> result;                                     \
+    result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs.tmp));    \
+    result.tmp.append(lhs.tmp);                                 \
+    result.tmp.pushr(rhs.tmp);                                  \
+    return result;                                              \
 }
+
 
 
 
@@ -399,7 +480,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs.tmp));        \
     result.tmp.append(lhs.tmp);                                     \
-    result.tmp.append_dir(rhs.tmp);                                 \
+    result.tmp.pushr(rhs.tmp);                                 \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -431,7 +512,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs.tmp));        \
     result.tmp.append(lhs.tmp);                                     \
-    result.tmp.append_dir(rhs.tmp);                                 \
+    result.tmp.pushr(rhs.tmp);                                      \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -465,7 +546,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs.tmp));            \
     result.tmp.append(lhs);                                         \
-    result.tmp.append_dir(rhs.tmp);                                 \
+    result.tmp.pushr(rhs.tmp);                                      \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -497,7 +578,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs));            \
     result.tmp.append(lhs.tmp);                                     \
-    result.tmp.append_dir(rhs);                                     \
+    result.tmp.pushr(rhs);                                          \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -531,7 +612,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs.tmp) + 1 + strsz(rhs));            \
     result.tmp.append(lhs.tmp);                                     \
-    result.tmp.append_dir(rhs);                                     \
+    result.tmp.pushr(rhs);                                          \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -563,7 +644,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs.tmp));            \
     result.tmp.append(lhs);                                         \
-    result.tmp.append_dir(rhs.tmp);                                 \
+    result.tmp.pushr(rhs.tmp);                                      \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -597,7 +678,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));                \
     result.tmp.append(lhs);                                         \
-    result.tmp.append_dir(rhs);                                     \
+    result.tmp.pushr(rhs);                                          \
     return result;                                                  \
 }                                                                   \
                                                                     \
@@ -629,7 +710,7 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
     _strCatRes<tyr> result;                                         \
     result.tmp.reserve(strsz(lhs) + 1 + strsz(rhs));                \
     result.tmp.append(lhs);                                         \
-    result.tmp.append_dir(rhs);                                     \
+    result.tmp.pushr(rhs);                                          \
     return result;                                                  \
 }
 
@@ -2641,6 +2722,7 @@ public:
     C4_ALWAYS_INLINE SizeType size () const noexcept { return m_size; }
 
     C4_ALWAYS_INLINE void resize(SizeType sz) { C4_CHECK(sz <= m_capacity && (m_str != nullptr || sz == 0)); m_size = sz; }
+    C4_ALWAYS_INLINE void reserve(SizeType sz) { C4_CHECK(sz <= m_capacity && (m_str != nullptr || sz == 0)); m_size = sz; }
 
     C4_ALWAYS_INLINE SizeType capacity() const { return m_capacity; }
     constexpr C4_ALWAYS_INLINE SizeType max_size() const { return std::numeric_limits< SizeType >::max(); }
