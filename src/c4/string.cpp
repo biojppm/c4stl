@@ -3,44 +3,6 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
-string sstest()
-{
-    csubstring ss1("ssa"), ss2("ssb");
-    string r;
-    r = ss1 + ss2;
-    return r;
-}
-static string caralho = sstest();
-string sstest2()
-{
-    char buf1[] = "ssa";
-    char buf2[] = "ssb";
-    substring ss1(buf1), ss2(buf2);
-    string r;
-    r = ss1 + ss2;
-    return r;
-}
-static string caralho2 = sstest2();
-string sstest3()
-{
-    csubstringrs ss1("ssa"), ss2("ssb");
-    string r;
-    r = ss1 + ss2;
-    return r;
-}
-static string caralho3 = sstest3();
-string sstest4()
-{
-    char buf1[] = "ssa";
-    char buf2[] = "ssb";
-    substringrs ss1(buf1), ss2(buf2);
-    string r;
-    r = ss1 + ss2;
-    return r;
-}
-static string caralho4 = sstest4();
-
-
 void s2ws(char const* mbstr, size_t len, wchar_t *output)
 {
     std::mbstate_t state = std::mbstate_t();
@@ -51,7 +13,97 @@ void ws2s(wchar_t const* mbstr, size_t len, char *output)
     std::mbstate_t state = std::mbstate_t();
     std::wcsrtombs(&output[0], &mbstr, len, &state);
 }
+/*
+string sstest()
+{
+    csubstring ss1("ssa"), ss2("ssb");
+    string r;
+    r = ss1 + ss2;
+    C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf = sstest();
 
+string sstest2()
+{
+    char buf1[] = "ssa";
+    char buf2[] = "ssb";
+    substring ss1(buf1), ss2(buf2);
+    string r;
+    r = ss1 + ss2;
+    C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf2 = sstest2();
+
+string sstest3()
+{
+    csubstringrs ss1("ssa"), ss2("ssb");
+    string r;
+    r = ss1 + ss2;
+    return r;
+}
+static string wtf3 = sstest3();
+
+string sstest4()
+{
+    char buf1[] = "ssa";
+    char buf2[] = "ssb";
+    substringrs ss1(buf1), ss2(buf2);
+    string r;
+    r = ss1 + ss2;
+    C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf4 = sstest4();
+
+substring sstest5()
+{
+    csubstring ss1("ssa"), ss2("ssb");
+    string r;
+    r = ss1 + ss2;
+    C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf5 = sstest5();
+*/
+substring sstest6()
+{
+    char buf1[] = "ssa";
+    char buf2[] = "ssb";
+    substring ss1(buf1), ss2(buf2);
+    static char resultbuf[9];
+    substring r(resultbuf);
+    r = ss1 + ss2;
+    //C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf6 = sstest6();
+/*
+substringrs sstest7()
+{
+    csubstringrs ss1("ssa"), ss2("ssb");
+    static char resultbuf[9];
+    substringrs r;
+    r = ss1 + ss2;
+    C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf7 = sstest7();
+
+substringrs sstest8()
+{
+    char buf1[] = "ssa";
+    char buf2[] = "ssb";
+    substringrs ss1(buf1), ss2(buf2);
+    static char resultbuf[9];
+    substringrs r(resultbuf);
+    r = ss1 + ss2;
+    C4_ASSERT(r == "ssassb");
+    return r;
+}
+static string wtf8 = sstest8();
+*/
 C4_END_NAMESPACE(c4)
 
 //-----------------------------------------------------------------------------

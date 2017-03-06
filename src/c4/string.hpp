@@ -279,7 +279,9 @@ C4_ALWAYS_INLINE classname& operator= (_strCatRes< Str > const& that)   \
 {                                                                       \
     C4_ASSERT_SAME_TYPE(typename Str::char_type, char_type);            \
     SizeType sz = szconv< SizeType >(that.tmp.size());                  \
-    this->assign(that.tmp.data(), sz);                                  \
+    this->reserve(sz);                                                  \
+    this->resize(0);                                                    \
+    this->append(that.tmp.data(), sz);                                  \
     return *this;                                                       \
 }                                                                       \
                                                                         \
@@ -376,8 +378,8 @@ _C4STR_DEFINE_BINOPS2TY_TPL( , ty1, ty2, tyr)
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    _strCatRes<ty1> const& lhs,                                            \
-    _strCatRes<ty2> const& rhs                                             \
+    _strCatRes<ty1> const& lhs,                                     \
+    _strCatRes<ty2> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -390,8 +392,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    _strCatRes<ty1> const& lhs,                                            \
-    _strCatRes<ty2> const& rhs                                             \
+    _strCatRes<ty1> const& lhs,                                     \
+    _strCatRes<ty2> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -408,8 +410,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    _strCatRes<ty2> const& lhs,                                            \
-    _strCatRes<ty1> const& rhs                                             \
+    _strCatRes<ty2> const& lhs,                                     \
+    _strCatRes<ty1> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -422,8 +424,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    _strCatRes<ty2> const& lhs,                                            \
-    _strCatRes<ty1> const& rhs                                             \
+    _strCatRes<ty2> const& lhs,                                     \
+    _strCatRes<ty1> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -442,8 +444,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    ty1 const& lhs,                                                        \
-    _strCatRes<ty2> const& rhs                                             \
+    ty1 const& lhs,                                                 \
+    _strCatRes<ty2> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -456,8 +458,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    ty1 const& lhs,                                                        \
-    _strCatRes<ty2> const& rhs                                             \
+    ty1 const& lhs,                                                 \
+    _strCatRes<ty2> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -474,8 +476,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    _strCatRes<ty2> const& lhs,                                            \
-    ty1 const& rhs                                                         \
+    _strCatRes<ty2> const& lhs,                                     \
+    ty1 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -488,8 +490,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    _strCatRes<ty2> const& lhs,                                            \
-    ty1 const& rhs                                                         \
+    _strCatRes<ty2> const& lhs,                                     \
+    ty1 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -508,8 +510,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    _strCatRes<ty1> const& lhs,                                            \
-    ty2 const& rhs                                                         \
+    _strCatRes<ty1> const& lhs,                                     \
+    ty2 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -522,8 +524,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    _strCatRes<ty1> const& lhs,                                            \
-    ty2 const& rhs                                                         \
+    _strCatRes<ty1> const& lhs,                                     \
+    ty2 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -540,8 +542,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    ty2 const& lhs,                                                        \
-    _strCatRes<ty1> const& rhs                                             \
+    ty2 const& lhs,                                                 \
+    _strCatRes<ty1> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -554,8 +556,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    ty2 const& lhs,                                                        \
-    _strCatRes<ty1> const& rhs                                             \
+    ty2 const& lhs,                                                 \
+    _strCatRes<ty1> const& rhs                                      \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -574,8 +576,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    ty1 const& lhs,                                                        \
-    ty2 const& rhs                                                         \
+    ty1 const& lhs,                                                 \
+    ty2 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -588,8 +590,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    ty1 const& lhs,                                                        \
-    ty2 const& rhs                                                         \
+    ty1 const& lhs,                                                 \
+    ty2 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -606,8 +608,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 (                                                                   \
-    ty2 const& lhs,                                                        \
-    ty1 const& rhs                                                         \
+    ty2 const& lhs,                                                 \
+    ty1 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -620,8 +622,8 @@ C4_ALWAYS_INLINE _strCatRes<tyr> operator+                          \
 template_spec                                                       \
 C4_ALWAYS_INLINE _strCatRes<tyr> operator/                          \
 (                                                                   \
-    ty2 const& lhs,                                                        \
-    ty1 const& rhs                                                         \
+    ty2 const& lhs,                                                 \
+    ty1 const& rhs                                                  \
 )                                                                   \
 {                                                                   \
     _strCatRes<tyr> result;                                         \
@@ -2490,7 +2492,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE operator bool () const { return m_size > 0; }
+    //C4_ALWAYS_INLINE operator bool () const { return m_size > 0; }
 
 public:
 
@@ -2590,7 +2592,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE operator bool () const { return m_size > 0; }
+    //C4_ALWAYS_INLINE operator bool () const { return m_size > 0; }
 
     C4_ALWAYS_INLINE operator substring const& () const { return *(substring const*)this; }
     C4_ALWAYS_INLINE operator substring      & ()       { return *(substring      *)this; }
@@ -2675,7 +2677,7 @@ public:
     using char_type = C;
     using value_type = C;
     using traits_type = typename impl_type::traits_type;
-    using alloc_type = Alloc;
+    using allocator_type = Alloc;
     using alloc_traits = std::allocator_traits< Alloc >;
     using size_type  = SizeType;
     using ssize_type = typename std::make_signed< SizeType >::type;
@@ -2696,7 +2698,7 @@ private:
 
 public:
 
-    C4_ALWAYS_INLINE operator bool     () const { return m_size > 0; }
+    //C4_ALWAYS_INLINE operator bool     () const { return m_size > 0; }
 
     C4_ALWAYS_INLINE operator basic_substring< C, SizeType > const& () const
     {
@@ -2947,7 +2949,7 @@ public:
     using char_type = C;
     using value_type = C;
     using traits_type = typename impl_type::traits_type;
-    using alloc_type = Alloc;
+    using allocator_type = Alloc;
     using alloc_traits = std::allocator_traits< Alloc >;
     using size_type  = SizeType;
     using ssize_type = typename std::make_signed< SizeType >::type;
@@ -2981,7 +2983,7 @@ private:
 
 public:
 
-    C4_ALWAYS_INLINE operator bool () const { return size() > 0; }
+    //C4_ALWAYS_INLINE operator bool () const { return size() > 0; }
 
     C4_ALWAYS_INLINE operator const basic_substring  < const C, SizeType > () const { return basic_substring  < const C, SizeType >(data(), size()); }
     C4_ALWAYS_INLINE operator const basic_substring  <       C, SizeType > ()       { return basic_substring  <       C, SizeType >(data(), size()); }
