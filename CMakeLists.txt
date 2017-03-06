@@ -11,7 +11,7 @@ setup_sanitize(C4STL)
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
 
 if(NOT MSVC)
-    list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 option(C4STL_BUILD_TESTS "" ON)

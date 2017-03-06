@@ -32,12 +32,18 @@
 #endif
 
 //-----------------------------------------------------------------------------
+#define C4_ASSERT_SAME_TYPE(ty1, ty2)                       \
+    C4_STATIC_ASSERT(std::is_same< ty1 C4_COMMA ty2>::value)
+
+#define C4_ASSERT_DIFF_TYPE(ty1, ty2)                       \
+    C4_STATIC_ASSERT( ! std::is_same< ty1 C4_COMMA ty2>::value)
+
+//-----------------------------------------------------------------------------
 
 #ifdef _DOXYGEN_
 /** utility macro that triggers a breakpoint when
  * the debugger is attached and NDEBUG is not defined.
- * @ingroup error_checking
- */
+ * @ingroup error_checking */
 #   define C4_DEBUG_BREAK()
 #endif // _DOXYGEN_
 
