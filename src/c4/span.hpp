@@ -159,7 +159,7 @@ public:
         }
     }
 
-    /** COMPLement Left: return the complement to the left of the beginning of the given substring.
+    /** COMPLement Left: return the complement to the left of the beginning of the given subspan.
      * If ss does not begin inside this, returns an empty substring. */
     SpanImpl compll(_span_crtp const& ss) const C4_NOEXCEPT_X
     {
@@ -176,7 +176,7 @@ public:
         }
     }
 
-    /** COMPLement Right: return the complement to the right of the end of the given substring.
+    /** COMPLement Right: return the complement to the right of the end of the given subspan.
      * If ss does not end inside this, returns an empty substring. */
     SpanImpl complr(_span_crtp const& ss) const C4_NOEXCEPT_X
     {

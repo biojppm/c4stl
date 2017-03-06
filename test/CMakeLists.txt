@@ -1,4 +1,5 @@
 add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
+add_custom_target(unit_tests_build)
 
 ExternalProject_Import(gtest
     PREFIX ${C4STL_EXTERN_DIR}
@@ -26,6 +27,7 @@ function(c4stl_add_test name)
         INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
         )
     add_dependencies(unit_tests ${name})
+    add_dependencies(unit_tests_build ${name})
     add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
     foreach(s asan msan tsan ubsan)
         set(t ${name}-${s})
