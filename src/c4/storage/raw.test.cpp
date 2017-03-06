@@ -129,6 +129,7 @@ TEST(raw_paged, instantiation)
     }
 }
 
+
 //-----------------------------------------------------------------------------
 TEST(raw_paged_rt, instantiation)
 {
@@ -228,6 +229,113 @@ TEST(raw_paged_rt, inheriting)
             ci rf(10);
             EXPECT_EQ(rf.obj.capacity(), 256);
         }
+    }
+}
+
+//-----------------------------------------------------------------------------
+template< class RawPagedContainer >
+void test_raw_page_addressing(RawPagedContainer const& rp)
+{
+    using I = typename RawPagedContainer::size_type;
+
+    I ps = rp.page_size();
+    I np = rp.num_pages();
+
+    I elm = 0;
+    for(I i = 0; i < np; ++i)
+    {
+        for(I j = 0; j < ps; ++j)
+        {
+            EXPECT_EQ(&rp[elm], &rp.m_pages[i][j])
+                    << "  i=" << i << " j=" << j << " e=" << elm
+                    << "  np=" << np << "  ps=" << ps;
+            elm++;
+        }
+    }
+}
+
+TEST(raw_paged, addressing)
+{
+    C4_SIZE_TYPE sz = 1000;
+
+    {
+        SCOPED_TRACE("page size==default");
+        using rptype = raw_paged< int >;
+        rptype rp(sz);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==512");
+        using rptype = raw_paged< int, 512 >;
+        EXPECT_EQ(rptype::page_size(), 512);
+        rptype rp(sz);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==32");
+        using rptype = raw_paged< int, 32 >;
+        EXPECT_EQ(rptype::page_size(), 32);
+        rptype rp(sz);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==4");
+        using rptype = raw_paged< int, 4 >;
+        EXPECT_EQ(rptype::page_size(), 4);
+        rptype rp(sz);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==2");
+        using rptype = raw_paged< int, 2 >;
+        EXPECT_EQ(rptype::page_size(), 2);
+        rptype rp(sz);
+        test_raw_page_addressing(rp);
+    }
+}
+
+
+TEST(raw_paged_rt, addressing)
+{
+    C4_SIZE_TYPE sz = 1000;
+    using rptype = raw_paged_rt< int >;
+
+    {
+        SCOPED_TRACE("page size==default");
+        rptype rp(sz);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==512");
+        rptype rp(sz, 512);
+        EXPECT_EQ(rp.page_size(), 512);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==32");
+        rptype rp(sz, 32);
+        EXPECT_EQ(rp.page_size(), 32);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==4");
+        rptype rp(sz, 4);
+        EXPECT_EQ(rp.page_size(), 4);
+        test_raw_page_addressing(rp);
+    }
+
+    {
+        SCOPED_TRACE("page size==2");
+        rptype rp(sz, 2);
+        EXPECT_EQ(rp.page_size(), 2);
+        test_raw_page_addressing(rp);
     }
 }
 

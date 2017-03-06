@@ -1,6 +1,8 @@
 #ifndef _C4_STORAGE_RAW_HPP_
 #define _C4_STORAGE_RAW_HPP_
 
+/** @file raw.hpp Raw storage classes. */
+
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 #include "c4/ctor_dtor.hpp"
@@ -12,6 +14,7 @@ C4_BEGIN_NAMESPACE(c4)
 
 // external forward declarations
 template< class T > class Allocator;
+template< class T, size_t N, size_t Alignment > class SmallAllocator;
 
 C4_BEGIN_NAMESPACE(stg)
 
@@ -44,9 +47,14 @@ struct raw;
 template< class T, size_t PageSize = 256, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
 struct raw_paged;
 
-/** raw paged with page size determined at runtime. */
+/** raw paged with page size determined at runtime. @ingroup raw_storage_classes */
 template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
 using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
+
+/** raw storage with inplace storage of up to N objects, thus saving an
+ * allocation when the size is small. @ingroup raw_storage_classes */
+template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
+using raw_small = raw< T, I, Alignment, SmallAllocator<T, N, Alignment> >;
 
 //-----------------------------------------------------------------------------
 /** Type traits for raw storage classes.
@@ -239,7 +247,7 @@ C4_DEFINE_STORAGE_TRAITS(raw_fixed< T C4_COMMA N C4_COMMA I C4_COMMA Alignment >
                          true, // contiguous
                          class T, size_t N, class I, I Alignment);
 
-/** raw storage with fixed capacity
+/** raw storage with capacity fixed at compile time
  * @ingroup raw_storage_classes */
 template< class T, size_t N, class I, I Alignment >
 struct raw_fixed
@@ -301,13 +309,12 @@ struct raw
         _raw_resize(0);
     }
 
-    /** @todo implement this */
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
     raw(raw const& that) = delete;
-    raw(raw     && that) = default;
-
-    /** @todo implement this */
+    raw(raw     && that) = delete;
     raw& operator=(raw const& that) = delete;
-    raw& operator=(raw     && that) = default;
+    raw& operator=(raw     && that) = delete;
 
     C4_ALWAYS_INLINE           T      & operator[] (I i)       noexcept { return m_ptr[i]; }
     C4_ALWAYS_INLINE constexpr T const& operator[] (I i) const noexcept { return m_ptr[i]; }
@@ -435,8 +442,8 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSiz
     //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
     constexpr static const I _raw_idmask = I(PageSize) - I(1);
 
-    //! page mask: bits complementary to PageSize. Use to extract the page of an index.
-    constexpr static const I _raw_pgmask = ~(I(PageSize) - I(1));
+    //! page lsb: the number of bits by bits complementary to PageSize. Use to extract the page of an index.
+    constexpr static const I _raw_pglsb  = lsb11< I, PageSize >::value;
 
     T    **m_pages;      //< array containing the pages
     I      m_num_pages;  //< number of current pages in the array
@@ -447,6 +454,8 @@ public:
     _c4_DEFINE_ARRAY_TYPES(T, I)
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
+
+public:
 
     raw_paged() : raw_paged(0) {}
     raw_paged(Alloc const& a) : raw_paged(0, a) {}
@@ -465,24 +474,26 @@ public:
         crtp_base::_raw_resize(0);
     }
 
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
     raw_paged(raw_paged const& that) = delete;
-    raw_paged(raw_paged     && that) = default;
+    raw_paged(raw_paged     && that) = delete;
     raw_paged& operator=(raw_paged const& that) = delete;
-    raw_paged& operator=(raw_paged     && that) = default;
+    raw_paged& operator=(raw_paged     && that) = delete;
 
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 T& operator[] (I i) C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i & _raw_pgmask;
+        I pg = i >> _raw_pglsb;
         I id = i & _raw_idmask;
         C4_XASSERT(pg < m_num_pages);
         C4_XASSERT(id < PageSize);
         return m_pages[pg][id];
     }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 T const& operator[] (I i) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i & _raw_pgmask;
+        I pg = i >> _raw_pglsb;
         I id = i & _raw_idmask;
         C4_XASSERT(pg < m_num_pages);
         C4_XASSERT(id < PageSize);
@@ -491,20 +502,25 @@ public:
 
     C4_ALWAYS_INLINE static constexpr I page_size() noexcept { return PageSize; }
 
+    template< class RawPagedContainer >
+    friend void test_raw_page_addressing(RawPagedContainer const& rp);
+
 };
 
 //-----------------------------------------------------------------------------
 
-/** specialization of raw_paged for dynamic page size */
+/** specialization of raw_paged allowing the page size to be set at run time.
+ * @ingroup raw_storage_classes */
 template< class T, class I, I Alignment, class Alloc >
 struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >
 {
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >;
     static_assert(std::is_integral< I >::value, "");
 
-    T    **m_pages;      //< array containing the pages
-    I      m_num_pages;  //< number of current pages in the array
-    I      m_page_size;  //< page size: cannot be changed after construction.
+    T    **m_pages;       ///< array containing the pages
+    I      m_num_pages;   ///< number of current pages in the array
+    I      m_id_mask;     ///< page size: cannot be changed after construction.
+    I      m_page_lsb;    ///< least significant bit of the page size
     Alloc  m_allocator;
 
 public:
@@ -513,19 +529,21 @@ public:
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
 
+public:
+
     raw_paged() : raw_paged(0, 256) {}
     raw_paged(Alloc const& a) : raw_paged(0, 256, a) {}
 
     raw_paged(I cap) : raw_paged(cap, 256) {}
     raw_paged(I cap, Alloc const& a) : raw_paged(cap, 256, a) {}
 
-    raw_paged(I cap, I page_sz) : m_pages(nullptr), m_num_pages(0), m_page_size(page_sz), m_allocator()
+    raw_paged(I cap, I page_sz) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator()
     {
         C4_ASSERT(page_sz > 1);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
         crtp_base::_raw_resize(cap);
     }
-    raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_page_size(page_sz), m_allocator(a)
+    raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
     {
         C4_ASSERT(page_sz > 1);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
@@ -537,31 +555,36 @@ public:
         crtp_base::_raw_resize(0);
     }
 
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
     raw_paged(raw_paged const& that) = delete;
-    raw_paged(raw_paged     && that) = default;
+    raw_paged(raw_paged     && that) = delete;
     raw_paged& operator=(raw_paged const& that) = delete;
-    raw_paged& operator=(raw_paged     && that) = default;
+    raw_paged& operator=(raw_paged     && that) = delete;
 
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 T& operator[] (I i) C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i & (m_page_size - I(1));  //! page mask: bits complementary to PageSize. Use to extract the page of an index.
-        I id = i & ~(m_page_size - I(1)); //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
+        I pg = i >> m_page_lsb;
+        I id = i & m_id_mask;
         C4_XASSERT(pg < m_num_pages);
-        C4_XASSERT(id < m_num_pages);
+        C4_XASSERT(id < m_id_mask + 1);
         return m_pages[pg][id];
     }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 T const& operator[] (I i) const C4_NOEXCEPT_X
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i & (m_page_size - I(1));  //! page mask: bits complementary to PageSize. Use to extract the page of an index.
-        I id = i & ~(m_page_size - I(1)); //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
+        I pg = i >> m_page_lsb;
+        I id = i & m_id_mask;
         C4_XASSERT(pg < m_num_pages);
-        C4_XASSERT(id < m_num_pages);
+        C4_XASSERT(id < m_id_mask + 1);
         return m_pages[pg][id];
     }
 
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I page_size() const noexcept { return m_page_size; }
+    C4_ALWAYS_INLINE I page_size() const noexcept { return m_id_mask + 1; }
+
+    template< class RawPagedContainer >
+    friend void test_raw_page_addressing(RawPagedContainer const& rp);
 
 };
 
