@@ -5,34 +5,126 @@
 
 /** @defgroup string_classes String classes
  *
- * Provides strings: owned (c4::string, c4::text) and non-owned
- * (c4::substring and c4::substringrs). These classes are mostly stl
- * compatible, with some additions, like begins_with()/ends_with(),
- * trim()/trimws(), or notably split() and related methods such as
- * popr()/popl(), gpopr()/gpopl(), pushr()/pushl(),
- * basename()/dirname() and the / operator for path
- * concatenation. Unlike STL's string_view, the substrings are
- * writeable; they are essentially a span retaining all the string
- * methods.
+ * Provides strings: owned (c4::string, c4::text) and non-owning
+ * (c4::substring and c4::substringrs). These classes are meant to be
+ * a superset of the std::string design. Some additions are
+ * begins_with()/ends_with(), trim()/trimws(), or notably split() and
+ * related methods such as popr()/popl(), gpopr()/gpopl(),
+ * pushr()/pushl(), basename()/dirname() and the / operator for path
+ * concatenation (for example "foo"/"bar" ---> "foo/bar").
  *
- * The string types are implementated with a CRTP base class without
- * any virtual methods. It provides the actual string methods such as
- * find(), leaving only the resource management and sizing information
- * for the derived classes. A significant improvement over the STL
- * design is that sub-selection methods return a non-owning substring
- * instead of a string of the same type; this provides significant
- * savings of allocations.
+ * Unlike STL's string_view, the substrings are writeable; they are
+ * essentially a span (in the case of substring) or a spanrs (in the
+ * case of substringrs) enriched with all the string methods.
  *
- * Expression templates are used for string concatenation either via +
- * or /, which has the advantage of allowing concatenation of
- * substrings (and specifically, much less memory allocations).
+ * The string types are implemented with a CRTP base class without any
+ * use of virtual methods. This CRTP base provides the actual string
+ * methods, leaving only the resource management and sizing
+ * information for the derived classes.
+ *
+ * A significant improvement over the STL design is that all the
+ * sub-selection methods (eg substr()) return a non-owning substring
+ * instead of an owning string; this provides substantial savings in
+ * memory allocations (depending on usage patterns, of course).
+ *
+ * Expression templates are used for the string concatenation
+ * operators + and / which has the advantage of saving many memory
+ * allocations because 1) no temporary strings are used and 2) the
+ * length of the result can be found out before any of the partial
+ * operations is performed, thus allowing a reserve() before the
+ * operations begin. The expression templates incur a compilation
+ * cost, though we've generally felt that it is small. If this cost is
+ * too much for your usage pattern, the expression templates can be
+ * disabled by defining the macro C4_STR_DISABLE_EXPR_TPL (which is
+ * disabled by default). This will cause switching to greedy
+ * evaluation of the concatenation operations + and / (with an
+ * allocation in every operation). So summing two substrings will
+ * result in a temporary allocated string. Note that there is still
+ * the ownership problem (discussed below) to address with substrings
+ * so the savings in compilation time might not be worth the cost of
+ * increased memory allocations. As always, test one and the other
+ * with your actual usage pattern, and proceed as you find most
+ * convenient.
+ *
+ * The ownership semantics are clear, too:
+ *
+ * @code
+ * string s1("foo"), s2;
+ * substring ss1, ss2;
+ * csubstring css1, css2;
+ *
+ * s2 = s1;      // resize s2, and copy "foo" to its buffer.
+ * s2 = "bar";   // copy "bar" to the buffer of s2
+ *
+ * ss1 = s1;     // ss1 is now pointing at the buffer of s1 (no copies are made, just a point-to)
+ * ss2 = s2;     // ss2 is now pointing at the buffer of s2 (no copies are made, just a point-to)
+ *
+ * ss1[0] = 'F'; // ss1 can be used to write into s1: s1's buffer is now "Foo".
+ *
+ * s1  = "bar";  // copy "bar" to the buffer of s1
+ * ss1 = "foo";  // ERROR: ss1 allows writes and cannot point to const memory
+ * css1 = "foo"; // OK: csubstring is const-memory.
+ * css1 = s1;    // OK. But no writes will be allowed into s1 through css1.
+ *
+ * ss1 = s2;     // ss1 is now pointing at the buffer of s2 (no copies are made, just a point-to)
+ * s1  = ss1;    // copy "bar" to the buffer of s1
+ * @endcode
  *
  *
  *------------------------------------
- * A word of caution
+ * ## A word of caution
  *
- * Do not assign string concatenation operations (operators + and /)
+ *
+ * @warning Non-owning strings have a pitfall. Assignment from string
+ * objects means "point there", whereas assignment from string
+ * concatenation operations means "write the result of this operation
+ * into the substring's current buffer". The reason for this is that
+ * since they are non-owning, substrings cannot be made to point at
+ * the temporary objects created by the concatenation operation (as an
+ * aside that would make the substrings point to stale memory, as
+ * those temporary objects are destroyed after the assignment). To
+ * illustrate this consider the following code:
+ *
+ * @code
+ * string s("supercallifragilisticexpialidocious");
+ * string e("a non empty buffer");
+ * csubstring css1("foo"), css2("bar"); // these are in const static memory
+ * substring ss;
+ * C4_ASSERT(ss1.empty());           // true. ss is empty.
+ * C4_ASSERT(ss1.data() == nullptr); // true.
+ *
+ * // NOTE the difference in the meaning of substring assignment
+ * // operations marked with (1) or (2):
+ * //   (1) assign from existing object: reference semantics (make
+ * //       the substring point to the existing object)
+ * //   (2) assign from cat operation: copy semantics (sequentially
+ * //       into the substring's current buffer).
+ *
+ * ss = s;                           // (1) Make ss point to the buffer of s
+ * C4_ASSERT( ! ss.empty());         // true. ss is now pointing at s.
+ * C4_ASSERT(ss.data() == s.data()); // true.
+ *
+ * s  = css1 + css2; // s's buffer is now "foobar\0llifragilisticexpialidocious\0"
+ *
+ * ss = css1 + css2; // (2) same result as above
+ * ss = css1 / css2; // (2) s's buffer is now "foo/bar\0lifragilisticexpialidocious\0"
+ *
+ * ss = e;           // (1) make ss point to the buffer of e
+ * ss = css1 + css2; // (2) e's buffer is now "foobar\0mpty buffer\0""
+ * ss = css1 / css2; // (2) e's buffer is now "foo/bar\0pty buffer\0""
+ * ss = css1 + css2; // (2) e's buffer is now "foobar\0\0pty buffer\0""
+ *
+ * s = css2; // copy from css2's buffer to s's buffer: "bar\0bar\0lifragilisticexpialidocious\0"
+ * @endcode
+ *
+ * This difference in semantics does not apply to owning strings, which
+ * always use the less-efficient copy semantics.
+ *
+ * @warning Do not assign string concatenation operations (operators + and /)
  * to non-owning strings unless you are sure they have room to write into.
+
+ *
+ *
  *
  * @code
  * csubstring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
@@ -62,12 +154,6 @@
  * owned string, it is set to point at the contents of the owned
  * temporary string (ss1+ss2), which gets destroyed after the
  * assignment. So after the statement ss3 is pointed at deallocated memory.
- *
- * The default is to have string expression templates enabled. They
- * can be disabled by defining C4_STR_DISABLE_EXPR_TPL. This will
- * cause switching to greedy evaluation of the concatenation
- * operations + and /. So summing two substrings will
- * result in an allocated string. For example, this would work:
 
  * For the reason above, it's better to use expression templates.
  *
@@ -150,7 +236,7 @@ struct string_traits< basic_string<C, Size, Alloc> >
     enum {
         is_owning = true,
         is_increasable = true,
-        has_upper_capacity = true,
+        has_upper_capacity = false,
         is_allocatable = true,
     };
 };
@@ -160,7 +246,7 @@ struct string_traits< basic_text<C, Size, Alloc> >
     enum {
         is_owning = true,
         is_increasable = true,
-        has_upper_capacity = true,
+        has_upper_capacity = false,
         is_allocatable = true,
     };
 };
@@ -168,6 +254,8 @@ struct string_traits< basic_text<C, Size, Alloc> >
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+/// @cond dev
 
 /** specialize std::hash for the given _str_crtp-derived type. Search
  for uses of this to find out how to use it. */
@@ -1248,6 +1336,8 @@ operator/
 
 #endif // C4_ENABLE_STRING_EXPRTPL
 
+/// @endcond
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1275,6 +1365,7 @@ operator/
 template< typename C, typename SizeType, class StrType, class SubStrType >
 class _str_crtp
 {
+/// @cond dev
 // utility defines; undefined below
 #define _c4this     static_cast< StrType      * >(this)
 #define _c4thisSZ   static_cast< StrType      * >(this)->size()
@@ -1288,6 +1379,7 @@ class _str_crtp
 #define _c4CCAST(ty) (ty)const_cast< _str_crtp const* >(this)
 #define _c4cSZ(ptr)  static_cast< StrType const* >(ptr)->size()
 #define _c4cSTR(ptr) static_cast< StrType const* >(ptr)->data()
+/// @endcond
 
     C4_STATIC_ASSERT(std::is_integral< SizeType >::value);
 
@@ -1483,9 +1575,9 @@ public:
         }
     }
 
-    /** COMPLment Left: return the complement to the left of the beginning of the given substring.
+    /** COMPLement Left: return the complement to the left of the beginning of the given substring.
      * If ss does not begin inside this, returns an empty substring. */
-    SubStrType compll(SubStrType const& ss) const noexcept
+    SubStrType compll(SubStrType const& ss) const C4_NOEXCEPT_X
     {
         auto ssb = ss.begin();
         auto b = begin();
@@ -1502,7 +1594,7 @@ public:
 
     /** COMPLement Right: return the complement to the right of the end of the given substring.
      * If ss does not end inside this, returns an empty substring. */
-    SubStrType complr(SubStrType const& ss) const noexcept
+    SubStrType complr(SubStrType const& ss) const C4_NOEXCEPT_X
     {
         auto sse = ss.end();
         auto b = begin();
@@ -2989,6 +3081,8 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_text< C C4_COMMA SizeType C4_COMMA Allo
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+/// @cond dev
+
 template< class _Char, size_t NumBytes >
 struct _shortstr;
 
@@ -3010,6 +3104,8 @@ struct _shortstr< wchar_t, NumBytes >
     wchar_t arr[NumBytes/sizeof(wchar_t) - 1];
 };
 
+/// @endcond
+
 //-----------------------------------------------------------------------------
 /** a string class with the small string optimization
  * @ingroup string_classes */
@@ -3018,6 +3114,8 @@ class basic_string : public _str_crtp< C, SizeType, basic_string< C, SizeType, A
 {
     using impl_type = _str_crtp< C, SizeType, basic_string< C, SizeType, Alloc >, basic_substring< C, SizeType > >;
 
+    /// @cond dev
+
     struct _long
     {
         SizeType flag_n_sz; ///< flag (first bit) and size
@@ -3025,6 +3123,8 @@ class basic_string : public _str_crtp< C, SizeType, basic_string< C, SizeType, A
         C *      str;
     };
     using _short = _shortstr< C, sizeof(_long) >;
+
+    /// @endcond
 
 public:
 
@@ -3372,6 +3472,8 @@ _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_string< C C4_COMMA SizeType C4_COMMA Al
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
 
+/// @cond dev
+
 #ifdef C4_STR_DISABLE_EXPR_TPL
 
 
@@ -3547,6 +3649,8 @@ _C4STR_DEFINE_BINOPS2TY_TPL(
 #undef WC
 
 #endif // C4_STR_DISABLE_EXPR_TPL
+
+/// @endcond
 
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------

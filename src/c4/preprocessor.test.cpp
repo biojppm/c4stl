@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#ifdef JAVAI
+#ifdef WE_LL_GET_THERE___MSVC_CANT_HANDLE_THE_FOREACH_MACRO___NEEDS_TO_BE_FIXED
 #include <string>
 #include <map>
 

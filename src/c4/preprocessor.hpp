@@ -65,8 +65,12 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 
 /** same as C4_FOR_EACH(), but use a custom separator between statements.
  * If a comma is needed as the separator, use the C4_COMMA macro.
- * @see C4_FOR_EACH */
+ * @see C4_FOR_EACH
+ * @see C4_COMMA
+ */
 #define C4_FOR_EACH_SEP(what, sep, ...) _C4_FOR_EACH_(_C4_FOR_EACH_NARG(__VA_ARGS__), what, sep, __VA_ARGS__)
+
+/// @cond dev
 
 #define _C4_FOR_EACH_01(what, sep, x) what(x) sep
 #define _C4_FOR_EACH_02(what, sep, x, ...) what(x) sep _C4_FOR_EACH_01(what, sep, __VA_ARGS__)
@@ -105,6 +109,8 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #define _C4_FOR_EACH_ARG_N(_01, _02, _03, _04, _05, _06, _07, _08, _09, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, N, ...) N
 #define _C4_FOR_EACH_RSEQ_N() 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 09, 08, 07, 06, 05, 04, 03, 02, 01
 #define _C4_FOR_EACH_(N, what, sep, ...) C4_XCAT(_C4_FOR_EACH_, N)(what, sep, __VA_ARGS__)
+
+/// @endcond
 
 #ifdef __clang__
 #   pragma clang diagnostic pop
