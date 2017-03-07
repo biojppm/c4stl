@@ -14,17 +14,20 @@ Features
 
 * ranges
 
-  * non-owning writeable ranges: `c4::span`, `c4::spanrs`, `c4::etched_span`
+  * non-owning writeable ranges: ``c4::span``, ``c4::spanrs``, ``c4::etched_span``
 
-  * non-owning read-only ranges: `c4::cspan`, `c4::cspanrs`,
-    `c4::cetched_span`
+  * non-owning read-only ranges: ``c4::cspan``, ``c4::cspanrs``,
+    ``c4::cetched_span``
 
 * container building blocks:
 
-  * raw storage: `c4::raw_fixed<T,N>`, `c4::raw<T>`, `c4::raw_small<T,N>`
-    (via the small allocator trick) and importantly `c4::raw_paged<T>` (which
-    allows for constant time insertion on vector-based lists and maps
-    without the need for a prior call to `reserve()`).
+  * raw storage:
+    * ``c4::raw_fixed<T,N>``
+    * ``c4::raw<T>``
+    * ``c4::raw_small<T,N>`` (via the small allocator trick)
+    * ``c4::raw_paged<T>`` (which allows for constant time insertion on
+      vector-based lists and maps without the need for a prior call to
+      ``reserve()``).
 
   * storage growth models: powers of two, Fibonacci, composed, etc.
 
@@ -34,40 +37,40 @@ Features
 
   * vector models:
 
-    * `c4::fixed_vector<T,N>`: compile-time fixed capacity, variable size
+    * ``c4::fixed_vector<T,N>``: compile-time fixed capacity, variable size
 
-    * `c4::small_vector<T,N>`: with inplace storage for up to N elements,
+    * ``c4::small_vector<T,N>``: with inplace storage for up to N elements,
       switching to the heap when the size exceeds N.
 
-    * `c4::array<T,N>`
+    * ``c4::array<T,N>``
 
-    * `c4::vector<T>`
+    * ``c4::vector<T>``
 
     * storage growth policy is given as a template parameter for the
       dynamic memory vectors.
 
-  * sorted vector: `c4::sorted_vector<T,VectorImpl>`
+  * sorted vector: ``c4::sorted_vector<T,VectorImpl>``
 
   * index-based contiguous memory lists (forward- and doubly-linked):
 
-    * `c4::flat_list<T,Storage>`: based on a vector of `{ T value, I next }`
+    * ``c4::flat_list<T,Storage>``: based on a vector of ``{ T value, I next }``
       pairs
 
-    * `c4::split_list<T,Storage>`: based on a vector for the indices and a
+    * ``c4::split_list<T,Storage>``: based on a vector for the indices and a
       different vector for the values
 
-    * the `raw_paged` storage policy can be used, thus getting constant-time
-      insertion/lookup even without any prior calls to `reserve()`, with
+    * the ``raw_paged`` storage policy can be used, thus getting constant-time
+      insertion/lookup even without any prior calls to ``reserve()``, with
       all the mechanical sympathy for caches that arrays are known for
 
   * contiguous maps with customizeable storage. As with lists, the vector
     storage is given as a template parameter.
 
-    * `c4::flat_map<K,V>`: based on a sorted vector with `std::pair<K,V>`
+    * ``c4::flat_map<K,V>``: based on a sorted vector with ``std::pair<K,V>``
       as the value type; useful for frequent iterations over both keys and
       values)
 
-    * `c4::split_map<K,V>`: based on a sorted vector for the keys and a
+    * ``c4::split_map<K,V>``: based on a sorted vector for the keys and a
       separate vector for the values; useful for when lookups are more
       important than iteration
 
@@ -76,12 +79,12 @@ Features
 
 * strings
 
-  * non-owning writeable strings: `c4::substring`, `c4::substringrs` with `wchar_t` counterparts
+  * non-owning writeable strings: ``c4::substring``, ``c4::substringrs`` with ``wchar_t`` counterparts
 
-  * non-owning read-only strings: `c4::csubstring`, `c4::csubstringrs` with `wchar_t` counterparts
+  * non-owning read-only strings: ``c4::csubstring``, ``c4::csubstringrs`` with ``wchar_t`` counterparts
 
-  * owning strings: `c4::string` (with small string optimization), `c4::text`
-  (without SSO) with `wchar_t` counterparts
+  * owning strings: ``c4::string`` (with small string optimization), ``c4::text``
+  (without SSO) with ``wchar_t`` counterparts
 
   * no virtuals anywhere
 
@@ -99,39 +102,39 @@ Features
 
   * clear and transparent ownership semantics:
 
-    * assigning a string to a substring `subs=s;` means "point subs to
+    * assigning a string to a substring ``subs=s;`` means "point subs to
       the buffer of s"
 
-    * assigning a substring to a string `s=subs;` means "copy the content
+    * assigning a substring to a string ``s=subs;`` means "copy the content
       of subs to the buffer of s"
 
     * assigning a string/substring/char sum to a substring or string
       means "copy the result of this operation to the string's internal
       buffer", wherever it is.
 
-* string stream: `c4::sstream< StringType >`
+* string stream: ``c4::sstream< StringType >``
 
   * essentially a decorator for writing into / reading from a string,
     without having to copy to get the result (a major sink of efficiency in
-    the design of `std::stringstream`)
+    the design of ``std::stringstream``)
 
   * the string can be moved in and out (WIP)
 
-  * works with `std::string` / `std::wstring` and all the c4 strings
+  * works with ``std::string`` / ``std::wstring`` and all the c4 strings
 
   * no virtuals anywhere.
 
   * many methods for writing/reading:
 
-    * iostream-like chevron `<<` `>>` operators
+    * iostream-like chevron ``<<`` ``>>`` operators
 
-    * type safe concatenation: `ss.cat(var)` and `ss.uncat(var)`
-      serializes/deserializes the object into the string (via `<<` `>>`
+    * type safe concatenation: ``ss.cat(var)`` and ``ss.uncat(var)``
+      serializes/deserializes the object into the string (via ``<<`` ``>>``
       overloads)
 
-    * Python-like, type safe: eg, `ss.printp("hi I am {}", name)`, `ss.scanp()`
+    * Python-like, type safe: eg, ``ss.printp("hi I am {}", name)``, ``ss.scanp()``
 
-    * C-like, type unsafe: `ss.printf()`, `ss.vprintf()` (sorry, no scanf
+    * C-like, type unsafe: ``ss.printf()``, ``ss.vprintf()`` (sorry, no scanf
       due to it being difficult to find the number of characters read)
 
 * size types are given as template parameters for all containers. This is
