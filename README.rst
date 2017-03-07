@@ -14,10 +14,10 @@ Features
 
 * ranges
 
-  * non-owning writeable ranges: ``c4::span``, ``c4::spanrs``, ``c4::etched_span``
+  * non-owning writeable ranges: ``c4::span<T>``, ``c4::spanrs<T>``, ``c4::etched_span<T>``
 
-  * non-owning read-only ranges: ``c4::cspan``, ``c4::cspanrs``,
-    ``c4::cetched_span``
+  * non-owning read-only ranges: ``c4::cspan<T>``, ``c4::cspanrs<T>``,
+    ``c4::cetched_span<T>``
 
 * container building blocks:
 
@@ -106,10 +106,10 @@ Features
 
   * clear and transparent ownership semantics:
 
-    * assigning a string to a substring ``subs=s;`` means "point subs to
+    * assigning an owning string to a non-owning substring ``subs=s;`` means "point subs to
       the buffer of s"
 
-    * assigning a substring to a string ``s=subs;`` means "copy the content
+    * assigning a non-owning substring to an owning string ``s=subs;`` means "copy the content
       of subs to the buffer of s"
 
     * assigning a string/substring/char sum to a substring or string
