@@ -3,175 +3,130 @@
  Linux + OS X: |travis|    Windows: |appveyor|
 ========================  ======================
 
-cmany
+c4stl
 =====
 
-Easily batch-build cmake projects!
-
-cmany is a command line tool to easily build variations of a CMake C/C++ project.
-It combines different compilers, cmake build types, compilation flags,
-processor architectures (WIP) and operating systems (also WIP).
-
-For example, to configure and build a project using clang++ and g++
-in both Debug and Release::
-
-    $ cmany build -c clang++,g++ -t Debug,Release path/to/CMakeLists.txt
-
-The command above will result in four different build trees, placed by default
-under a ``build`` folder which is under the current folder::
-
-    $ tree -fi -L 2
-    build
-    build/linux-x86_64-clang3.9-Debug
-    build/linux-x86_64-clang3.9-Release
-    build/linux-x86_64-gcc6.1-Debug
-    build/linux-x86_64-gcc6.1-Release
+C++ library of performance-minded contiguous containers, strings and streams.
 
 
 Features
 --------
 
-* Saves the tedious work of dealing with many build trees by hand.
-* Useful for build comparisons.
-* Useful for cross-compiler validation.
-* Avoids a full rebuild when the build type is changed. Although this feature
-  already exists in multi-configuration cmake generators like Visual
-  Studio, it is missing from mono-configuration generators like Unix
-  Makefiles.
-* ... TODO
+  * ranges
+    * non-owning writeable ranges: `c4::span`, `c4::spanrs`, `c4::etched_span`
+    * non-owning read-only ranges: `c4::cspan`, `c4::cspanrs`,
+      `c4::cetched_span`
+  * container building blocks:
+    * raw storage: `c4::raw_fixed<T,N>`, `c4::raw<T>`, `c4::raw_small<T,N>`
+      (via the small allocator trick) and importantly `c4::raw_paged<T>` (which
+      allows for constant time insertion on vector-based lists and maps
+      without the need for a prior call to `reserve()`).
+    * storage growth models: powers of two, Fibonacci, composed, etc.
+    * object (mass-) construction/destruction/copy/move facilities
+  * **WIP**:
+    * vector models:
+      * `c4::fixed_vector<T,N>`: compile-time fixed capacity, variable size
+      * `c4::small_vector<T,N>`: with inplace storage for up to N elements,
+        switching to the heap when the size exceeds N.
+      * `c4::array<T,N>`
+      * `c4::vector<T>`
+      * storage growth policy is given as a template parameter for the
+        dynamic memory vectors.
+    * sorted vector: `c4::sorted_vector<T,VectorImpl>`
+    * index-based contiguous memory lists (forward- and doubly-linked):
+      * `c4::flat_list<T,Storage>`: based on a vector of `{ T value, I next }`
+        pairs
+      * `c4::split_list<T,Storage>`: based on a vector for the indices and a
+        different vector for the values
+      * the `raw_paged` storage policy can be used, thus getting constant-time
+        insertion/lookup even without any prior calls to `reserve()`, with
+        all the mechanical sympathy for caches that arrays are known for
+    * contiguous maps with customizeable storage. As with lists, the vector
+      storage is given as a template parameter.
+      * `c4::flat_map<K,V>`: based on a sorted vector with `std::pair<K,V>`
+        as the value type; useful for frequent iterations over both keys and
+        values)
+      * `c4::split_map<K,V>`: based on a sorted vector for the keys and a
+        separate vector for the values; useful for when lookups are more
+        important than iteration
+      * need to investigate to what extent using a full array-based rb-tree
+        can be accomplished (separating the indices to save object copies?)
+  * strings
+    * non-owning writeable strings: `c4::substring`, `c4::substringrs` with `wchar_t` counterparts
+    * non-owning read-only strings: `c4::csubstring`, `c4::csubstringrs` with `wchar_t` counterparts
+    * owning strings: `c4::string` (with small string optimization), `c4::text`
+    (without SSO) with `wchar_t` counterparts
+    * no virtuals anywhere
+    * where the semantics make sense, all string methods are common to every type
+    * methods for path-like pop/push from right/left, with custom separator and
+      the / operator which joins operands as directories.
+    * expression templates are used for string concatenation operations, and
+      can be switched off (reverting to less-efficient allocation-happy
+      behaviour).
+    * all string selection operations keep allocations to a minimum by returning
+      substrings
+    * clear and transparent ownership semantics:
+      * assigning a string to a substring `subs=s;` means "point subs to
+        the buffer of s"
+      * assigning a substring to a string `s=subs;` means "copy the content
+        of subs to the buffer of s"
+      * assigning a string/substring/char sum to a substring or string
+        means "copy the result of this operation to the string's internal
+        buffer", wherever it is.
+  * string stream: `c4::sstream< StringType >`
+    * essentially a decorator for writing into / reading from a string,
+      without having to copy to get the result (a major sink of efficiency in
+      the design of `std::stringstream`)
+    * the string can be moved in and out (WIP)
+    * works with `std::string` / `std::wstring` and all the c4 strings
+    * no virtuals anywhere.
+    * many methods for writing/reading:
+      * iostream-like chevron `<<` `>>` operators
+      * type safe concatenation: `ss.cat(var)` and `ss.uncat(var)`
+        serializes/deserializes the object into the string (via `<<` `>>`
+        overloads)
+      * Python-like, type safe: eg, `ss.printp("hi I am {}", name)`, `ss.scanp()`
+      * C-like, type unsafe: `ss.printf()`, `ss.vprintf()` (sorry, no scanf
+        due to it being difficult to find the number of characters read)
+  * size types are given as template parameters for all containers. This is
+    meant more for situations in which it is important to have an overall
+    narrow type as the default for the containers (as in embedded platforms),
+    than to have dozens of different container types parameterized by the
+    size type. But it also helps to be able to go narrow for just that
+    particular hotspot! Although extensive unit tests are yet to be written
+    for size type interoperation, things should mostly work here (assertions
+    for overflow are generously spliced throughout the code where this might
+    occur). Of course, there might be some places where this was overlooked
+    -- so your contributions or bug reports are welcome.
+  * C++17-like polymorphic memory resource semantics. Allocations are slow
+    anyway, so this is a place where virtual behaviour has advantages. If
+    this is too slow for you, you can still plug in your ultra-lean
+    ultra-fast no-virtuals-anywhere allocator.
+  * customizeable behaviour on error, including callbacks
+  * Tested in Windows and Linux.
+  * Compilers: MSVC 2015+, g++4.9+, clang 3.8+, icc 2016+.
+  * Tested with valgrind and the clang sanitizers.
 
 
-Basic usage examples
---------------------
+Caveats
+-------
 
-Consider a directory with this layout::
+This is an alpha. Although there are already hundreds of unit tests, and they are
+executed with the clang sanitizers, and valgrind, bugs are bound to
+happen.
 
-    $ ls -1
-    CMakeLists.txt
-    main.cpp
+Also, design flaws may be present (it may very well be possible to
+successfully compile method calls which should not be possible). I welcome
+your input on this too.
 
-The following command invokes CMake to configure this project::
 
-    $ cmany configure .
+Documentation
+-------------
 
-When no compiler is specified, cmany chooses the compiler that CMake would
-default to (this is done by calling ``cmake --system-information``). cmany's
-default build type is Release, and it explicitly sets the build type even
-when it is not given. As an example, using g++ 6.1 in Linux x86_64, the
-result of the command above will be this::
+For now, use Doxygen::
 
-    $ tree -fi -L 2
-    build/
-    build/linux-x86_64-gcc6.1-release/
-    CMakeLists.txt
-    main.cpp
-
-    $ ls build/*/CMakeCache.txt
-    build/linux-x86_64-gcc6.1-release/CMakeCache.txt
-
-The command-line behaviour of cmany is similar to that of CMake except
-that the resulting build tree is not placed directly at the current
-directory, but will instead be nested under ``./build``. To make it
-unique, the name for each build tree will be obtained from combining
-the names of the operating system, architecture, compiler+version and
-the CMake build type. Like with CMake, omitting the path to the
-project dir will cause searching for CMakeLists.txt on the current
-dir. Also, the configure command has an alias of ``c``. So the following
-has the same result as above::
-
-    $ cmany c
-
-The ``cmany build`` command will configure AND build at once as if per
-``cmake --build``. This will invoke ``cmany configure`` if necessary::
-
-    $ cmany build
-
-Same as above: ``b`` is an alias to ``build``::
-
-    $ cmany b
-
-The ``cmany install`` command does the same as above, and additionally
-installs. That is, configure AND build AND install. ``i`` is an alias to
-``install``::
-
-    $ cmany i
-
-The install root defaults to ``./install``. So assuming the project creates
-an executable named ``hello``, the following will result::
-
-    $ ls -1
-    CMakeLists.txt
-    build/
-    install/
-    main.cpp
-    $ tree -fi install
-    install/
-    install/linux-x86_64-gcc6.1-release/
-    install/linux-x86_64-gcc6.1-release/bin/
-    install/linux-x86_64-gcc6.1-release/bin/hello
-
-To set the build types use ``-t`` or ``--build-types``. The following command
-chooses a build type of Debug instead of Release. If the directory is
-initially empty, this will be the result::
-
-    $ cmany b -t Debug
-    $ ls -1 build/*
-    build/linux-x86_64-gcc6.1-debug/
-
-The commands shown up to this point were only fancy wrappers for CMake. Since
-defaults were being used, or single arguments were given, the result was a
-single build tree. But as its name attests to, cmany will build many trees at
-once by combining the build parameters. For example, to build both Debug and
-Release build types while using defaults for the remaining parameters, you
-can do the following (resulting in 2 build trees)::
-
-    $ cmany b -t Debug,Release
-    $ ls -1 build/*
-    build/linux-x86_64-gcc6.1-debug/
-    build/linux-x86_64-gcc6.1-release/
-
-To set the compilers use ``-c`` or ``--compilers``. For example, build
-using both clang++ and g++; with the default build type (2 build trees)::
-
-    $ cmany b -c clang++,g++
-    $ ls -1 build/
-    build/linux-x86_64-clang3.9-release/
-    build/linux-x86_64-gcc6.1-release/
-
-Build using both clang++,g++ for Debug,Release build types (4 build trees)::
-
-    $ cmany b -c clang++,g++ -t Debug,Release
-    $ ls -1 build/
-    build/linux-x86_64-clang3.9-debug/
-    build/linux-x86_64-clang3.9-release/
-    build/linux-x86_64-gcc6.1-debug/
-    build/linux-x86_64-gcc6.1-release/
-
-Build using clang++,g++,icpc for Debug,Release,MinSizeRel build types
-(9 build trees)::
-
-    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
-    $ ls -1 build/
-    build/linux-x86_64-clang3.9-debug/
-    build/linux-x86_64-clang3.9-minsizerel/
-    build/linux-x86_64-clang3.9-release/
-    build/linux-x86_64-gcc6.1-debug/
-    build/linux-x86_64-gcc6.1-minsizerel/
-    build/linux-x86_64-gcc6.1-release/
-    build/linux-x86_64-icc16.1-debug/
-    build/linux-x86_64-icc16.1-minsizerel/
-    build/linux-x86_64-icc16.1-release/
-
-To get a list of available commands and help topics::
-
-    $ cmany help
-
-To get help on a particular command or topic (eg, ``build``), any
-of the following can be used::
-
-    $ cmany help build
-    $ cmany build -h
-    $ cmany build --help
+  $ cd doc
+  $ doxygen Doxyfile
 
 
 License
@@ -179,32 +134,39 @@ License
 
 This project is licensed under the MIT license.
 
+
 Status
 ------
 
 This project is a pre-alpha under development.
 
-Installation
-------------
 
-To install from source using Pip::
+Building
+--------
 
-    git clone https://github.com/biojppm/cmany
-    cd cmany
-    pip3 install .
+Build using cmake::
+
+    $ git clone https://github.com/biojppm/c4stl
+    $ cd c4stl
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ cmake --build .
+
 
 Contribute
 ----------
 
-Send pull requests to `<https://github.com/biojppm/cmany/pulls>`.
+Your contributions are welcome! Send pull requests to `<https://github.com/biojppm/c4stl/pulls>`.
+
 
 Support
 -------
 
-Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
+Your bug reports are also welcome! Send them to `<https://github.com/biojppm/c4stl/issues>`.
 
 
-.. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
-    :target: https://travis-ci.org/biojppm/cmany
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
-    :target: https://ci.appveyor.com/project/biojppm/cmany
+.. |travis| image:: https://travis-ci.org/biojppm/c4stl.svg?branch=master
+    :target: https://travis-ci.org/biojppm/c4stl
+.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/c4stl?branch=master&svg=true
+    :target: https://ci.appveyor.com/project/biojppm/c4stl
