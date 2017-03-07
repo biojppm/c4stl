@@ -402,18 +402,37 @@ template< typename S >
 void test_span_is_subspan()
 {
     int buf10[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int buf5[]  = {0, 1, 2, 3, 4};
+    int buf_5[]  = {-1, 0, 1, 2, 3, 4};
+    int *buf5 = buf_5 + 1; // to make sure that one does not immediately follow the other in memory
 
     S n(buf10);
-    S m(buf5);
+    S m(buf5, 5);
 
-    EXPECT_EQ(n.is_subspan(n.subspan(0)), true);
-    EXPECT_EQ(n.is_subspan(n.subspan(0, 3)), true);
-    EXPECT_EQ(n.is_subspan(n.subspan(0, 0)), true);
+    EXPECT_EQ(n.data(), buf10);
+    EXPECT_EQ(m.data(), buf5);
 
-    EXPECT_EQ(n.is_subspan(m.subspan(0)), false);
-    EXPECT_EQ(n.is_subspan(m.subspan(0, 3)), false);
-    EXPECT_EQ(n.is_subspan(m.subspan(0, 0)), false);
+    auto ss = n.subspan(0);
+    EXPECT_EQ(ss.data(), buf10);
+    EXPECT_EQ(ss.size(), 10);
+    ss = m.subspan(0);
+    EXPECT_EQ(ss.data(), buf5);
+    EXPECT_EQ(ss.size(), 5);
+    ss = n.subspan(0, 0);
+    EXPECT_NE(ss.data(), nullptr);
+    EXPECT_EQ(ss.data(), &buf10[0]);
+    EXPECT_EQ(ss.size(), 0);
+    ss = m.subspan(0, 0);
+    EXPECT_NE(ss.data(), nullptr);
+    EXPECT_EQ(ss.data(), &buf5[0]);
+    EXPECT_EQ(ss.size(), 0);
+
+    EXPECT_TRUE(n.is_subspan(n.subspan(0   )));
+    EXPECT_TRUE(n.is_subspan(n.subspan(0, 3)));
+    EXPECT_TRUE(n.is_subspan(n.subspan(0, 0)));
+
+    EXPECT_FALSE(n.is_subspan(m.subspan(0   )));
+    EXPECT_FALSE(n.is_subspan(m.subspan(0, 3)));
+    EXPECT_FALSE(n.is_subspan(ss));
 }
 TEST(span, is_subspan)
 {
