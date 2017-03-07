@@ -22,9 +22,13 @@ Features
 * container building blocks:
 
   * raw storage:
+
     * ``c4::raw_fixed<T,N>``
+
     * ``c4::raw<T>``
+
     * ``c4::raw_small<T,N>`` (via the small allocator trick)
+
     * ``c4::raw_paged<T>`` (which allows for constant time insertion on
       vector-based lists and maps without the need for a prior call to
       ``reserve()``).
@@ -84,7 +88,7 @@ Features
   * non-owning read-only strings: ``c4::csubstring``, ``c4::csubstringrs`` with ``wchar_t`` counterparts
 
   * owning strings: ``c4::string`` (with small string optimization), ``c4::text``
-  (without SSO) with ``wchar_t`` counterparts
+    (without SSO) with ``wchar_t`` counterparts
 
   * no virtuals anywhere
 
