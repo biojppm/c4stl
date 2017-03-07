@@ -120,47 +120,50 @@
  * This difference in semantics does not apply to owning strings, which
  * always use the less-efficient copy semantics.
  *
+ *
+ *
+ * ## Mechanics of concatenation operations
+ *
+ * When expression templates are enabled the sequence of cat
+ * operations is lazily transformed (by the compiler) into a syntax
+ * tree, its result size is found, then the receiving string is
+ * reserve()d, and finally the result is written into it. No temporary
+ * objects are created and so no copies are made to those temporary
+ * objects. Also, no allocations occur except possibly when the
+ * receiving string is reserved.
+ *
+ * When expression templates are disabled, each partial operation is
+ * greedily evaluated and assigned to a temporary object which
+ * contains an owning string as member (of type basic_text if a
+ * basic_text object is one of the operands; otherwise
+ * basic_string). This temporary object will then be use as operand to
+ * the following cat operation, in turn producing another temporary
+ * object. This will proceed until the assignment occurs. Special
+ * overloads exist for assigning from this object such that a copy
+ * occurs at this time (instead of a vanilla assignment, which as
+ * explained above results in a reference when the receiving string is
+ * a substring). Thus ensuring that the final result is the same as
+ * that of expression templates. This is really (as far as I can tell)
+ * the only possible behaviour here: if the return type of the cat
+ * operators were directly a basic_string or basic_text, then when
+ * assigning to a receiving substring we would get a reference to the
+ * stale memory of the meanwhile destroyed temporary object.
+ *
+ *
+ *
+ * ## Buffer overflows
+ *
+ * As always, the efficiency offered by substrings comes with added
+ * responsibility. The following is important:
+ *
  * @warning Do not assign string concatenation operations (operators + and /)
  * to non-owning strings unless you are sure they have room to write into.
-
  *
+ * c4stl has generous assertions spliced into to the code to prevent
+ * buffer overflow accidents from happening.
  *
- *
- * @code
- * csubstring ss1("foo"), ss2("bar"); // ss1 and ss2 are pointing at static memory
- * string r;
- * r = ss1 + ss2; // OK, r is "foobar" and owns the memory, copied
- *                // over from ss1 and ss2
- * @endcode
- *
- * BUT if we assign the sum to a substring instead, we will get a stale
- * pointer when expression templates are disabled:
- *
- * @code
- * // with expression templates:
- * char buf[16] = {0};     // must be big enough to hold "foobar\0"
- * substring ss3(buf, 16); // ss3 is pointing to buf
- * ss3 = ss1 + ss2; // OK, "foo" is copied into buf, then "bar" then \0
- * @endcode
- *
- * @code
- * // without expression templates:
- * char buf[16] = {0};     // must be big enough to hold "foobar\0"
- * substring ss3(buf, 16); // ss3 is pointing to buf
- * ss3 = ss1 + ss2;        // BAD, ss3 is now pointing at deallocated memory
- * @endcode
- *
- * The result of ss1+ss2 is an owned string. Because ss3 is not an
- * owned string, it is set to point at the contents of the owned
- * temporary string (ss1+ss2), which gets destroyed after the
- * assignment. So after the statement ss3 is pointed at deallocated memory.
-
- * For the reason above, it's better to use expression templates.
- *
- * @todo This can
- * be fixed in the future if a proxy (greedy) class is created to represent
- * the result of a binary operation. Then copy-assignment could be overloaded
- * to prevent substring classes from pointing at stale temporary memory.
+ * @see C4_ASSERT
+ * @see C4_XASSERT
  */
 
 #ifndef _C4_CONFIG_HPP_
