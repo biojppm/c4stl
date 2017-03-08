@@ -340,16 +340,15 @@ TEST(raw_paged_rt, addressing)
 }
 
 //-----------------------------------------------------------------------------
-template< class Raw, class... CtorArgs >
-void test_raw_construction(CtorArgs&& ...args)
+template< class Raw >
+void test_raw_construction(Raw &rp)
 {
     using traits = typename Raw::raw_traits;
     using value_type = typename Raw::value_type;
 
     {
-        auto cd = value_type::check_ctors_dtors(0, 0);
+        auto cd = value_type::check_ctors_dtors(10, 0);
         {
-            Raw rp(std::forward< CtorArgs >(args)...);
             traits::construct_n(rp, 0, 10);
         }
     }
@@ -357,7 +356,6 @@ void test_raw_construction(CtorArgs&& ...args)
     {
         auto cd = value_type::check_ctors_dtors(10, 0);
         {
-            Raw rp(std::forward< CtorArgs >(args)...);
             traits::construct_n(rp, 0, 10);
         }
     }
@@ -365,22 +363,26 @@ void test_raw_construction(CtorArgs&& ...args)
 TEST(raw_fixed, construction)
 {
     using ci = Counting< int >;
-    test_raw_construction< raw_fixed< ci, 1000 > >();
+    raw_fixed< ci, 1000 > rp;
+    test_raw_construction(rp);
 }
 TEST(raw, construction)
 {
     using ci = Counting< int >;
-    test_raw_construction< raw< ci > >(1000);
+    raw< ci > rp(1000);
+    test_raw_construction(rp);
 }
 TEST(raw_paged, construction)
 {
     using ci = Counting< int >;
-    test_raw_construction< raw_paged< ci > >(1000);
+    raw_paged< ci > rp(1000);
+    test_raw_construction(rp);
 }
 TEST(raw_paged_rt, construction)
 {
     using ci = Counting< int >;
-    test_raw_construction< raw_paged_rt< ci > >(1000);
+    raw_paged_rt< ci > rp(1000);
+    test_raw_construction(rp);
 }
 
 C4_END_NAMESPACE(stg)

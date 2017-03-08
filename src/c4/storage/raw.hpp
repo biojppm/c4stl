@@ -483,6 +483,7 @@ _raw_construct_n(I first, I n, Args&&... args)
 
     // handle elements on first page
     c4::construct_n(pgs[first_pg] + first_id, pg_sz - first_id, std::forward< Args >(args)...);
+    if(last_pg == first_pg) return; // or the loop would overflow if last_pg == 0
     // fully handle middle pages
     for(I p = first_pg + 1, e = last_pg - 1; p != e; ++p)
     {
