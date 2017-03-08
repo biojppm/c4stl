@@ -21,6 +21,8 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+template< class StringType > class sstream;
+
 /** @defgroup span_classes Span classes
  *
  * A span is a non-owning range of elements contiguously stored in memory.
@@ -304,9 +306,12 @@ public:
 public:
 
     C4_ALWAYS_INLINE span() noexcept : m_ptr{nullptr}, m_size{0} {}
-    C4_ALWAYS_INLINE span(T *p, I sz) noexcept : m_ptr{p}, m_size{sz} {}
-    template< size_t N >
-    C4_ALWAYS_INLINE span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N} {}
+
+    C4_ALWAYS_INLINE      span  (T *p, I sz) noexcept : m_ptr{p}, m_size{sz} {}
+    C4_ALWAYS_INLINE void assign(T *p, I sz) noexcept { m_ptr = p; m_size = sz; }
+
+    template< size_t N > C4_ALWAYS_INLINE      span  (T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N} {}
+    template< size_t N > C4_ALWAYS_INLINE void assign(T (&arr)[N]) noexcept { m_ptr = arr; m_size = N; }
 
     span(span const&) = default;
     span(span     &&) = default;
@@ -363,10 +368,16 @@ public:
 public:
 
     C4_ALWAYS_INLINE spanrs() noexcept : m_ptr{nullptr}, m_size{0}, m_capacity{0} {}
-    C4_ALWAYS_INLINE spanrs(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz} {}
-    C4_ALWAYS_INLINE spanrs(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap} {}
-    template< size_t N >
-    C4_ALWAYS_INLINE spanrs(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N} {}
+
+    C4_ALWAYS_INLINE      spanrs(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz} {}
+    /** @warning will reset the capacity to sz */
+    C4_ALWAYS_INLINE void assign(T *p, I sz) noexcept { m_ptr = p; m_size = sz; m_capacity = sz; }
+
+    C4_ALWAYS_INLINE      spanrs(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap} {}
+    C4_ALWAYS_INLINE void assign(T *p, I sz, I cap) noexcept { m_ptr = p; m_size = sz; m_capacity = cap; }
+
+    template< size_t N > C4_ALWAYS_INLINE      spanrs(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N} {}
+    template< size_t N > C4_ALWAYS_INLINE void assign(T (&arr)[N]) noexcept { m_ptr = arr; m_size = N; m_capacity = N; }
 
     spanrs(spanrs const&) = default;
     spanrs(spanrs     &&) = default;
@@ -424,11 +435,18 @@ public:
 public:
 
     C4_ALWAYS_INLINE etched_span() noexcept : m_ptr{nullptr}, m_size{0}, m_capacity{0}, m_offset{0} {}
+
     C4_ALWAYS_INLINE etched_span(T *p, I sz) noexcept : m_ptr{p}, m_size{sz}, m_capacity{sz}, m_offset{0} {}
+    C4_ALWAYS_INLINE void assign(T *p, I sz) noexcept { m_ptr = p; m_size = sz; m_capacity = sz; m_offset = 0; }
+
     C4_ALWAYS_INLINE etched_span(T *p, I sz, I cap) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{0} {}
+    C4_ALWAYS_INLINE void assign(T *p, I sz, I cap) noexcept { m_ptr = p; m_size = sz; m_capacity = cap; m_offset = 0; }
+
     C4_ALWAYS_INLINE etched_span(T *p, I sz, I cap, I offs) noexcept : m_ptr{p}, m_size{sz}, m_capacity{cap}, m_offset{offs} {}
-    template< size_t N >
-    C4_ALWAYS_INLINE etched_span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N}, m_offset{0} {}
+    C4_ALWAYS_INLINE void assign(T *p, I sz, I cap, I offs) noexcept { m_ptr = p; m_size = sz; m_capacity = cap; m_offset = offs; }
+
+    template< size_t N > C4_ALWAYS_INLINE etched_span(T (&arr)[N]) noexcept : m_ptr{arr}, m_size{N}, m_capacity{N}, m_offset{0} {}
+    template< size_t N > C4_ALWAYS_INLINE void assign(T (&arr)[N]) noexcept { m_ptr = arr; m_size = N; m_capacity = N; m_offset = 0; }
 
     etched_span(etched_span const&) = default;
     etched_span(etched_span     &&) = default;
