@@ -33,8 +33,8 @@ Features
       power of two the ``[]`` operator is constant time. This allows for
       constant time zero-copies-resizing insertion on vector-based lists and
       maps without the need for a prior call to ``reserve()``). Unlike array
-      storage, it also saves the need to copy over the lower pages to when
-      shrinking the container back to a smaller size.
+      storage, it also saves the need to copy over the lower pages whenever
+      the container is resized.
 
   * storage growth models: powers of two, Fibonacci, composed, etc.
 
@@ -91,12 +91,14 @@ Features
 
 * strings
 
-  * non-owning writeable strings: ``c4::substring``, ``c4::substringrs`` with ``wchar_t`` counterparts
+  * non-owning writeable strings: ``c4::substring``, ``c4::substringrs`` with
+    ``wchar_t`` counterparts
 
-  * non-owning read-only strings: ``c4::csubstring``, ``c4::csubstringrs`` with ``wchar_t`` counterparts
+  * non-owning read-only strings: ``c4::csubstring``, ``c4::csubstringrs``
+    with ``wchar_t`` counterparts
 
-  * owning strings: ``c4::string`` (with small string optimization), ``c4::text``
-    (without SSO) with ``wchar_t`` counterparts
+  * owning strings: ``c4::string`` (with small string optimization),
+    ``c4::text`` (without SSO) with ``wchar_t`` counterparts
 
   * no virtuals anywhere
 
@@ -114,15 +116,18 @@ Features
 
   * clear and transparent ownership semantics:
 
-    * assigning an owning string to a non-owning substring ``subs=s;`` means "point subs to
-      the buffer of s"
+    * assigning an owning string to a non-owning substring ``subs=s;`` means
+      "point subs to the buffer of s"
 
-    * assigning a non-owning substring to an owning string ``s=subs;`` means "copy the content
-      of subs to the buffer of s"
+    * assigning a non-owning substring to an owning string ``s=subs;`` means
+      "copy the content of subs to the buffer of s"
 
-    * assigning a string/substring/char sum to a substring or string
-      means "copy the result of this operation to the string's internal
-      buffer", wherever it is.
+    * assigning a sum of strings (of any type, including raw C strings) to a
+      substring or string means "copy the result of this operation to the
+      string's internal buffer". Owning strings are free to enlarge their
+      buffer as needed, but nonowning strings will assert if the space needed
+      to store the result is bigger than the size of the buffer they're
+      pointing to.
 
 * string stream: ``c4::sstream< StringType >``
 
@@ -140,7 +145,7 @@ Features
 
     * iostream-like chevron ``<<`` ``>>`` operators
 
-    * type safe concatenation: ``ss.cat(var)`` and ``ss.uncat(var)``
+    * type safe concatenation: ``ss.cat(var1, var2)`` and ``ss.uncat(var1, var2)``
       serializes/deserializes the object into the string (via ``<<`` ``>>``
       overloads)
 
@@ -159,6 +164,11 @@ Features
   overflow are generously spliced throughout the code where this might
   occur). Of course, there will be some places where this was overlooked --
   so your contributions or bug reports are welcome.
+
+* alignment (defaulting to ``alignof(T)``) is also a template parameter for
+  all containers to facilitate SIMD operations on containers (strings are an
+  exception, but this is easy to bypass if the string buffer is kept on an
+  aligned container and a substring is used to access it).
 
 * C++17-like polymorphic memory resource semantics. Allocations are slow
   anyway, so this is a place where virtual behaviour has advantages. If
