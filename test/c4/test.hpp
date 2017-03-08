@@ -68,6 +68,8 @@ protected:
 template< class T >
 struct Counting
 {
+    using value_type = T;
+
     T obj;
 
     static bool log_ctors;
