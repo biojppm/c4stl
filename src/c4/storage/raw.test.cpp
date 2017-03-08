@@ -339,5 +339,49 @@ TEST(raw_paged_rt, addressing)
     }
 }
 
+//-----------------------------------------------------------------------------
+template< class Raw, class... CtorArgs >
+void test_raw_construction(CtorArgs&& ...args)
+{
+    using traits = typename Raw::raw_traits;
+    using value_type = typename Raw::value_type;
+
+    {
+        auto cd = value_type::check_ctors_dtors(0, 0);
+        {
+            Raw rp(std::forward< CtorArgs >(args)...);
+            traits::construct_n(rp, 0, 10);
+        }
+    }
+
+    {
+        auto cd = value_type::check_ctors_dtors(10, 0);
+        {
+            Raw rp(std::forward< CtorArgs >(args)...);
+            traits::construct_n(rp, 0, 10);
+        }
+    }
+}
+TEST(raw_fixed, construction)
+{
+    using ci = Counting< int >;
+    test_raw_construction< raw_fixed< ci, 1000 > >();
+}
+TEST(raw, construction)
+{
+    using ci = Counting< int >;
+    test_raw_construction< raw< ci > >(1000);
+}
+TEST(raw_paged, construction)
+{
+    using ci = Counting< int >;
+    test_raw_construction< raw_paged< ci > >(1000);
+}
+TEST(raw_paged_rt, construction)
+{
+    using ci = Counting< int >;
+    test_raw_construction< raw_paged_rt< ci > >(1000);
+}
+
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
