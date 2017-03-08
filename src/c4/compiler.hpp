@@ -22,7 +22,7 @@
 /** @see http://sourceforge.net/p/predef/wiki/Compilers/ for a list of compiler identifier macros */
 /** @see https://msdn.microsoft.com/en-us/library/b0084kay.aspx for VS2013 predefined macros */
 
-#if defined(_MSC_VER) && (defined(C4_WIN) || defined(C4_XBOX) || defined(C4_UE4))
+#if defined(_MSC_VER)// && (defined(C4_WIN) || defined(C4_XBOX) || defined(C4_UE4))
 #   define C4_MSVC
 #   define C4_MSVC_VERSION_2017 15
 #   define C4_MSVC_VERSION_2015 14
