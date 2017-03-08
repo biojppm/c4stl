@@ -375,61 +375,56 @@ void test_raw_construction_paged(Raw &rp)
 {
     using traits = typename Raw::raw_traits;
     using value_type = typename Raw::value_type;
+    using T = typename Raw::value_type::value_type;
+    using I = typename Raw::size_type;
+
     test_raw_construction(rp);
 
-    {
-        SCOPED_TRACE("case 1");
-        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
-        {
-            traits::construct_n(rp, 0, rp.page_size(), /*the value*/123);
-        }
-    }
+    C4_STATIC_ASSERT(std::is_integral< T >::value);
 
+    auto do_test = [](const char *name, Raw &r_, I first, I num, T val)
     {
-        SCOPED_TRACE("case 2");
-        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        SCOPED_TRACE(name);
+        C4_ASSERT(r_.capacity() >= first + num);
+        auto cd = value_type::check_ctors_dtors(num, 0);
         {
-            C4_ASSERT(rp.num_pages() >= 2);
-            traits::construct_n(rp, rp.page_size(), rp.page_size(), /*the value*/123);
-        }
-    }
+            for(I p = 0, e = r_.num_pages(); p < e; ++p)
+            {
+                memset(&r_[p * r_.page_size()], 0, sizeof(T) * r_.page_size());
+            }
 
-    {
-        SCOPED_TRACE("case 3");
-        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
-        {
-            C4_ASSERT(rp.num_pages() >= 2);
-            traits::construct_n(rp, rp.page_size() / 2, rp.page_size(), /*the value*/123);
-        }
-    }
+            traits::construct_n(r_, first, num, /*the value*/val);
 
-    {
-        SCOPED_TRACE("case 4");
-        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
-        {
-            C4_ASSERT(rp.num_pages() >= 2);
-            traits::construct_n(rp, rp.page_size() / 3, rp.page_size(), /*the value*/123);
+            for(I i = first, e = first + num; i < e; ++i)
+            {
+                EXPECT_EQ(r_[i].obj, val);
+            }
         }
-    }
+    };
 
-    {
-        SCOPED_TRACE("case 5");
-        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
-        {
-            C4_ASSERT(rp.num_pages() >= 2);
-            traits::construct_n(rp, rp.page_size() - 1, rp.page_size(), /*the value*/123);
-        }
-    }
+    do_test("case 1.1", rp, 0, rp.page_size(), 123);
+    do_test("case 1.2", rp, 0, rp.page_size(), 23);
+    do_test("case 1.3", rp, 0, rp.capacity(), 123);
+    do_test("case 1.4", rp, 0, rp.capacity(), 23);
 
-    {
-        SCOPED_TRACE("case 6");
-        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
-        {
-            C4_ASSERT(rp.num_pages() >= 3);
-            traits::construct_n(rp, rp.page_size() + 1, rp.page_size(), /*the value*/123);
-        }
-    }
+    do_test("case 2.1", rp, rp.page_size(), rp.page_size(), 123);
+    do_test("case 2.2", rp, rp.page_size(), rp.page_size(), 23);
 
+    do_test("case 3.1", rp, rp.page_size() / 2, rp.page_size(), 123);
+    do_test("case 3.2", rp, rp.page_size() / 2, rp.page_size(), 23);
+    do_test("case 3.3", rp, rp.page_size() / 2, rp.page_size() / 2, 123);
+    do_test("case 3.4", rp, rp.page_size() / 2, rp.page_size() / 2, 23);
+    do_test("case 3.5", rp, rp.page_size() / 2 - 1, rp.page_size() / 2, 123);
+    do_test("case 3.6", rp, rp.page_size() / 2 + 1, rp.page_size() / 2, 23);
+
+    do_test("case 4.1", rp, rp.page_size() / 3, rp.page_size(), 123);
+    do_test("case 4.2", rp, rp.page_size() / 3, rp.page_size(), 23);
+
+    do_test("case 5.1", rp, rp.page_size() - 1, rp.page_size(), 123);
+    do_test("case 5.2", rp, rp.page_size() - 1, rp.page_size(), 23);
+
+    do_test("case 6.1", rp, rp.page_size() + 1, rp.page_size(), 123);
+    do_test("case 6.2", rp, rp.page_size() + 1, rp.page_size(), 23);
 }
 TEST(raw_fixed, construction)
 {
