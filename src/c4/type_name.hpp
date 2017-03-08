@@ -6,14 +6,15 @@
 #include <stdio.h>
 
 /// @cond dev
-// this is a more abbreviated way of getting the type name
-// (span involves templates and creates longer type name strings,
-// as well as more differences between compilers)
 struct _c4t
 {
     template< size_t N > _c4t(const char (&s)[N]) : str(s), sz(N-1) {} // take off the \0
     const char *str; size_t sz;
 };
+// this is a more abbreviated way of getting the type name
+// (if we used span in the return type the name would involve
+// templates and would create longer type name strings,
+// as well as more differences between compilers)
 template< class T >
 C4_CONSTEXPR14 C4_ALWAYS_INLINE
 _c4t _c4tn()
