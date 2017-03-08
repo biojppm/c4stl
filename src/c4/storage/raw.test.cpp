@@ -346,19 +346,90 @@ void test_raw_construction(Raw &rp)
     using traits = typename Raw::raw_traits;
     using value_type = typename Raw::value_type;
 
+    C4_STATIC_ASSERT(is_instance_of_tpl< Counting C4_COMMA value_type >::value);
+    C4_STATIC_ASSERT(std::is_integral< typename value_type::value_type >::value);
+
     {
         auto cd = value_type::check_ctors_dtors(10, 0);
         {
-            traits::construct_n(rp, 0, 10);
+            traits::construct_n(rp, 0, 10, /*the value*/123);
         }
     }
 
     {
         auto cd = value_type::check_ctors_dtors(10, 0);
         {
-            traits::construct_n(rp, 0, 10);
+            traits::construct_n(rp, 0, 10, /*the value*/123);
         }
     }
+
+    {
+        auto cd = value_type::check_ctors_dtors(10, 0);
+        {
+            traits::construct_n(rp, 10, 10, /*the value*/123);
+        }
+    }
+}
+template< class Raw >
+void test_raw_construction_paged(Raw &rp)
+{
+    using traits = typename Raw::raw_traits;
+    using value_type = typename Raw::value_type;
+    test_raw_construction(rp);
+
+    {
+        SCOPED_TRACE("case 1");
+        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        {
+            traits::construct_n(rp, 0, rp.page_size(), /*the value*/123);
+        }
+    }
+
+    {
+        SCOPED_TRACE("case 2");
+        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        {
+            C4_ASSERT(rp.num_pages() >= 2);
+            traits::construct_n(rp, rp.page_size(), rp.page_size(), /*the value*/123);
+        }
+    }
+
+    {
+        SCOPED_TRACE("case 3");
+        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        {
+            C4_ASSERT(rp.num_pages() >= 2);
+            traits::construct_n(rp, rp.page_size() / 2, rp.page_size(), /*the value*/123);
+        }
+    }
+
+    {
+        SCOPED_TRACE("case 4");
+        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        {
+            C4_ASSERT(rp.num_pages() >= 2);
+            traits::construct_n(rp, rp.page_size() / 3, rp.page_size(), /*the value*/123);
+        }
+    }
+
+    {
+        SCOPED_TRACE("case 5");
+        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        {
+            C4_ASSERT(rp.num_pages() >= 2);
+            traits::construct_n(rp, rp.page_size() - 1, rp.page_size(), /*the value*/123);
+        }
+    }
+
+    {
+        SCOPED_TRACE("case 6");
+        auto cd = value_type::check_ctors_dtors(rp.page_size(), 0);
+        {
+            C4_ASSERT(rp.num_pages() >= 3);
+            traits::construct_n(rp, rp.page_size() + 1, rp.page_size(), /*the value*/123);
+        }
+    }
+
 }
 TEST(raw_fixed, construction)
 {
@@ -376,13 +447,13 @@ TEST(raw_paged, construction)
 {
     using ci = Counting< int >;
     raw_paged< ci > rp(1000);
-    test_raw_construction(rp);
+    test_raw_construction_paged(rp);
 }
 TEST(raw_paged_rt, construction)
 {
     using ci = Counting< int >;
     raw_paged_rt< ci > rp(1000);
-    test_raw_construction(rp);
+    test_raw_construction_paged(rp);
 }
 
 C4_END_NAMESPACE(stg)

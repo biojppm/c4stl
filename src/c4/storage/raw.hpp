@@ -441,6 +441,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
         }
         at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
         _c4this->m_pages = nullptr;
+        _c4this->m_num_pages = 0;
         return;
     }
 
@@ -473,24 +474,21 @@ C4_ALWAYS_INLINE void
 _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_construct_n(I first, I n, Args&&... args)
 {
-    const I pg_sz    = _c4this->page_size();
-    const I first_pg = _c4this->_raw_pg(first    );
-    const I first_id = _c4this->_raw_id(first    );
-    const I last_pg  = _c4this->_raw_pg(first + n);
-    const I last_id  = _c4this->_raw_id(first + n);
-
-    auto *pgs = _c4this->m_pages;
-
-    // handle elements on first page
-    c4::construct_n(pgs[first_pg] + first_id, pg_sz - first_id, std::forward< Args >(args)...);
-    if(last_pg == first_pg) return; // or the loop would overflow if last_pg == 0
-    // fully handle middle pages
-    for(I p = first_pg + 1, e = last_pg - 1; p != e; ++p)
+    const I pg_sz = _c4this->page_size();
+    I first_id = _c4this->_raw_id(first);
+    I count = 0; // num elms handled so far
+    I pg = _c4this->_raw_pg(first);
+    while(count < n)
     {
-        c4::construct_n(pgs[p], pg_sz, std::forward< Args >(args)...);
+        C4_ASSERT(pg <= _c4this->_raw_pg(first + n));
+        const I missing = n - count;
+        I pn = pg_sz - first_id;
+        pn = pn < missing ? pn : missing;  // num elms to handle in this page
+        c4::construct_n(_c4this->m_pages[pg] + first_id, pn, std::forward< Args >(args)...);
+        pg++;
+        first_id = 0;
+        count += pn;
     }
-    // handle elements on last page
-    c4::construct_n(pgs[last_pg], last_id, std::forward< Args >(args)...);
 }
 
 template< class T, class I, I Alignment, class RawPaged >
