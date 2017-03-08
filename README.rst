@@ -21,7 +21,7 @@ Features
 
 * container building blocks:
 
-  * raw storage:
+  * raw storage: uninitialized memory returning elements via the ``[]`` operator.
 
     * ``c4::raw_fixed<T,N>``
 
@@ -29,15 +29,18 @@ Features
 
     * ``c4::raw_small<T,N>`` (via the small allocator trick)
 
-    * ``c4::raw_paged<T>`` (which allows for constant time insertion on
-      vector-based lists and maps without the need for a prior call to
-      ``reserve()``).
+    * ``c4::raw_paged<T>`` (quasi-contiguous). With the page size being a
+      power of two the ``[]`` operator is constant time. This allows for
+      constant time zero-copies-resizing insertion on vector-based lists and
+      maps without the need for a prior call to ``reserve()``). Unlike array
+      storage, it also saves the need to copy over the lower pages to when
+      shrinking the container back to a smaller size.
 
   * storage growth models: powers of two, Fibonacci, composed, etc.
 
   * object (mass-) construction/destruction/copy/move facilities
 
-* **WIP**:
+* Containers **WIP**: hold raw storage and construct/destroy elements as needed.
 
   * vector models:
 
@@ -49,6 +52,10 @@ Features
     * ``c4::array<T,N>``
 
     * ``c4::vector<T>``
+
+    * ``c4::spanning_vector<T>``: non-owning, allows insertion and removal of
+      elements without requiring size parameterization (thus providing
+      size-erasure for client code)
 
     * storage growth policy is given as a template parameter for the
       dynamic memory vectors.
@@ -63,9 +70,10 @@ Features
     * ``c4::split_list<T,Storage>``: based on a vector for the indices and a
       different vector for the values
 
-    * the ``raw_paged`` storage policy can be used, thus getting constant-time
-      insertion/lookup even without any prior calls to ``reserve()``, with
-      all the mechanical sympathy for caches that arrays are known for
+    * the ``raw_paged`` storage policy can be used, thus getting
+      constant-time insertion/lookup with zero-copies-resizing, even without
+      any prior calls to ``reserve()``, with all the mechanical sympathy for
+      caches that arrays are known for
 
   * contiguous maps with customizeable storage. As with lists, the vector
     storage is given as a template parameter.
@@ -78,8 +86,8 @@ Features
       separate vector for the values; useful for when lookups are more
       important than iteration
 
-    * need to investigate to what extent using a full array-based rb-tree
-      can be accomplished (separating the indices to save object copies?)
+    * need to investigate to what extent using an index map will solve
+      the problem of data movement.
 
 * strings
 
@@ -143,19 +151,19 @@ Features
 
 * size types are given as template parameters for all containers. This is
   meant more for situations in which it is important to have an overall
-  narrow type as the default for the containers (as in embedded platforms),
-  than to have dozens of different container types parameterized by the
-  size type. But it also helps to be able to go narrow for just that
-  particular hotspot! Although extensive unit tests are yet to be written
-  for size type interoperation, things should mostly work here (assertions
-  for overflow are generously spliced throughout the code where this might
-  occur). Of course, there might be some places where this was overlooked
-  -- so your contributions or bug reports are welcome.
+  narrow type as the default for the container sizes (as in embedded
+  platforms), than to have dozens of different container types parameterized
+  by the size type. But it also helps to be able to go narrow for just that
+  particular hotspot! Although extensive unit tests are yet to be written for
+  size type interoperation, things should mostly work here (assertions for
+  overflow are generously spliced throughout the code where this might
+  occur). Of course, there will be some places where this was overlooked --
+  so your contributions or bug reports are welcome.
 
 * C++17-like polymorphic memory resource semantics. Allocations are slow
   anyway, so this is a place where virtual behaviour has advantages. If
   this is too slow for you, you can still plug in your ultra-lean
-  ultra-fast no-virtuals-anywhere allocator.
+  ultra-fast no-virtuals-anywhere allocator into the containers.
 
 * customizeable behaviour on error, including callbacks
 
@@ -169,13 +177,13 @@ Features
 Caveats
 -------
 
-This is an alpha. Although there are already hundreds of unit tests, and they are
+This is a pre-alpha. Although there are already hundreds of unit tests, and they are
 executed with the clang sanitizers, and valgrind, bugs are bound to
 happen.
 
-Also, design flaws may be present (it may very well be possible to
-successfully compile method calls which should not be possible). I welcome
-your input on this too.
+Also, design flaws will be present in some corner cases, and it may very well
+be possible to successfully compile method calls which should not be
+possible to do. Again, I welcome your input regarding this and any other methods.
 
 
 Documentation
@@ -210,6 +218,11 @@ Build using cmake::
     $ cd build
     $ cmake ..
     $ cmake --build .
+
+Running the tests::
+
+    $ cmake --build --target unit_tests   # builds and runs the tests
+    $ cmake --build --target test         # only runs the tests
 
 
 Contribute
