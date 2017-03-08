@@ -209,7 +209,7 @@ public:                                                                 \
 };
 
 //-----------------------------------------------------------------------------
-#define _c4_DEFINE_ARRAY_TYPES(T, I) \
+#define _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I) \
 \
     using value_type = T;\
     using size_type = I;\
@@ -220,10 +220,14 @@ public:                                                                 \
     using reference = T&;\
     using const_reference = T const&;\
 \
-    using iterator = T*;\
-    using const_iterator = T const*;\
-\
     using difference_type = ptrdiff_t;
+
+#define _c4_DEFINE_ARRAY_TYPES(T, I) \
+\
+    _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I);\
+\
+    using iterator = T*;\
+    using const_iterator = T const*;
 
 //-----------------------------------------------------------------------------
 // http://stackoverflow.com/questions/10821380/is-t-an-instance-of-a-template-in-c
