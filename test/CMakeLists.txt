@@ -61,6 +61,7 @@ c4stl_add_test(c4stl-test-core
     ${s}/c4/storage/raw.test.cpp
     ${s}/c4/storage/raw.test.hpp
     ${s}/c4/storage/growth.test.cpp
+    ${s}/c4/type_name.test.cpp
     ${s}/c4/types.test.cpp
     )
 
