@@ -1,6 +1,7 @@
 add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
-add_custom_target(unit_tests_build)
-add_dependencies(unit_tests unit_tests_build)
+
+add_custom_target(unit_tests-build)
+add_dependencies(unit_tests unit_tests-build)
 
 #------------------------------------------------------------------------------
 
@@ -33,7 +34,7 @@ function(c4stl_add_test name)
         )
     add_custom_target(${name}-build)
     add_dependencies(${name}-build ${name})
-    add_dependencies(unit_tests_build ${name}-build)
+    add_dependencies(unit_tests-build ${name}-build)
     add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
     foreach(s asan msan tsan ubsan)
         set(t ${name}-${s})
