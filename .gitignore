@@ -12,7 +12,10 @@ CMakeLists.txt.user
 .cproject
 /.settings/
 
-
+# build files
 build/
 install/
+
+# test files
+/Testing/
 
