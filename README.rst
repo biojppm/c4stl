@@ -74,8 +74,11 @@ Features
 
     * also provides an explicit API for building the container without sorting or
       checking the order of the given input: ``assign_nosort()`` (does not
-      sort, but does a check and marks invalid portion) and
-      ``assign_nocheck()`` (assumes the input is fully sorted)
+      sort, but does a check and marks the invalid portion) and
+      ``assign_nocheck()`` (assumes the input is fully sorted and will mark
+      the container as fully valid). Again, the vanilla ``assign()`` method
+      will safely (but inefficiently) behave as expected: its input is
+      checked and sorted if needed, so that the container is valid on return.
 
   * contiguous maps with customizeable storage. As with lists, the vector
     storage is given as a template parameter.
@@ -104,7 +107,7 @@ Features
       calls to ``reserve()``, with all the mechanical sympathy for caches
       that arrays are known for
 
-* container building blocks (facilitates building more containers):
+* container building blocks (facilitate building more containers):
 
   * raw storage: uninitialized memory returning elements via the ``[]`` operator.
 
@@ -138,16 +141,17 @@ Features
   * owning strings: ``c4::string`` (with small string optimization),
     ``c4::text`` (without SSO) with ``wchar_t`` counterparts
 
-  * no virtuals anywhere
+  * no virtuals anywhere.
 
   * where the semantics make sense, all string methods are common to every type
 
-  * methods for path-like pop/push from right/left, with custom separator and
-    the / operator which joins operands as directories.
+  * also, there's methods for path-like pop/push from right/left, with custom
+    separator and the / operator which joins operands as directories.
 
-  * expression templates are used for string concatenation operations, and
-    can be switched off (reverting to less-efficient allocation-happy
-    behaviour).
+  * expression templates are used for string concatenation operations
+    (allowing for efficient lazy evaluation of the length before and proper
+    ``reserve()`` before any actual data copy begins). Expression templates can be
+    switched off (reverting to less-efficient allocation-happy behaviour).
 
   * all string selection operations keep allocations to a minimum by returning
     substrings
@@ -169,11 +173,7 @@ Features
 
 * string stream: ``c4::sstream< StringType >``
 
-  * essentially a decorator for writing into / reading from a string,
-    without having to copy to get the result (a major sink of efficiency in
-    the design of ``std::stringstream``)
-
-  * the string can be moved in and out (WIP)
+  * the string can be moved in and out! (WIP)
 
   * works with ``std::string`` / ``std::wstring`` and all the c4 strings
 
@@ -192,20 +192,28 @@ Features
     * C-like, type unsafe: ``ss.printf()``, ``ss.vprintf()`` (sorry, no scanf
       due to it being difficult to find the number of characters read)
 
+  * essentially a decorator for writing into / reading from a string,
+    without having to copy to get the result (a major sink of efficiency in
+    the design of ``std::stringstream``)
+
 * size types are given as template parameters for all containers.
 
   * This is meant more for situations in which it is important to have an
     overall narrow type as the default for the container sizes (as in
     embedded platforms), than to have dozens of different container types
-    parameterized by the size type. But it also helps to be able to go narrow
-    for just that particular hotspot! For example, using a 16-bit integer for
-    a list index will make it a list node 96 bits instead of the ,
+    parameterized by the size type.
 
-  * Although extensive unit tests are yet to be written for size type
-    interoperation, things should mostly work here (assertions for overflow
-    are generously spliced throughout the code where this might occur). Of
-    course, there will be some places where this was overlooked -- so your
-    contributions or bug reports are welcome.
+  * But it also helps to be able to go narrow for just that particular
+    hotspot! For example, using a 16-bit integer for the list index type will
+    make its node type 96 bits wide ``(64 + 2 * 16)`` instead of the 192 bits
+    that a std three-pointer node would take in a 64-bit platform. This is a
+    ``50%`` saving in memory, and can really matter in some cases.
+
+  * Basic unit tests are already in place. Although extensive unit tests for
+    size type interoperation are yet to be implemented, things should mostly
+    work here (assertions for overflow are generously spliced throughout the
+    code where this might occur). Of course, there will be some places where
+    this was overlooked -- so your contributions or bug reports are welcome.
 
 * alignment (defaulting to ``alignof(T)``) is also a template parameter for
   all containers to facilitate SIMD operations on containers (strings are an
