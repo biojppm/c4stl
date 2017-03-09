@@ -115,7 +115,7 @@ struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
 
 //-----------------------------------------------------------------------------
 
-/** specialization of raw_storage_util for fixed storage containers.
+/** specialization of _raw_storage_traits for fixed storage containers.
  * @ingroup raw_storage_classes */
 template< class Storage >
 struct _raw_storage_traits< Storage, fixed_t >
@@ -157,7 +157,7 @@ struct _raw_storage_traits< Storage, fixed_t >
     }
 };
 
-/** specialization of raw_storage_util for non-fixed contiguous containers.
+/** specialization of _raw_storage_traits for non-fixed contiguous containers.
  * @ingroup raw_storage_classes */
 template< class Storage >
 struct _raw_storage_traits< Storage, contiguous_t >
@@ -201,7 +201,7 @@ struct _raw_storage_traits< Storage, contiguous_t >
 };
 
 
-/** specialization of raw_storage_util for paged storage containers.
+/** specialization of _raw_storage_traits for paged storage containers.
  * @ingroup raw_storage_classes */
 template< class Storage >
 struct _raw_storage_traits< Storage, paged_t >
@@ -256,7 +256,7 @@ struct raw_fixed
 
     union {
         alignas(Alignment) char _m_buf[N * sizeof(T)];
-        alignas(Alignment) T m_ptr[N];
+        alignas(Alignment) T m_arr[N];
     };
 
 public:
@@ -276,11 +276,11 @@ public:
     raw_fixed& operator=(raw_fixed const& that) = delete;
     raw_fixed& operator=(raw_fixed     && that) = delete;
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < N); return m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < N); return m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < N); return m_arr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < N); return m_arr[i]; }
 
-    C4_ALWAYS_INLINE T      * data()       noexcept { return m_ptr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return m_ptr; }
+    C4_ALWAYS_INLINE T      * data()       noexcept { return m_arr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return m_arr; }
 
     C4_ALWAYS_INLINE constexpr I  max_capacity()      const noexcept { return N; }
     C4_ALWAYS_INLINE constexpr I      capacity()      const noexcept { return N; }
@@ -288,8 +288,8 @@ public:
 
 public:
 
-    iterator       _raw_iterator(I id)       noexcept { return m_ptr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return m_ptr + id; }
+    iterator       _raw_iterator(I id)       noexcept { return m_arr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return m_arr + id; }
 
 public:
 
