@@ -18,48 +18,78 @@ Features
   * non-owning read-only ranges: ``c4::cspan<T>``, ``c4::cspanrs<T>``,
     ``c4::cetched_span<T>``
 
-* container building blocks:
-
-  * raw storage: uninitialized memory returning elements via the ``[]`` operator.
-
-    * ``c4::raw_fixed<T,N>``
-
-    * ``c4::raw<T>``
-
-    * ``c4::raw_small<T,N>`` (via the small allocator trick)
-
-    * ``c4::raw_paged<T>`` (quasi-contiguous). With the page size being a
-      power of two the ``[]`` operator is constant time. This allows for
-      constant time zero-copies-resizing insertion on vector-based lists and
-      maps without the need for a prior call to ``reserve()``). Unlike array
-      storage, it also saves the need to copy over the lower pages whenever
-      the container is resized.
-
-  * storage growth models: powers of two, Fibonacci, composed, etc.
-
-  * object (mass-) construction/destruction/copy/move facilities
-
-* Containers **WIP**: hold raw storage and construct/destroy elements as needed.
+* Containers **WIP**: hold raw storage and are responsible for object lifetime.
 
   * vector models:
 
-    * ``c4::fixed_vector<T,N>``: compile-time fixed capacity, variable size
+    * ``c4::array<T,N>``: fixed capacity and size
+
+    * ``c4::vector<T>``:  dynamic capacity and size
+
+    * ``c4::fixed_vector<T,N>``: fixed capacity, dynamic size
 
     * ``c4::small_vector<T,N>``: with inplace storage for up to N elements,
-      switching to the heap when the size exceeds N.
-
-    * ``c4::array<T,N>``
-
-    * ``c4::vector<T>``
+      switching to the heap when the capacity exceeds N.
 
     * ``c4::spanning_vector<T>``: non-owning, allows insertion and removal of
       elements without requiring size parameterization (thus providing
       size-erasure for client code)
 
-    * storage growth policy is given as a template parameter for the
-      dynamic memory vectors.
+    * customizeable behaviour:
 
-  * sorted vector: ``c4::sorted_vector<T,VectorImpl>``
+      * size type (defaulting to `size_t`) is given as a template parameter
+
+      * data alignment (defaulting to `alignof(T)`) is given as a template
+        parameter
+
+      * the capacity policy for dynamic types is given as a template
+        parameter. Default policy is growth-by-two for small sizes and
+        growth-by-golden-section for large sizes
+
+  * sorted vector: ``c4::sorted_vector<T,Compare,Storage>``. Leveraging the
+    fact that insertions and lookups are often done in separate phases, it
+    provides an explicit API and a ``valid()`` order state predicate to
+    efficiently manage this flow:
+
+    * defaults to the safe (but inefficient) always-sorted behaviour
+
+    * insert without sorting by calling ``insert_nosort()``. Inserted
+      elements will be pushed to the back of the container; if the order
+      was valid before inserting, a comparison to the back() element is made
+      and the valid/invalid boundary adjusted when they do not `Compare`.
+
+    * lookups in this invalid state will then consist of a binary search in
+      the valid portion, and a linear search in the invalid portion. Of
+      course, when the state is valid then the binary search will apply
+      everywhere.
+
+    * ``lower_bounds()``, ``upper_bound()`` and ``equal_range()`` will
+      trigger an assertion if the container is not fully valid (ie if the
+      valid boundary is not at the end).
+
+    * explicitly calling ``fix()`` will make the container fully valid.
+
+    * can also call ``insert()``, which will do insert and immediately
+      sort. This is practical when used occasionally (inefficiently).
+
+    * also provides an explicit API for building the container without sorting or
+      checking the order of the given input: ``assign_nosort()`` (does not
+      sort, but does a check and marks invalid portion) and
+      ``assign_nocheck()`` (assumes the input is fully sorted)
+
+  * contiguous maps with customizeable storage. As with lists, the vector
+    storage is given as a template parameter.
+
+    * ``c4::flat_map<K,V,Compare,Storage>``: based on a sorted vector with
+      ``std::pair<K,V>`` as the value type; useful for frequent iterations
+      over both keys and values)
+
+    * ``c4::split_map<K,V,Compare,Storage>``: based on a sorted vector for
+      the keys and a separate vector for the values; useful for when lookups
+      are more important than iteration
+
+    * need to investigate to what extent using an index map will solve
+      the problem of data movement.
 
   * index-based contiguous memory lists (forward- and doubly-linked):
 
@@ -69,24 +99,33 @@ Features
     * ``c4::split_list<T,Storage>``: based on a vector for the indices and a
       different vector for the values
 
-    * the ``raw_paged`` storage policy can be used, thus getting
-      constant-time insertion/lookup with zero-copies-resizing, even without
-      any prior calls to ``reserve()``, with all the mechanical sympathy for
-      caches that arrays are known for
+    * using the ``raw_paged`` storage policy will allow constant-time
+      insertion/lookup with zero-copies-resizing, even without any prior
+      calls to ``reserve()``, with all the mechanical sympathy for caches
+      that arrays are known for
 
-  * contiguous maps with customizeable storage. As with lists, the vector
-    storage is given as a template parameter.
+* container building blocks (facilitates building more containers):
 
-    * ``c4::flat_map<K,V>``: based on a sorted vector with ``std::pair<K,V>``
-      as the value type; useful for frequent iterations over both keys and
-      values)
+  * raw storage: uninitialized memory returning elements via the ``[]`` operator.
 
-    * ``c4::split_map<K,V>``: based on a sorted vector for the keys and a
-      separate vector for the values; useful for when lookups are more
-      important than iteration
+    * ``c4::stg::raw_fixed<T,N>``: capacity fixed at compile time
 
-    * need to investigate to what extent using an index map will solve
-      the problem of data movement.
+    * ``c4::stg::raw<T>``: capacity set at run time
+
+    * ``c4::stg::raw_small<T,N>``: capacity set at run time with in-place
+      storage up to N elements; will only allocate if the required capacity
+      is larger than N.
+
+    * ``c4::stg::raw_paged<T>`` (quasi-contiguous). With the page size being a
+      power of two the ``[]`` operator is constant time. This allows for
+      constant time zero-copies-resizing insertion on vector-based lists and
+      maps without the need for a prior call to ``reserve()``). Unlike array
+      storage, it also saves the need to copy over the lower pages whenever
+      the capacity is changed. The page size is also a 
+
+  * storage growth models: powers of two, Fibonacci, composed, etc.
+
+  * object (mass-) construction/destruction/copy/move facilities
 
 * strings
 
@@ -153,16 +192,20 @@ Features
     * C-like, type unsafe: ``ss.printf()``, ``ss.vprintf()`` (sorry, no scanf
       due to it being difficult to find the number of characters read)
 
-* size types are given as template parameters for all containers. This is
-  meant more for situations in which it is important to have an overall
-  narrow type as the default for the container sizes (as in embedded
-  platforms), than to have dozens of different container types parameterized
-  by the size type. But it also helps to be able to go narrow for just that
-  particular hotspot! Although extensive unit tests are yet to be written for
-  size type interoperation, things should mostly work here (assertions for
-  overflow are generously spliced throughout the code where this might
-  occur). Of course, there will be some places where this was overlooked --
-  so your contributions or bug reports are welcome.
+* size types are given as template parameters for all containers.
+
+  * This is meant more for situations in which it is important to have an
+    overall narrow type as the default for the container sizes (as in
+    embedded platforms), than to have dozens of different container types
+    parameterized by the size type. But it also helps to be able to go narrow
+    for just that particular hotspot! For example, using a 16-bit integer for
+    a list index will make it a list node 96 bits instead of the ,
+
+  * Although extensive unit tests are yet to be written for size type
+    interoperation, things should mostly work here (assertions for overflow
+    are generously spliced throughout the code where this might occur). Of
+    course, there will be some places where this was overlooked -- so your
+    contributions or bug reports are welcome.
 
 * alignment (defaulting to ``alignof(T)``) is also a template parameter for
   all containers to facilitate SIMD operations on containers (strings are an
@@ -174,11 +217,12 @@ Features
   this is too slow for you, you can still plug in your ultra-lean
   ultra-fast no-virtuals-anywhere allocator into the containers.
 
-* customizeable behaviour on error, including callbacks
+* customizeable behaviour on error, including callbacks and macros for
+  turning on/off assertions irrespective of ``NDEBUG`` status
 
 * Tested in Windows and Linux.
 
-* Compilers: MSVC 2015+, g++4.9+, clang 3.8+, icc 2016+.
+* Compilers: >= MSVC 2015, >= g++5, >= clang++ 3.8, >= icc 2016.
 
 * Tested with valgrind and the clang sanitizers.
 
