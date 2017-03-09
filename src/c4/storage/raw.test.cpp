@@ -466,6 +466,7 @@ void test_raw_construction_paged(Raw &rp)
     test_raw_construction(rp);
 
     C4_STATIC_ASSERT(std::is_integral< T >::value);
+    C4_STATIC_ASSERT(std::is_trivially_destructible< T >::value);
 
     auto do_test = [](const char *name, Raw &r_, I first, I num, T val)
     {
@@ -480,9 +481,17 @@ void test_raw_construction_paged(Raw &rp)
 
             traits::construct_n(r_, first, num, /*the value*/val);
 
+            for(I i = 0, e = first; i < e; ++i)
+            {
+                EXPECT_EQ(r_[i].obj, 0);
+            }
             for(I i = first, e = first + num; i < e; ++i)
             {
                 EXPECT_EQ(r_[i].obj, val);
+            }
+            for(I i = first + num, e = r_.capacity(); i < e; ++i)
+            {
+                EXPECT_EQ(r_[i].obj, 0);
             }
         }
     };
