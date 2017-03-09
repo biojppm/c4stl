@@ -26,7 +26,7 @@ Features
 
     * ``c4::vector<T>``:  dynamic capacity and size
 
-    * ``c4::fixed_vector<T,N>``: fixed capacity, dynamic size
+    * ``c4::array_vector<T,N>``: fixed capacity, dynamic size
 
     * ``c4::small_vector<T,N>``: with inplace storage for up to N elements,
       switching to the heap when the capacity exceeds N.
@@ -203,11 +203,12 @@ Features
     embedded platforms), than to have dozens of different container types
     parameterized by the size type.
 
-  * But it also helps to be able to go narrow for just that particular
-    hotspot! For example, using a 16-bit integer for the list index type will
-    make its node type 96 bits wide ``(64 + 2 * 16)`` instead of the 192 bits
-    that a std three-pointer node would take in a 64-bit platform. This is a
-    ``50%`` saving in memory, and can really matter in some cases.
+  * But you can also do it! It also helps to be able to go narrow for just
+    that particular hotspot! For example, using a 16-bit integer for the list
+    index type will make its node type 96 bits wide ``(64 + 2 * 16)`` instead
+    of the 192 bits that a std three-pointer node would take in a 64-bit
+    platform. This is a ``50%`` saving in memory, and can really matter in
+    some cases.
 
   * Basic unit tests are already in place. Although extensive unit tests for
     size type interoperation are yet to be implemented, things should mostly

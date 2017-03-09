@@ -161,11 +161,7 @@
 #   define C4_LIKELY(x)   __builtin_expect(x, 1)
 #   define C4_UNLIKELY(x) __builtin_expect(x, 0)
 #   define C4_UNREACHABLE() __builtin_unreachable()
-#   if defined(C4_GCC)
-#       define C4_ATTR_FORMAT(...) //__attribute__((__VA_ARGS__)) ///< @see https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#Common-Function-Attributes
-#   else
-#       define C4_ATTR_FORMAT(...)
-#   endif
+#   define C4_ATTR_FORMAT(...) //__attribute__((format (__VA_ARGS__))) ///< @see https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#Common-Function-Attributes
 #else
 #   define C4_RESTRICT __restrict
 #   define C4_RESTRICT_FN __declspec(restrict)
