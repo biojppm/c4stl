@@ -34,6 +34,28 @@ struct growth_default;
  *   or destroyed.
  */
 
+#ifndef C4_REF_SMALL_SIZE // size in bytes
+#   define C4_REF_SMALL_SIZE 128 // 128 bytes
+#endif
+
+#ifndef C4_REF_PAGE_SIZE
+#   define C4_REF_PAGE_SIZE 1024
+#endif
+
+constexpr size_t num_small_objects(size_t obj_size)
+{
+    return C4_REF_SMALL_SIZE / obj_size;
+}
+
+constexpr size_t num_paged_objects(size_t obj_size)
+{
+    return C4_REF_PAGE_SIZE / obj_size;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 // forward declarations
 template< class Storage, class TagType > struct raw_storage_traits;
 
@@ -43,17 +65,17 @@ struct raw_fixed;
 template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
 struct raw;
 
-template< class T, size_t PageSize = 256, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
+/** raw storage with inplace storage of up to N objects, thus saving an
+ * allocation when the size is small. @ingroup raw_storage_classes */
+template< class T, size_t N = num_small_objects(sizeof(T)), class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
+struct raw_small; // = raw< T, I, Alignment, SmallAllocator<T, N, Alignment> >;
+
+template< class T, size_t PageSize = num_paged_objects(sizeof(T)), class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
 struct raw_paged;
 
 /** raw paged with page size determined at runtime. @ingroup raw_storage_classes */
 template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
 using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
-
-/** raw storage with inplace storage of up to N objects, thus saving an
- * allocation when the size is small. @ingroup raw_storage_classes */
-template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
-using raw_small = raw< T, I, Alignment, SmallAllocator<T, N, Alignment> >;
 
 //-----------------------------------------------------------------------------
 
@@ -319,8 +341,8 @@ public:
     raw& operator=(raw const& that) = delete;
     raw& operator=(raw     && that) = delete;
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_ptr[i]; }
 
     C4_ALWAYS_INLINE T      * data()       noexcept { return m_ptr; }
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_ptr; }
@@ -351,6 +373,107 @@ public:
             m_ptr = m_allocator.allocate(cap, Alignment);
         }
         m_capacity = cap;
+    }
+
+};
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** raw contiguous storage with in-place storage for a small number of objects
+ * @tparam N the number of objects
+ * @ingroup raw_storage_classes */
+template< class T, size_t N, class I, I Alignment, class Alloc, class GrowthPolicy >
+struct raw_small
+{
+
+    C4_STATIC_ASSERT(sizeof(T) == alignof(T));
+
+    union {
+        union {
+            alignas(Alignment) T    m_arr[N];
+            alignas(Alignment) char m_buf[N * sizeof(T)];
+        };
+        T * m_ptr;
+    };
+
+    I     m_capacity;
+    Alloc m_allocator;
+
+public:
+
+    _c4_DEFINE_ARRAY_TYPES(T, I)
+    using raw_traits = raw_storage_traits< raw_small, contiguous_t >;
+
+    using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
+    using growth_policy = GrowthPolicy;
+
+    C4_STATIC_ASSERT(N < (size_t)std::numeric_limits< I >::max());
+    enum : I { threshold = (I)N };
+
+public:
+
+    raw_small() : raw_small(0) {}
+    raw_small(Alloc const& a) : raw_small(0, a) {}
+
+    raw_small(I cap) : m_ptr(nullptr), m_capacity(0), m_allocator() { _raw_resize(cap); }
+    raw_small(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(0), m_allocator(a) { _raw_resize(cap); }
+
+    ~raw_small()
+    {
+        _raw_resize(0);
+    }
+
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
+    raw_small(raw_small const& that) = delete;
+    raw_small(raw_small     && that) = delete;
+    raw_small& operator=(raw_small const& that) = delete;
+    raw_small& operator=(raw_small     && that) = delete;
+
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity < N ? m_arr[i] : m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity < N ? m_arr[i] : m_ptr[i]; }
+
+    C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity < N ? m_arr : m_ptr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity < N ? m_arr : m_ptr; }
+
+    C4_ALWAYS_INLINE I max_capacity() const noexcept { return std::numeric_limits< I >::max() - 1; }
+    C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
+    C4_ALWAYS_INLINE I next_capacity(I desired) const
+    {
+        return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+    }
+
+public:
+
+    iterator       _raw_iterator(I id)       noexcept { return m_capacity < N ? m_arr + id : m_ptr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return m_capacity < N ? m_arr + id : m_ptr + id; }
+
+public:
+
+    void _raw_resize(I cap)
+    {
+        if(m_capacity > N)
+        {
+            m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+            m_ptr = nullptr;
+        }
+        if(cap == 0)
+        {
+            return;
+        }
+        if(cap > N)
+        {
+            m_ptr = m_allocator.allocate(cap, Alignment);
+            m_capacity = cap;
+        }
+        else
+        {
+            m_capacity = N;
+        }
     }
 
 };
@@ -631,7 +754,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-/** specialization of raw_paged allowing the page size to be set at run time.
+/** specialization of raw_paged for dynamic (set at run time) page size.
  * @ingroup raw_storage_classes */
 template< class T, class I, I Alignment, class Alloc >
 struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >

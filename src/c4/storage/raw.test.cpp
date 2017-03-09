@@ -69,6 +69,63 @@ TEST(raw, instantiation)
 }
 
 //-----------------------------------------------------------------------------
+TEST(raw_small, instantiation)
+{
+    using ci = Counting< int >;
+    using rs = raw_small< ci >;
+
+    {
+        SCOPED_TRACE("empty");
+        AllocationCountsChecker ch;
+        {
+            auto cd = ci::check_ctors_dtors(0, 0);
+            rs rf;
+            EXPECT_EQ(rf.capacity(), 0);
+        }
+        ch.check_all_delta(0, 0, 0);
+    }
+
+    {
+        SCOPED_TRACE("small");
+        AllocationCountsChecker ch;
+        auto num = rs::threshold - 1; // fits in the inplace storage
+        {
+            auto cd = ci::check_ctors_dtors(0, 0);
+            rs rf(num);
+            EXPECT_EQ(rf.capacity(), rs::threshold);
+        }
+        ch.check_all_delta(0, 0, 0);
+    }
+
+    {
+        SCOPED_TRACE("small-limit");
+        AllocationCountsChecker ch;
+        auto num = rs::threshold; // fits in the inplace storage
+        {
+            auto cd = ci::check_ctors_dtors(0, 0);
+            rs rf(num);
+            EXPECT_EQ(rf.capacity(), rs::threshold);
+            ch.check_curr_delta(0, 0);
+        }
+        ch.check_all_delta(0, 0, 0);
+    }
+
+    {
+        SCOPED_TRACE("large");
+        AllocationCountsChecker ch;
+        auto num = rs::threshold + 1; // does not fit in the inplace storage
+        {
+            SCOPED_TRACE("large-test");
+            auto cd = ci::check_ctors_dtors(0, 0);
+            rs rf(num);
+            EXPECT_EQ(rf.capacity(), num);
+            ch.check_curr_delta(1, num * sizeof(ci));
+        }
+        ch.check_curr_delta(0, 0);
+    }
+}
+
+//-----------------------------------------------------------------------------
 template< class T >
 struct raw_inheriting : public raw< T >
 {
@@ -82,6 +139,34 @@ TEST(raw, inheriting)
         {
             ci rf(10);
             EXPECT_EQ(rf.obj.capacity(), 10);
+        }
+    }
+}
+template< class T >
+struct raw_small_inheriting : public raw_small< T >
+{
+    using raw_small< T >::raw_small;
+};
+TEST(raw_small, inheriting)
+{
+    using ci = Counting< raw_small_inheriting< int > >;
+    auto threshold = raw_small< int >::threshold;
+
+    {
+        SCOPED_TRACE("small");
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(threshold - 1);
+            EXPECT_EQ(rf.obj.capacity(), threshold);
+        }
+    }
+
+    {
+        SCOPED_TRACE("large");
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(threshold + 1);
+            EXPECT_EQ(rf.obj.capacity(), threshold + 1);
         }
     }
 }
@@ -436,6 +521,12 @@ TEST(raw, construction)
 {
     using ci = Counting< int >;
     raw< ci > rp(1000);
+    test_raw_construction(rp);
+}
+TEST(raw_small, construction)
+{
+    using ci = Counting< int >;
+    raw_small< ci > rp(1000);
     test_raw_construction(rp);
 }
 TEST(raw_paged, construction)
