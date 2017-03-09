@@ -67,29 +67,6 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE void fill(T const& v)
-    {
-        C4_ASSERT(_c4this->m_size > 0);
-        c4::copy_assign_n(_c4this->data(), v, _c4this->m_size);
-    }
-
-    C4_ALWAYS_INLINE void assign(T const* v, I sz)
-    {
-        if(v == _c4this->data() && sz == _c4this->size()) return;
-        _c4this->resize(sz); // resize() for fixed-size storage just asserts whether the size is the same
-        c4::copy_assign_n(_c4this->data(), v, sz);
-    }
-
-    C4_ALWAYS_INLINE void assign(cspan< T, I > v)
-    {
-        this->assign(v.data(), v.size());
-    }
-
-    C4_ALWAYS_INLINE void assign(aggregate_t, std::initializer_list< T > il)
-    {
-        this->assign(il.begin(), il.size());
-    }
-
     C4_ALWAYS_INLINE bool is_valid_iterator(const_iterator it) const noexcept
     {
         return it >= _c4cthis->data() && it <= _c4cthis->data() + _c4cthis->size();
@@ -109,7 +86,7 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** contiguous storage, fixed size+capacity (cannot resize down) */
+/** contiguous storage, fixed size+capacity (cannot resize down). */
 template< class T, size_t N, class I, I Alignment >
 class fixed_size : public _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >
 {
@@ -122,8 +99,7 @@ public:
     C4_STATIC_ASSERT(N <= std::numeric_limits< I >::max());
 
     using base_type = _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >;
-    friend class
-    _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >;
+    friend class _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >;
 
 public:
 
@@ -134,54 +110,69 @@ public:
 public:
 
     fixed_size() {}
-    fixed_size(cspan< T, I > const& v) { assign(v); }
-    fixed_size(aggregate_t, std::initializer_list< T > il) { this->assign(aggregate, il); }
 
-    // provided for compatibility with other contiguous storages
-    fixed_size(I sz) { C4_ASSERT(sz == N); }
-    fixed_size(I sz, with_capacity_t, I cap) { C4_ASSERT(sz == N && cap == N); }
+    fixed_size (cspan< T, I > const& v) { C4_ASSERT(v.size() == N); c4::copy_construct_n(m_arr, v.data(), v.size()); }
+    void assign(cspan< T, I > const& v) { C4_ASSERT(v.size() == N); c4::copy_assign_n(m_arr, v.data(), v.size()); }
 
-    C4_ALWAYS_INLINE constexpr bool empty()    const { return false; }
-    C4_ALWAYS_INLINE constexpr I    size()     const { return N; }
-    C4_ALWAYS_INLINE constexpr I    max_size() const { return N; }
-    C4_ALWAYS_INLINE constexpr I    capacity() const { return N; }
+    fixed_size (aggregate_t, std::initializer_list< T > il) { C4_ASSERT(il.size() == N); c4::copy_construct_n(m_arr, il.begin(), il.size()); }
+    void assign(aggregate_t, std::initializer_list< T > il) { C4_ASSERT(il.size() == N); c4::copy_assign_n(m_arr, il.begin(), il.size()); }
 
-    C4_ALWAYS_INLINE                 iterator  begin()       { return m_arr; }
-    C4_ALWAYS_INLINE constexpr const_iterator  begin() const { return m_arr; }
-    C4_ALWAYS_INLINE constexpr const_iterator cbegin() const { return m_arr; }
+    fixed_size (T const (&v)[N]) { c4::copy_construct_n(m_arr, v, N); }
+    void assign(T const (&v)[N]) { c4::copy_assign_n(m_arr, v, N); }
 
-    C4_ALWAYS_INLINE                 iterator  end()       { return m_arr + I(N); }
-    C4_ALWAYS_INLINE constexpr const_iterator  end() const { return m_arr + I(N); }
-    C4_ALWAYS_INLINE constexpr const_iterator cend() const { return m_arr + I(N); }
+    fixed_size (T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_construct_n(m_arr, v, sz); }
+    void assign(T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_assign_n(m_arr, v, sz); }
 
-    C4_ALWAYS_INLINE           T      & front()       { return m_arr[0]; }
-    C4_ALWAYS_INLINE constexpr T const& front() const { return m_arr[0]; }
-
-    C4_ALWAYS_INLINE           T&       back()       { return m_arr[I(N) - 1]; }
-    C4_ALWAYS_INLINE constexpr T const& back() const { return m_arr[I(N) - 1]; }
-
-    C4_ALWAYS_INLINE           T      * data()       { return m_arr; }
-    C4_ALWAYS_INLINE constexpr T const* data() const { return m_arr; }
-
-    C4_ALWAYS_INLINE T&          operator[] (I i)       { C4_XASSERT(i >= 0 && i < N); return m_arr[i]; }
-    C4_ALWAYS_INLINE fastcref<T> operator[] (I i) const { C4_XASSERT(i >= 0 && i < N); return m_arr[i]; }
-
-private:
-
-    // these functions are provided for compatibility with the scaffold CRTP
-
-    C4_ALWAYS_INLINE void reserve(I cap) { C4_ASSERT(cap == I(N)); }
-    C4_ALWAYS_INLINE void shrink_to_fit() {}
-    C4_ALWAYS_INLINE void resize(I sz) { C4_ASSERT(sz == I(N)); }
-    C4_ALWAYS_INLINE void clear() { C4_NEVER_REACH(); }
-
-    template< class U, class... Args >
-    C4_ALWAYS_INLINE static void _construct(U *ptr, Args&&... args)
+    /** @warning do NOT pass in std::move() arguments. */
+    template< class... Args > fixed_size(Args&&... args)
     {
-        ::c4::construct(ptr, std::forward< Args >(args)...);
+        c4::construct_n(m_arr, std::forward< Args >(args)...);
+    }
+    /** @warning do NOT pass in std::move() arguments. */
+    template< class... Args > void assign(Args&&... args)
+    {
+        c4::destroy_n(m_arr);
+        c4::construct_n(m_arr, std::forward< Args >(args)...);
+    }
+
+public:
+
+    C4_ALWAYS_INLINE constexpr bool empty()    const noexcept { return false; }
+    C4_ALWAYS_INLINE constexpr I    size()     const noexcept { return N; }
+    C4_ALWAYS_INLINE constexpr I    max_size() const noexcept { return N; }
+    C4_ALWAYS_INLINE constexpr I    capacity() const noexcept { return N; }
+
+    C4_ALWAYS_INLINE                 iterator  begin()       noexcept { return m_arr; }
+    C4_ALWAYS_INLINE constexpr const_iterator  begin() const noexcept { return m_arr; }
+    C4_ALWAYS_INLINE constexpr const_iterator cbegin() const noexcept { return m_arr; }
+
+    C4_ALWAYS_INLINE                 iterator  end()       noexcept { return m_arr + I(N); }
+    C4_ALWAYS_INLINE constexpr const_iterator  end() const noexcept { return m_arr + I(N); }
+    C4_ALWAYS_INLINE constexpr const_iterator cend() const noexcept { return m_arr + I(N); }
+
+    C4_ALWAYS_INLINE           T      & front()       noexcept { return m_arr[0]; }
+    C4_ALWAYS_INLINE constexpr T const& front() const noexcept { return m_arr[0]; }
+
+    C4_ALWAYS_INLINE           T      & back()       noexcept { return m_arr[I(N) - 1]; }
+    C4_ALWAYS_INLINE constexpr T const& back() const noexcept { return m_arr[I(N) - 1]; }
+
+    C4_ALWAYS_INLINE           T      * data()       noexcept { return m_arr; }
+    C4_ALWAYS_INLINE constexpr T const* data() const noexcept { return m_arr; }
+
+    C4_ALWAYS_INLINE                T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < I(N)); return m_arr[i]; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < I(N)); return m_arr[i]; }
+
+    C4_ALWAYS_INLINE void fill(T const& v)
+    {
+        c4::copy_assign_n(m_arr, v, N);
     }
 
 };
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
