@@ -1,34 +1,11 @@
 #include "sstream.hpp"
 #include "c4/string.hpp"
 
+#include "c4/test.hpp"
 #include "c4/archetypes.hpp"
 #include <iostream>
 
 C4_BEGIN_NAMESPACE(c4)
-
-template< class T >
-struct exvec3
-{
-    T x, y, z;
-    bool operator== (exvec3 const& that) const
-    {
-        return x == that.x && y == that.y && z == that.z;
-    }
-};
-template< class String, class T >
-sstream< String >& operator<< (sstream< String >& ss, exvec3<T> const& v)
-{
-    using char_type = typename sstream< String >::char_type;
-    ss.printp(C4_TXTTY("({},{},{})", char_type), v.x, v.y, v.z);
-    return ss;
-}
-template< class String, class T >
-sstream< String >& operator>> (sstream< String >& ss, exvec3<T> & v)
-{
-    using char_type = typename sstream< String >::char_type;
-    ss.scanp(C4_TXTTY("({},{},{})", char_type), v.x, v.y, v.z);
-    return ss;
-}
 
 //-----------------------------------------------------------------------------
 template <class T>
