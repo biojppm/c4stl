@@ -1432,14 +1432,26 @@ public:
 
 public:
 
-    typedef C      *       iterator;
-    typedef C const* const_iterator;
+    using iterator = C*;
+    using const_iterator = C const*;
+    using reverse_iterator = std::reverse_iterator<C*>;
+    using const_reverse_iterator = std::reverse_iterator<C const*>;
 
-    C4_ALWAYS_INLINE iterator begin() noexcept { return _c4thisSTR; }
-    C4_ALWAYS_INLINE iterator end()   noexcept { return _c4thisSTR + _c4thisSZ; }
+    C4_ALWAYS_INLINE       iterator  begin()       noexcept { return _c4thisSTR; }
+    C4_ALWAYS_INLINE const_iterator  begin() const noexcept { return _c4cthisSTR; }
+    C4_ALWAYS_INLINE const_iterator cbegin() const noexcept { return _c4cthisSTR; }
 
-    C4_ALWAYS_INLINE const_iterator begin() const noexcept { return _c4cthisSTR; }
-    C4_ALWAYS_INLINE const_iterator end()   const noexcept { return _c4cthisSTR + _c4cthisSZ; }
+    C4_ALWAYS_INLINE       iterator  end()       noexcept { return _c4thisSTR + _c4thisSZ; }
+    C4_ALWAYS_INLINE const_iterator  end() const noexcept { return _c4thisSTR + _c4thisSZ; }
+    C4_ALWAYS_INLINE const_iterator cend() const noexcept { return _c4cthisSTR + _c4cthisSZ; }
+
+    C4_ALWAYS_INLINE       iterator  rbegin()       noexcept { return       reverse_iterator(_c4thisSTR + _c4thisSZ); }
+    C4_ALWAYS_INLINE const_iterator  rbegin() const noexcept { return const_reverse_iterator(_c4thisSTR + _c4thisSZ); }
+    C4_ALWAYS_INLINE const_iterator crbegin() const noexcept { return const_reverse_iterator(_c4thisSTR + _c4thisSZ); }
+
+    C4_ALWAYS_INLINE       iterator  rend()       noexcept { return       reverse_iterator(_c4cthisSTR); }
+    C4_ALWAYS_INLINE const_iterator  rend() const noexcept { return const_reverse_iterator(_c4cthisSTR); }
+    C4_ALWAYS_INLINE const_iterator crend() const noexcept { return const_reverse_iterator(_c4cthisSTR); }
 
 public:
 

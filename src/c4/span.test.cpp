@@ -667,6 +667,18 @@ const char larrc[11] = "0123456789";
 const char rarrc[11] = "1234567890";
 const int larri[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 const int rarri[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+TEST(span, reverse_iter)
+{
+    cspan< int > s(larri);
+    using rit = cspan< int >::const_reverse_iterator;
+    int pos = s.size() - 1;
+    for(rit b = s.rbegin(), e = s.rend(); b != e; ++b)
+    {
+        EXPECT_EQ(*b, s[pos--]);
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(span_impl, eq)
 {
     EXPECT_EQ(cspan  <char>(larrc), cspan  <char>(larrc));
