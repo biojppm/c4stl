@@ -3,7 +3,7 @@
 
 #include "c4/memory_resource.hpp"
 #include "c4/ctor_dtor.hpp"
-#include <memory>
+#include <memory> // std::allocator_traits
 
 C4_BEGIN_NAMESPACE(c4)
 
