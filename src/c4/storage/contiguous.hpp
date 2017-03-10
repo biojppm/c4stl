@@ -3,6 +3,8 @@
 
 #include "c4/config.hpp"
 #include "c4/storage/raw.hpp"
+#include "c4/szconv.hpp"
+#include "c4/span.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -38,8 +40,11 @@ class fixed_size;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+// utility defines, undefined below
+/// @cond dev
 #define _c4this  static_cast< Storage      * >(this)
 #define _c4cthis static_cast< Storage const* >(this)
+/// @endcond
 
 /** CRTP base for non-resizeable contiguous storage */
 template< class T, class I, class Storage >
@@ -80,7 +85,6 @@ public:
 
 #undef _c4this
 #undef _c4cthis
-
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -123,6 +127,7 @@ public:
     fixed_size (T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_construct_n(m_arr, v, sz); }
     void assign(T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_assign_n(m_arr, v, sz); }
 
+#ifdef HMMM
     /** @warning do NOT pass in std::move() arguments. */
     template< class... Args > fixed_size(Args&&... args)
     {
@@ -134,6 +139,7 @@ public:
         c4::destroy_n(m_arr);
         c4::construct_n(m_arr, std::forward< Args >(args)...);
     }
+#endif
 
 public:
 
@@ -149,6 +155,14 @@ public:
     C4_ALWAYS_INLINE                 iterator  end()       noexcept { return m_arr + I(N); }
     C4_ALWAYS_INLINE constexpr const_iterator  end() const noexcept { return m_arr + I(N); }
     C4_ALWAYS_INLINE constexpr const_iterator cend() const noexcept { return m_arr + I(N); }
+
+    C4_ALWAYS_INLINE                 reverse_iterator  rbegin()       noexcept { return reverse_iterator(m_arr + I(N)); }
+    C4_ALWAYS_INLINE constexpr const_reverse_iterator  rbegin() const noexcept { return reverse_iterator(m_arr + I(N)); }
+    C4_ALWAYS_INLINE constexpr const_reverse_iterator crbegin() const noexcept { return reverse_iterator(m_arr + I(N)); }
+
+    C4_ALWAYS_INLINE                 reverse_iterator  rend()       noexcept { return const_reverse_iterator(m_arr); }
+    C4_ALWAYS_INLINE constexpr const_reverse_iterator  rend() const noexcept { return const_reverse_iterator(m_arr); }
+    C4_ALWAYS_INLINE constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(m_arr); }
 
     C4_ALWAYS_INLINE           T      & front()       noexcept { return m_arr[0]; }
     C4_ALWAYS_INLINE constexpr T const& front() const noexcept { return m_arr[0]; }
@@ -169,6 +183,198 @@ public:
 
 };
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// utility defines, undefined below
+/// @cond dev
+#define _c4this  static_cast< Storage      * >(this)
+#define _c4cthis static_cast< Storage const* >(this)
+/// @endcond
+
+
+/** CRTP base for resizeable contiguous storage */
+template< class T, class I, class Storage >
+struct _ctgrs_crtp : public _ctg_crtp< T, I, Storage >
+{
+    using _ctg_crtp< T, I, Storage >::is_valid_iterator;
+
+public:
+
+    _c4_DEFINE_ARRAY_TYPES(T, I)
+
+public:
+
+
+    // emplace
+
+    template< class... Args >
+    iterator emplace(const_iterator pos, Args&&... args)
+    {
+        C4_XASSERT(pos >= _c4this->data() && pos <= _c4this->data() + _c4this->size());
+        I ipos = szconv<I>(pos - _c4this->data());
+        _c4this->_growto(_c4this->size() + 1, pos);
+        pos = _c4this->data() + ipos;
+        construct(pos, std::forward< Args >(args)...);
+        ++_c4this->size();
+        return (iterator)pos;
+    }
+    template< class... Args >
+    void emplace_back(Args&& ...a)
+    {
+        _c4this->_growto(_c4this->size() + 1);
+        construct(_c4this->data() + _c4this->size(), std::forward< Args >(a)...);
+        ++_c4this->size();
+    }
+    template< class... Args >
+    void emplace_front(Args&& ...a)
+    {
+        _c4this->_growto(_c4this->size() + 1);
+        construct(_c4this->data(), std::forward< Args >(a)...);
+        ++_c4this->size();
+    }
+
+
+    // push
+
+    void push_back(T const& val)
+    {
+        _c4this->_growto(_c4this->size() + 1);
+        construct(_c4this->data() + _c4this->size(), val);
+        ++_c4this->size();
+    }
+    void push_back(T && val)
+    {
+        _c4this->_growto(_c4this->size() + 1);
+        construct(_c4this->data() + _c4this->size(), std::move(val));
+        ++_c4this->size();
+    }
+
+    void push_front(T const& val)
+    {
+        _c4this->_growto(_c4this->size() + 1, _c4this->data());
+        construct(_c4this->data(), val);
+        ++_c4this->size();
+    }
+    void push_front(T && val)
+    {
+        _c4this->_growto(_c4this->size() + 1, _c4this->data());
+        construct(_c4this->data(), std::move(val));
+        ++_c4this->size();
+    }
+
+
+    // pop
+
+    void pop_back()
+    {
+        C4_XASSERT(_c4this->size() > 0);
+        _c4this->_growto(_c4this->size() - 1);
+        --_c4this->size();
+    }
+    void pop_front()
+    {
+        C4_XASSERT(_c4this->size() > 0);
+        _c4this->_growto(_c4this->size() - 1, _c4this->data());
+        --_c4this->size();
+    }
+
+
+    // insert
+
+    iterator insert(const_iterator pos, T const& value)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = I(pos - _c4this->data());
+        _c4this->_growto(_c4this->size() + 1, pos);
+        pos = _c4this->data() + ipos;
+        construct(pos, value);
+        ++_c4this->size();
+        return (iterator)pos;
+    }
+    iterator insert(const_iterator pos, T&& value)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = szconv< I >(pos - _c4this->data());
+        _c4this->_growto(_c4this->size() + 1, pos);
+        pos = _c4this->data() + ipos;
+        construct(pos, std::move(value));
+        ++_c4this->size();
+        return (iterator)pos;
+    }
+    iterator insert(const_iterator pos, I count, T const& value)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = I(pos - _c4this->data());
+        _c4this->_growto(_c4this->size() + count, pos);
+        pos = _c4this->data() + ipos;
+        construct_n(pos, value, count);
+        _c4this->size() += count;
+        return (iterator)pos;
+    }
+    template< class InputIt >
+    iterator insert(const_iterator pos, InputIt first, InputIt last)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = I(pos - _c4this->data());
+        I count = (I)std::distance(first, last);
+        _c4this->_growto(_c4this->size() + count, pos);
+        pos = _c4this->data() + ipos;
+        for(I i = 0; first != last; ++first, ++i)
+        {
+            construct(pos + i, first);
+        }
+        _c4this->size() += count;
+        return (iterator)pos;
+    }
+    iterator insert(const_iterator pos, aggregate_t, std::initializer_list<T> ilist)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = I(pos - _c4this->data());
+        _c4this->_growto(_c4this->size() + ilist.size(), pos);
+        pos = _c4this->data() + ipos;
+        I i = 0;
+        for(auto const& v : ilist)
+        {
+            construct((pos++) + i, v);
+        }
+        pos = _c4this->data() + ipos;
+        _c4this->size() += ilist.size();
+        return (iterator)pos;
+    }
+
+
+    // erase
+
+    /** removes the element at pos */
+    iterator erase(const_iterator pos)
+    {
+        C4_XASSERT(is_valid_iterator(pos) && _c4this->size() > 0);
+        I ipos = I(pos - _c4this->data());
+        _c4this->_growto(_c4this->size() - 1, pos);
+        pos = _c4this->data() + ipos;
+        --_c4this->size();
+        return (iterator)pos;
+    }
+    /** removes the elements in the range [first; last). */
+    iterator erase(const_iterator first, const_iterator last)
+    {
+        I dist = (I)std::distance(first, last);
+        if(!dist) return (iterator)first;
+        C4_XASSERT(is_valid_iterator(first) && _c4this->size() >= dist);
+        I ipos = I(first - _c4this->data());
+        _c4this->_growto(_c4this->size() - dist, first);
+        first = _c4this->data() + ipos;
+        _c4this->size() -= dist;
+        return (iterator)first;
+    }
+
+};
+
+#undef _c4this
+#undef _c4cthis
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
