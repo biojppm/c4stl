@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
 
 if [ $# -lt 2 ] ; then
     echo "USAGE: $0 <build-dir> <test-name> [<test-name2>] [<test-name3>] ..."
@@ -10,7 +9,7 @@ fi
 
 bdir=$1
 np=$(nproc --all)
-targets=${@:2}
+targets=${@:2}  # http://stackoverflow.com/a/7762555/5875572
 
 if [ ! -d $bdir ] ; then
     echo "ERROR: build dir $bdir does not exist"
@@ -19,7 +18,7 @@ fi
 
 ( cd $bdir && cmake . )
 for t in $targets ; do
-    if [ -z "$(cd $bdir ; make help | grep $t-build)" ] ; then
+    if [ -z "$(cd $bdir ; make help | grep $t-build\$)" ] ; then
         ( cd $bdir && make -j $np $t )
     else
         ( cd $bdir && make -j $np $t-build )
