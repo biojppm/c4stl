@@ -10,6 +10,11 @@ C4_BEGIN_NAMESPACE(c4)
 
 template< class String > class sstream;
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+C4_BEGIN_NAMESPACE(archetypes)
+
 template< class T > void check_archetype(T const& a) { a.check(); }
 template< class T > void check_archetype(T const& a, T const& ref) { a.check(ref); }
 inline void check_archetype(char    ) {}
@@ -64,24 +69,6 @@ struct archetype_proto<std::string>
             "str4", "str5", "str6", "str7",
         };
         return arr[which];
-    }
-};
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-template <class T>
-struct container_test : public ::testing::Test
-{
-    using atype = T;
-
-    static std::initializer_list<atype> getil()
-    {
-        static const std::initializer_list< atype > il{
-            archetype_proto<T>::get(0), archetype_proto<T>::get(1), archetype_proto<T>::get(2), archetype_proto<T>::get(3),
-            archetype_proto<T>::get(4), archetype_proto<T>::get(5), archetype_proto<T>::get(6), archetype_proto<T>::get(7)
-        };
-        return il;
     }
 };
 
@@ -412,23 +399,20 @@ struct archetype_proto<InsidePtr<T>>
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-C4_BEGIN_NAMESPACE(archetypes)
 
 using scalars = ::testing::Types<
     char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double
 >;
 using containees = ::testing::Types<
     char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double,
-    IdOwner,
-    MemOwner<int>, MemOwner<std::string>,
-    MemOwnerAlloc<int>, MemOwnerAlloc<std::string>,
-    InsidePtr<int>, InsidePtr<std::string>
+    archetypes::exvec3<int>, archetypes::exvec3<float>,
+    archetypes::IdOwner,
+    archetypes::MemOwner<int>, archetypes::MemOwner<std::string>,
+    archetypes::MemOwnerAlloc<int>, archetypes::MemOwnerAlloc<std::string>,
+    archetypes::InsidePtr<int>, archetypes::InsidePtr<std::string>
 >;
 
 C4_END_NAMESPACE(archetypes)
-
-TYPED_TEST_CASE_P(container_test);
-
 C4_END_NAMESPACE(c4)
 
 #endif // _C4_TEST_ARCHETYPES_HPP_
