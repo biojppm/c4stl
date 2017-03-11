@@ -61,8 +61,8 @@ public:
     using span_type = span< T, I >;
     using cspan_type = cspan< T, I >;
 
-    C4_ALWAYS_INLINE operator  span_type ()       { return  span_type(_c4this->data(), _c4this->size()); }
-    C4_ALWAYS_INLINE operator cspan_type () const { return cspan_type(_c4this->data(), _c4this->size()); }
+    C4_ALWAYS_INLINE operator  span_type ()       { return  span_type(_c4this->data(),   _c4this->size()); }
+    C4_ALWAYS_INLINE operator cspan_type () const { return cspan_type(_c4cthis->data(), _c4cthis->size()); }
 
      span_type subspan(I first = 0)       {  span_type s = *this; return s.subspan(first); }
     cspan_type subspan(I first = 0) const { cspan_type s = *this; return s.subspan(first); }
@@ -115,31 +115,34 @@ public:
 
     fixed_size() {}
 
-    fixed_size (cspan< T, I > const& v) { C4_ASSERT(v.size() == N); c4::copy_construct_n(m_arr, v.data(), v.size()); }
+    fixed_size(fixed_size const& that) { c4::copy_assign_n(m_arr, that.m_arr, N); }
+    fixed_size(fixed_size     && that) { c4::move_assign_n(m_arr, that.m_arr, N); }
+
+    fixed_size& operator= (fixed_size const& that) { c4::copy_assign_n(m_arr, that.m_arr, N); return *this; }
+    fixed_size& operator= (fixed_size     && that) { c4::move_assign_n(m_arr, that.m_arr, N); return *this; }
+
+    fixed_size (cspan< T, I > const& v) { C4_ASSERT(v.size() == N); c4::copy_assign_n(m_arr, v.data(), v.size()); }
     void assign(cspan< T, I > const& v) { C4_ASSERT(v.size() == N); c4::copy_assign_n(m_arr, v.data(), v.size()); }
 
-    fixed_size (aggregate_t, std::initializer_list< T > il) { C4_ASSERT(il.size() == N); c4::copy_construct_n(m_arr, il.begin(), il.size()); }
+    fixed_size (aggregate_t, std::initializer_list< T > il) { C4_ASSERT(il.size() == N); c4::copy_assign_n(m_arr, il.begin(), il.size()); }
     void assign(aggregate_t, std::initializer_list< T > il) { C4_ASSERT(il.size() == N); c4::copy_assign_n(m_arr, il.begin(), il.size()); }
 
-    fixed_size (T const (&v)[N]) { c4::copy_construct_n(m_arr, v, N); }
+    fixed_size (T const (&v)[N]) { c4::copy_assign_n(m_arr, v, N); }
     void assign(T const (&v)[N]) { c4::copy_assign_n(m_arr, v, N); }
 
-    fixed_size (T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_construct_n(m_arr, v, sz); }
+    fixed_size (T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_assign_n(m_arr, v, sz); }
     void assign(T const* v, I sz) { C4_ASSERT(sz == N); c4::copy_assign_n(m_arr, v, sz); }
 
-#ifdef HMMM
     /** @warning do NOT pass in std::move() arguments. */
-    template< class... Args > fixed_size(Args&&... args)
+    template< class... Args > fixed_size(varargs_t, Args&&... args)
     {
-        c4::construct_n(m_arr, std::forward< Args >(args)...);
+         c4::copy_assign_n(m_arr, std::forward< Args >(args)...);
     }
     /** @warning do NOT pass in std::move() arguments. */
-    template< class... Args > void assign(Args&&... args)
+    template< class... Args > void assign(varargs_t, Args&&... args)
     {
-        c4::destroy_n(m_arr);
-        c4::construct_n(m_arr, std::forward< Args >(args)...);
+        c4::copy_assign_n(m_arr, std::forward< Args >(args)...);
     }
-#endif
 
 public:
 
@@ -178,6 +181,7 @@ public:
 
     C4_ALWAYS_INLINE void fill(T const& v)
     {
+        c4::destroy_n(m_arr, N);
         c4::copy_assign_n(m_arr, v, N);
     }
 

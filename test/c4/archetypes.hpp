@@ -179,18 +179,24 @@ struct MemOwner
         EXPECT_NE(mem, that.mem);
     }
 
-    template< class ...Args >
-    MemOwner(Args && ...args)
-    {
-        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
-        new (mem) T(std::forward< Args >(args)...);
-    }
     ~MemOwner()
     {
         if(!mem) return;
         mem->~T();
         c4::get_memory_resource()->deallocate(mem, sizeof(T), alignof(T));
         mem = nullptr;
+    }
+
+    MemOwner()
+    {
+        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+        new (mem) T();
+    }
+    template< class ...Args >
+    MemOwner(varargs_t, Args && ...args)
+    {
+        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+        new (mem) T(std::forward< Args >(args)...);
     }
     MemOwner(MemOwner const& that)
     {
@@ -199,17 +205,19 @@ struct MemOwner
     }
     MemOwner(MemOwner && that)
     {
-        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
-        new (mem) T(std::move(*that.mem));
+        mem = that.mem;
+        that.mem = nullptr;
     }
     MemOwner& operator= (MemOwner const& that)
     {
-        if(mem)
+        if(!mem)
+        {
+            mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+        }
+        else
         {
             mem->~T();
-            c4::get_memory_resource()->deallocate(mem, sizeof(T), alignof(T));
         }
-        mem = c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
         new (mem) T(*that.mem);
         return *this;
     }
@@ -220,8 +228,8 @@ struct MemOwner
             mem->~T();
             c4::get_memory_resource()->deallocate(mem, sizeof(T), alignof(T));
         }
-        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
-        new (mem) T(std::move(*that.mem));
+        mem = that.mem;
+        that.mem = nullptr;
         return *this;
     }
     bool operator== (MemOwner const& that) const
@@ -236,10 +244,12 @@ struct archetype_proto<MemOwner<T>>
     static MemOwner<T> get(int which)
     {
         C4_ASSERT(which < 8);
+#define c4v(which) {varargs, archetype_proto<T>::get(which) }
         static const MemOwner<T> arr[8] = {
-            archetype_proto<T>::get(0), archetype_proto<T>::get(1), archetype_proto<T>::get(2), archetype_proto<T>::get(3),
-            archetype_proto<T>::get(4), archetype_proto<T>::get(5), archetype_proto<T>::get(6), archetype_proto<T>::get(7)
+            c4v(0), c4v(1), c4v(2), c4v(3),
+            c4v(4), c4v(5), c4v(6), c4v(7)
         };
+#undef c4v
         return arr[which];
     }
 };
@@ -266,12 +276,6 @@ struct MemOwnerAlloc
         EXPECT_NE(mem, that.mem);
     }
 
-    template< class ...Args >
-    MemOwnerAlloc(Args && ...args)
-    {
-        mem = alloc_traits::allocate(m_alloc, 1);
-        alloc_traits::construct(m_alloc, mem, std::forward< Args >(args)...);
-    }
     void free()
     {
         alloc_traits::destroy(m_alloc, mem);
@@ -283,6 +287,19 @@ struct MemOwnerAlloc
         if(!mem) return;
         free();
     }
+
+    MemOwnerAlloc()
+    {
+        mem = alloc_traits::allocate(m_alloc, 1);
+        alloc_traits::construct(m_alloc, mem);
+    }
+    template< class ...Args >
+    MemOwnerAlloc(varargs_t, Args && ...args)
+    {
+        mem = alloc_traits::allocate(m_alloc, 1);
+        alloc_traits::construct(m_alloc, mem, std::forward< Args >(args)...);
+    }
+
     MemOwnerAlloc(MemOwnerAlloc const& that)
     {
         mem = alloc_traits::allocate(m_alloc, 1);
@@ -290,16 +307,20 @@ struct MemOwnerAlloc
     }
     MemOwnerAlloc(MemOwnerAlloc && that)
     {
-        mem = alloc_traits::allocate(m_alloc, 1);
-        alloc_traits::construct(m_alloc, mem, std::move(*that.mem));
+        mem = that.mem;
+        that.mem = nullptr;
     }
+
     MemOwnerAlloc& operator= (MemOwnerAlloc const& that)
     {
-        if(mem)
+        if(!mem)
         {
-            free();
+            mem = alloc_traits::allocate(m_alloc, 1);
         }
-        mem = alloc_traits::allocate(m_alloc, 1);
+        else
+        {
+            mem->~T();
+        }
         alloc_traits::construct(m_alloc, mem, *that.mem);
         return *this;
     }
@@ -309,10 +330,11 @@ struct MemOwnerAlloc
         {
             free();
         }
-        mem = alloc_traits::allocate(m_alloc, 1);
-        alloc_traits::construct(m_alloc, mem, std::move(*that.mem));
+        mem = that.mem;
+        that.mem = nullptr;
         return *this;
     }
+
     bool operator== (MemOwnerAlloc const& that) const
     {
         return *mem == *that.mem;
@@ -325,10 +347,12 @@ struct archetype_proto<MemOwnerAlloc<T>>
     static MemOwnerAlloc<T> get(int which)
     {
         C4_ASSERT(which < 8);
+#define c4v(which) {varargs, archetype_proto<T>::get(which) }
         static const MemOwnerAlloc<T> arr[8] = {
-            archetype_proto<T>::get(0), archetype_proto<T>::get(1), archetype_proto<T>::get(2), archetype_proto<T>::get(3),
-            archetype_proto<T>::get(4), archetype_proto<T>::get(5), archetype_proto<T>::get(6), archetype_proto<T>::get(7)
+            c4v(0), c4v(1), c4v(2), c4v(3),
+            c4v(4), c4v(5), c4v(6), c4v(7)
         };
+#undef c4v
         return arr[which];
     }
 };
@@ -365,7 +389,7 @@ struct InsidePtr
     InsidePtr(InsidePtr     && that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) { that.ptr = nullptr; }
     InsidePtr& operator= (InsidePtr const& that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); return *this; }
     InsidePtr& operator= (InsidePtr     && that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); that.ptr = nullptr; return *this; }
-    ~InsidePtr() { EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c); }
+    ~InsidePtr() { EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c || ptr == nullptr); }
 
     void check() const
     {
