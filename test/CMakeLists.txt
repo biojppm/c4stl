@@ -60,6 +60,7 @@ set(s ../src)
 c4stl_add_test(c4stl-test-core
     ${s}/c4/allocator.test.cpp
     ${s}/c4/char_traits.test.cpp
+    ${s}/c4/ctor_dtor.test.cpp
     ${s}/c4/error.test.cpp
     ${s}/c4/log.test.cpp
     ${s}/c4/memory_resource.test.cpp

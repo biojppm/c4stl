@@ -55,7 +55,7 @@ inline void construct_n(U* ptr, I n, Args&&... args)
 {
     for(I i = 0; i < n; ++i)
     {
-        new ((void*)(ptr + i)) U(std::forward< Args >(args)...);
+        new ((void*)(ptr + i)) U(args...);
     }
 }
 
