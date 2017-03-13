@@ -364,7 +364,7 @@ class spanrs : public _span_crtp<T, I, spanrs<T, I>>
     T *m_ptr;
     I m_size;
     I m_capacity;
-    
+
     C4_ALWAYS_INLINE spanrs _select(T *p, I sz) const noexcept { return spanrs(p, sz, m_capacity - (p - m_ptr)); }
 
 public:

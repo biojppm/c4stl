@@ -10,9 +10,12 @@ C4_BEGIN_NAMESPACE(c4)
 
 // forward declarations
 template< class T, class I > class span;
+template< class T, class I > class spanrs;
+template< class T, class I > class etched_span;
 
-template< class T, class I >
-using cspan = span< const T, I >;
+template< class T, class I > using cspan = span< const T, I >;
+template< class T, class I > using cspanrs = spanrs< const T, I >;
+template< class T, class I > using cetched_span = etched_span< const T, I >;
 
 // some tag types
 
@@ -58,17 +61,49 @@ struct _ctg_crtp
 
 public:
 
-    using span_type = span< T, I >;
-    using cspan_type = cspan< T, I >;
+    // span interoperation
 
-    C4_ALWAYS_INLINE operator  span_type ()       { return  span_type(_c4this->data(),   _c4this->size()); }
+    using   span_type = span< T, I >;
+    using  cspan_type = span< const T, I >;
+
+    C4_ALWAYS_INLINE operator  span_type ()       { return  span_type( _c4this->data(),  _c4this->size()); }
     C4_ALWAYS_INLINE operator cspan_type () const { return cspan_type(_c4cthis->data(), _c4cthis->size()); }
 
-     span_type subspan(I first = 0)       {  span_type s = *this; return s.subspan(first); }
-    cspan_type subspan(I first = 0) const { cspan_type s = *this; return s.subspan(first); }
+     span_type get_span(I first = 0)       {  span_type s = *this; s = s.subspan(first); return s; }
+    cspan_type get_span(I first = 0) const { cspan_type s = *this; s = s.subspan(first); return s; }
 
-     span_type subspan(I first, I num)       {  span_type s = *this; return s.subspan(first, num); }
-    cspan_type subspan(I first, I num) const { cspan_type s = *this; return s.subspan(first, num); }
+     span_type get_span(I first, I num)       {  span_type s = *this; s = s.subspan(first, num); return s; }
+    cspan_type get_span(I first, I num) const { cspan_type s = *this; s = s.subspan(first, num); return s; }
+
+
+    // spanrs interoperation
+
+    using  spanrs_type = spanrs<       T, I >;
+    using cspanrs_type = spanrs< const T, I >;
+
+    C4_ALWAYS_INLINE operator  spanrs_type ()       { return  spanrs_type( _c4this->data(),  _c4this->size(),  _c4this->capacity()); }
+    C4_ALWAYS_INLINE operator cspanrs_type () const { return cspanrs_type(_c4cthis->data(), _c4cthis->size(), _c4cthis->capacity()); }
+
+     spanrs_type get_spanrs(I first = 0)       {  spanrs_type s = *this; s = s.subspan(first); return s; }
+    cspanrs_type get_spanrs(I first = 0) const { cspanrs_type s = *this; s = s.subspan(first); return s; }
+
+     spanrs_type get_spanrs(I first, I num)       {  spanrs_type s = *this; s = s.subspan(first, num); return s; }
+    cspanrs_type get_spanrs(I first, I num) const { cspanrs_type s = *this; s = s.subspan(first, num); return s; }
+
+
+    // etched_span interoperation
+
+    using  etched_span_type = etched_span<       T, I >;
+    using cetched_span_type = etched_span< const T, I >;
+
+    C4_ALWAYS_INLINE operator  etched_span_type ()       { return  etched_span_type( _c4this->data(),  _c4this->size(),  _c4this->capacity(), 0); }
+    C4_ALWAYS_INLINE operator cetched_span_type () const { return cetched_span_type(_c4cthis->data(), _c4cthis->size(), _c4cthis->capacity(), 0); }
+
+     etched_span_type get_etched_span(I first = 0)       {  etched_span_type s = *this; s = s.subspan(first); return s; }
+    cetched_span_type get_etched_span(I first = 0) const { cetched_span_type s = *this; s = s.subspan(first); return s; }
+
+     etched_span_type get_etched_span(I first, I num)       {  etched_span_type s = *this; s = s.subspan(first, num); return s; }
+    cetched_span_type get_etched_span(I first, I num) const { cetched_span_type s = *this; s = s.subspan(first, num); return s; }
 
 public:
 
