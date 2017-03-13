@@ -261,6 +261,122 @@ destroy_n(U* ptr, I n) noexcept
     }
 }
 
+//-----------------------------------------------------------------------------
+/** makes room at the beginning of buf, which has a current size of n */
+template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
+make_room(U *buf, I n, I room) noexcept
+{
+    if(room >= n)
+    {
+        memcpy(buf + room, buf, n * sizeof(U));
+    }
+    else
+    {
+        memmove(buf + room, buf, n * sizeof(U));
+    }
+}
+/** makes room at the beginning of buf, which has a current size of n */
+template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
+make_room(U *buf, I n, I room) C4_NOEXCEPT_A
+{
+    C4_ASSERT(room >= 0);
+    if(room >= n)
+    {
+        for(I i = 0; i < n; ++i)
+        {
+            new (buf + (i + room)) U(std::move(buf[i]));
+        }
+    }
+    else
+    {
+        for(I i = 0; i < n; ++i)
+        {
+            I w = n-1 - i; // do a backwards loop
+            new (buf + (w + room)) U(std::move(buf[w]));
+        }
+    }
+}
+
+template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
+make_room(U *dst, U const* src, I n, I room, I pos) C4_NOEXCEPT_A
+{
+    C4_ASSERT(pos < n);
+    memcpy(dst, src, pos * sizeof(U));
+    memcpy(dst + room + pos, src + pos, (n - pos) * sizeof(U));
+}
+template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
+make_room(U *dst, U const* src, I n, I room, I pos)
+{
+    for(I i = 0; i < pos; ++i)
+    {
+        new (dst + i) U(std::move(src[i]));
+    }
+    src += pos;
+    dst += room + pos;
+    for(I i = 0, e = n - pos; i < e; ++i)
+    {
+        new (dst + i) U(std::move(src[i]));
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** destroys room at the beginning of buf, which has a current size of n */
+template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
+destroy_room(U *buf, I n, I room) noexcept
+{
+    C4_ASSERT(room <= n);
+    if(room >= n)
+    {
+        C4_UNUSED(buf); // nothing to do
+    }
+    else
+    {
+        memmove(buf, buf + room, room * sizeof(U));
+    }
+}
+/** destroys room at the beginning of buf, which has a current size of n */
+template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
+destroy_room(U *buf, I n, I room)
+{
+    if(room < n)
+    {
+        for(I i = 0, e = n - room; i < e; ++i)
+        {
+            buf[i] = std::move(buf[i + room]);
+        }
+    }
+    else
+    {
+        for(I i = 0; i < n; ++i)
+        {
+            buf[i].~U();
+        }
+    }
+}
+
+template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
+destroy_room(U *dst, U const* src, I n, I room, I pos) noexcept
+{
+    if(C4_UNLIKELY(n < room)) return;
+    memcpy(dst, src, pos * sizeof(U));
+    memcpy(dst + pos, src + room + pos, (n - pos - room) * sizeof(U));
+}
+template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
+destroy_room(U *dst, U const* src, I n, I room, I pos)
+{
+    if(C4_UNLIKELY(n < room)) return;
+    for(I i = 0; i < pos; ++i)
+    {
+        new (dst + i) U(std::move(src[i]));
+    }
+    src += room + pos;
+    dst += pos;
+    for(I i = 0, e = n - pos - room; i < e; ++i)
+    {
+        new (dst + i) U(std::move(src[i]));
+    }
+}
+
 C4_END_NAMESPACE(c4)
 
 #undef _C4REQUIRE
