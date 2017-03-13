@@ -51,6 +51,14 @@ TEST(classname, charbuf_and_size)                               \
 {                                                               \
     test_stringbase_char_and_size< classtype >();               \
 }                                                               \
+TEST(classname, front_back)                                     \
+{                                                               \
+    test_stringbase_front_back< classtype >();                  \
+}                                                               \
+TEST(classname, begin_end)                                      \
+{                                                               \
+    test_stringbase_begin_end< classtype >();                   \
+}                                                               \
 TEST(classname, eq)                                             \
 {                                                               \
     test_stringbase_eq< classtype >();                          \
@@ -325,7 +333,7 @@ template< typename S >
 void test_stringbase_copy_move_big_big()
 {
     S n(MTEST);
-    
+
     C4_EXPECT_EQ(n.size(), S::traits_type::length(MTEST));
     C4_EXPECT_EQ(n, MTEST);
 
@@ -535,6 +543,27 @@ void test_stringbase_char_and_size()
 }
 
 template< typename S >
+void test_stringbase_front_back()
+{
+    const S n("abcdefhij");
+    const S cn("abcdefhij");
+    C4_EXPECT_EQ(n.front(), 'a');
+    C4_EXPECT_EQ(cn.front(), 'a');
+    C4_EXPECT_EQ(n.back(), 'j');
+    C4_EXPECT_EQ(cn.back(), 'j');
+}
+template< typename S >
+void test_stringbase_begin_end()
+{
+    const S n("abcdefhij");
+    const S cn("abcdefhij");
+    C4_EXPECT_EQ(n.begin(), n.data());
+    C4_EXPECT_EQ(cn.begin(), cn.data());
+    C4_EXPECT_EQ(n.end(), n.data() + n.size());
+    C4_EXPECT_EQ(cn.end(), cn.data() + cn.size());
+}
+
+template< typename S >
 void test_stringbase_eq()
 {
     S n("0123");
@@ -655,7 +684,7 @@ void test_stringbase_complr()
 
     C4_EXPECT_EQ(n.complr(n.substr(5)), "");
     C4_EXPECT_EQ(n.complr(n.range(5, 10)), "");
- 
+
     C4_EXPECT_EQ(n.complr(n.substr(5, 0)), "56789");
     C4_EXPECT_EQ(n.complr(n.range(5, 5)), "56789");
 
