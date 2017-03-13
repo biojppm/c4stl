@@ -6,6 +6,7 @@
 #include "c4/config.hpp"
 #include "c4/error.hpp"
 #include "c4/ctor_dtor.hpp"
+#include "c4/memory_util.hpp"
 
 #include <limits>
 #include <memory>
@@ -34,24 +35,6 @@ struct growth_default;
  *   or destroyed.
  */
 
-#ifndef C4_REF_SMALL_SIZE // size in bytes
-#   define C4_REF_SMALL_SIZE 128 // 128 bytes
-#endif
-
-#ifndef C4_REF_PAGE_SIZE
-#   define C4_REF_PAGE_SIZE 1024
-#endif
-
-constexpr size_t num_small_objects(size_t obj_size)
-{
-    return C4_REF_SMALL_SIZE / obj_size;
-}
-
-constexpr size_t num_paged_objects(size_t obj_size)
-{
-    return C4_REF_PAGE_SIZE / obj_size;
-}
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -59,23 +42,23 @@ constexpr size_t num_paged_objects(size_t obj_size)
 // forward declarations
 template< class Storage, class TagType > struct raw_storage_traits;
 
-template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed;
 
-template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw;
 
 /** raw storage with inplace storage of up to N objects, thus saving an
  * allocation when the size is small. @ingroup raw_storage_classes */
-template< class T, size_t N = num_small_objects(sizeof(T)), class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T>, class GrowthPolicy = growth_default >
+template< class T, size_t N=16, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw_small; // = raw< T, I, Alignment, SmallAllocator<T, N, Alignment> >;
 
-template< class T, size_t PageSize = num_paged_objects(sizeof(T)), class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
+template< class T, size_t PageSize=256, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
 struct raw_paged;
 
 /** raw paged with page size determined at runtime. @ingroup raw_storage_classes */
-template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T), class Alloc = Allocator<T> >
-using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
+using raw_paged_rt=raw_paged< T, 0, I, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 
@@ -527,6 +510,9 @@ public:
         iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
         iterator_impl& operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
 
+        iterator_impl& operator-- (   ) noexcept {                           --i; return *this; }
+        iterator_impl& operator-- (int) noexcept { iterator_impl it = *this; --i; return    it; }
+
         bool operator== (iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
         bool operator!= (iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
 
@@ -568,8 +554,9 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
         return;
     }
 
-    // number of pages: round up to the next page
+    // number of pages: round up to the next multiple of ps
     const I np = (cap + ps - 1) / ps;
+
     C4_ASSERT(np * ps >= cap);
     if(np >= _c4this->m_num_pages)
     {

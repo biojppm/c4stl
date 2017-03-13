@@ -34,7 +34,12 @@ struct container_test : public ::testing::Test
 template <class T> using test_fixed_size = container_test<fixed_size<T, 8>>;
 TYPED_TEST_CASE_P(test_fixed_size);
 
-#define C4_DEFINE_CONTAINER_TEST(test_name, ctor_args, ...) \
+template <class T> using test_fixed_capacity = container_test<fixed_capacity<T, 8>>;
+TYPED_TEST_CASE_P(test_fixed_capacity);
+
+
+//-----------------------------------------------------------------------------
+#define C4_DEFINE_FIXED_CONTAINER_TEST(test_name, ctor_args, ...)   \
 TYPED_TEST_P(test_fixed_size, test_name)                    \
 {                                                           \
     using cont = typename TestFixture::container_type;      \
@@ -43,6 +48,36 @@ TYPED_TEST_P(test_fixed_size, test_name)                    \
     test_##test_name<cont, TypeParam>(c, ## __VA_ARGS__);   \
 }
 
+#define C4_DEFINE_DYNAMIC_CONTAINER_TEST(test_name, ctor_args, ...) \
+TYPED_TEST_P(test_fixed_capacity, test_name)                    \
+{                                                           \
+    using cont = typename TestFixture::container_type;      \
+    using T = typename cont::value_type;                    \
+    auto c = cont ctor_args;                                \
+    test_##test_name<cont, TypeParam>(c, ## __VA_ARGS__);   \
+}
+
+#define C4_DEFINE_CONTAINER_TEST(test_name, ctor_args, ...) \
+    C4_DEFINE_FIXED_CONTAINER_TEST(test_name, ctor_args, ## __VA_ARGS__);  \
+    C4_DEFINE_DYNAMIC_CONTAINER_TEST(test_name, ctor_args, ## __VA_ARGS__);
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template <class Cont, class T>
+void test_contiguous_class_layout(Cont const& fs)
+{
+    using raw_storage_type = typename Cont::raw_storage_type;
+    using base_crtp_type = typename Cont::base_crtp;
+
+    {
+        contiguous< T, size_t, raw_fixed< T, 8 > > fn;
+        contiguous< T, size_t, raw<T> > dn;
+        contiguous< T, size_t, raw_paged<T> > pn;
+    }
+}
+C4_DEFINE_DYNAMIC_CONTAINER_TEST(contiguous_class_layout, ());
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -273,7 +308,15 @@ REGISTER_TYPED_TEST_CASE_P(test_fixed_size,
                            get_spanrs, spanrs_conversion,
                            get_etched_span, etched_span_conversion);
 
+REGISTER_TYPED_TEST_CASE_P(test_fixed_capacity,
+                           contiguous_class_layout,
+                           ctor_empty, ctor_copy, ctor_move, ctor_copy_span, ctor_aggregate,
+                           get_span, span_conversion,
+                           get_spanrs, spanrs_conversion,
+                           get_etched_span, etched_span_conversion);
+
 INSTANTIATE_TYPED_TEST_CASE_P(containers, test_fixed_size, c4::archetypes::containees);
+INSTANTIATE_TYPED_TEST_CASE_P(containers, test_fixed_capacity, c4::archetypes::containees);
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
