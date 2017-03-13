@@ -1416,19 +1416,18 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE C const*   data()  const noexcept { return _c4cthisSTR; }
     C4_ALWAYS_INLINE C      *   data()        noexcept { return _c4thisSTR; }
+    C4_ALWAYS_INLINE C const*   data()  const noexcept { return _c4cthisSTR; }
 
-    C4_ALWAYS_INLINE size_type  size()  const noexcept { return _c4cthisSZ; }
-
-    C4_ALWAYS_INLINE ssize_type ssize() const noexcept { return szconv< ssize_type >(_c4cthisSZ); }
     C4_ALWAYS_INLINE bool       empty() const noexcept { return _c4cthisSZ == 0; }
+    C4_ALWAYS_INLINE size_type  size()  const noexcept { return _c4cthisSZ; }
+    C4_ALWAYS_INLINE ssize_type ssize() const noexcept { return szconv< ssize_type >(_c4cthisSZ); }
 
-    C4_ALWAYS_INLINE C  front() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return *_c4cthisSTR; }
     C4_ALWAYS_INLINE C& front()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return *_c4thisSTR; }
+    C4_ALWAYS_INLINE C  front() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return *_c4cthisSTR; }
 
-    C4_ALWAYS_INLINE C  back() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return *(_c4cthisSTR + _c4thisSZ - 1); }
     C4_ALWAYS_INLINE C& back()       C4_NOEXCEPT_X { C4_XASSERT(!empty()); return *(_c4thisSTR + _c4thisSZ - 1); }
+    C4_ALWAYS_INLINE C  back() const C4_NOEXCEPT_X { C4_XASSERT(!empty()); return *(_c4cthisSTR + _c4cthisSZ - 1); }
 
 public:
 
@@ -1442,14 +1441,14 @@ public:
     C4_ALWAYS_INLINE const_iterator cbegin() const noexcept { return _c4cthisSTR; }
 
     C4_ALWAYS_INLINE       iterator  end()       noexcept { return _c4thisSTR + _c4thisSZ; }
-    C4_ALWAYS_INLINE const_iterator  end() const noexcept { return _c4thisSTR + _c4thisSZ; }
+    C4_ALWAYS_INLINE const_iterator  end() const noexcept { return _c4cthisSTR + _c4cthisSZ; }
     C4_ALWAYS_INLINE const_iterator cend() const noexcept { return _c4cthisSTR + _c4cthisSZ; }
 
     C4_ALWAYS_INLINE       iterator  rbegin()       noexcept { return       reverse_iterator(_c4thisSTR + _c4thisSZ); }
-    C4_ALWAYS_INLINE const_iterator  rbegin() const noexcept { return const_reverse_iterator(_c4thisSTR + _c4thisSZ); }
-    C4_ALWAYS_INLINE const_iterator crbegin() const noexcept { return const_reverse_iterator(_c4thisSTR + _c4thisSZ); }
+    C4_ALWAYS_INLINE const_iterator  rbegin() const noexcept { return const_reverse_iterator(_c4cthisSTR + _c4cthisSZ); }
+    C4_ALWAYS_INLINE const_iterator crbegin() const noexcept { return const_reverse_iterator(_c4cthisSTR + _c4cthisSZ); }
 
-    C4_ALWAYS_INLINE       iterator  rend()       noexcept { return       reverse_iterator(_c4cthisSTR); }
+    C4_ALWAYS_INLINE       iterator  rend()       noexcept { return       reverse_iterator(_c4thisSTR); }
     C4_ALWAYS_INLINE const_iterator  rend() const noexcept { return const_reverse_iterator(_c4cthisSTR); }
     C4_ALWAYS_INLINE const_iterator crend() const noexcept { return const_reverse_iterator(_c4cthisSTR); }
 
