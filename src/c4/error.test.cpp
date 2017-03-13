@@ -1,5 +1,4 @@
 #include "c4/error.hpp"
-
 #include <gtest/gtest.h>
 
 C4_BEGIN_HIDDEN_NAMESPACE
@@ -10,7 +9,6 @@ void error_callback(const char *msg, size_t msg_sz)
     was_called = true;
 }
 C4_END_HIDDEN_NAMESPACE
-
 
 C4_BEGIN_NAMESPACE(c4)
 

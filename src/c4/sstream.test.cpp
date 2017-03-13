@@ -65,7 +65,7 @@ TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
     which<strtype, TypeParam>(this->ss, 123, 124, 125);             \
     this->ss.reset();                                               \
                                                                     \
-    which<strtype, exvec3<TypeParam>>(this->ss, {65,66,67},{68,69,70},{71,72,73}); \
+    which<strtype, archetypes::exvec3<TypeParam>>(this->ss, {65,66,67},{68,69,70},{71,72,73}); \
     this->ss.reset();
 
 //-----------------------------------------------------------------------------
