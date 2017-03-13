@@ -23,7 +23,11 @@ for t in $targets ; do
     else
         ( cd $bdir && make -j $np $t-build )
     fi
-    ( cd $bdir && ctest -V -R $t )
+    if [ "$t" == "unit_tests" ] ; then
+        ( cd $bdir && make unit_tests )
+    else
+        ( cd $bdir && ctest -V -R $t )
+    fi
 done
 
 exit 0
