@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-// Some memory utilities.
+/** @file memory_util.hpp Some memory utilities. */
 
 C4_BEGIN_NAMESPACE(c4)
 
