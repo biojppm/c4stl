@@ -59,4 +59,109 @@ TEST(ctor_dtor, construct_n)
     }
 }
 
+//-----------------------------------------------------------------------------
+template< class T >
+void create_make_room_buffer(std::vector<T> &orig)
+{
+    C4_STATIC_ASSERT(std::is_integral< T >::value);
+    for(T i = 0, e = (T)orig.size(); i < e; ++i)
+    {
+        orig[i] = i;
+    }
+}
+template<>
+void create_make_room_buffer< std::string >(std::vector<std::string> &orig)
+{
+    for(size_t i = 0, e = orig.size(); i < e; ++i)
+    {
+        char c = (char)(33 + i % (122 - 33));
+        orig[i].assign(10, c);
+    }
+}
+template< class T >
+void do_make_room_inplace_check(std::vector< T > const& orig, std::vector< T > & buf,
+                        size_t bufsz, size_t room, size_t pos)
+{
+    buf = orig;
+
+    make_room(buf.data() + pos, bufsz, room);
+
+    for(size_t i = 0, e = orig.size(); i < e; ++i)
+    {
+        if(i < pos)
+        {
+            // memory before the move, should be untouched
+            EXPECT_EQ(buf[i], orig[i]) << "i=" << (int)i;
+        }
+        else if(i >= pos)
+        {
+            if(i >= pos && i < pos + room)
+            {
+                // this is the memory that was moved (at its origin)
+                //EXPECT_EQ(buf[i], orig[i]) << "i=" << (int)i;
+            }
+            else if(i >= pos + room && i < pos + room + bufsz)
+            {
+                // this is the memory that was moved (at its destination)
+                EXPECT_EQ(buf[i], orig[i - room]) << "i=" << (int)i;
+            }
+            else
+            {
+                // this is memory at the end, should be untouched
+                EXPECT_EQ(buf[i], orig[i]) << "i=" << (int)i;
+            }
+        }
+    }
+};
+
+template< class T >
+void test_make_room_inplace()
+{
+    std::vector< T > orig(100), buf(100);
+
+    create_make_room_buffer(orig);
+
+    {
+        SCOPED_TRACE("in the beginning without overlap");
+        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/10, /*pos*/0);
+    }
+
+    {
+        SCOPED_TRACE("in the beginning with overlap");
+        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/5, /*pos*/0);
+    }
+
+    {
+        SCOPED_TRACE("in the middle without overlap");
+        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/10, /*pos*/10);
+    }
+
+    {
+        SCOPED_TRACE("in beginning with overlap");
+        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/5, /*pos*/10);
+    }
+
+}
+TEST(make_room, inplace)
+{
+    {
+        SCOPED_TRACE("uint8_t");
+        test_make_room_inplace< uint8_t >();
+    }
+    {
+        SCOPED_TRACE("uint64_t");
+        test_make_room_inplace< uint64_t >();
+    }
+    {
+        SCOPED_TRACE("std::string");
+        test_make_room_inplace< std::string >();
+    }
+}
+
+template< class T >
+void test_destroy_room_inplace()
+{
+
+}
+
 C4_END_NAMESPACE(c4)

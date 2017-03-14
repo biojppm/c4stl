@@ -4,6 +4,7 @@
 #include "c4/preprocessor.hpp"
 #include "c4/language.hpp"
 #include "c4/memory_util.hpp"
+#include "c4/error.hpp"
 
 #include <type_traits>
 #include <utility> // std::forward
