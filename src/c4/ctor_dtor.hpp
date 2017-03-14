@@ -327,14 +327,13 @@ make_room(U *dst, U const* src, I n, I room, I pos)
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_assignable< U >::value)
 destroy_room(U *buf, I n, I room) noexcept
 {
-    C4_ASSERT(room <= n);
-    if(room >= n)
+    if(room < n)
     {
-        C4_UNUSED(buf); // nothing to do
+        memmove(buf, buf + room, (n - room) * sizeof(U));
     }
     else
     {
-        memcpy(buf, buf + room, room * sizeof(U));
+        C4_UNUSED(buf); // nothing to do
     }
 }
 /** destroys room at the beginning of buf, which has a current size of n */
