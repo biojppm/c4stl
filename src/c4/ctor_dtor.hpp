@@ -298,6 +298,7 @@ make_room(U *buf, I n, I room) C4_NOEXCEPT_A
     }
 }
 
+/** make room to the right of pos, copying to a different buffer */
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
 make_room(U *dst, U const* src, I n, I room, I pos) C4_NOEXCEPT_A
 {
@@ -305,6 +306,7 @@ make_room(U *dst, U const* src, I n, I room, I pos) C4_NOEXCEPT_A
     memcpy(dst, src, pos * sizeof(U));
     memcpy(dst + room + pos, src + pos, (n - pos) * sizeof(U));
 }
+/** make room to the right of pos, copying to a different buffer */
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
 make_room(U *dst, U const* src, I n, I room, I pos)
 {
@@ -322,7 +324,7 @@ make_room(U *dst, U const* src, I n, I room, I pos)
 
 //-----------------------------------------------------------------------------
 /** destroys room at the beginning of buf, which has a current size of n */
-template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
+template< class U, class I > _C4REQUIRE(std::is_trivially_move_assignable< U >::value)
 destroy_room(U *buf, I n, I room) noexcept
 {
     C4_ASSERT(room <= n);
@@ -332,11 +334,11 @@ destroy_room(U *buf, I n, I room) noexcept
     }
     else
     {
-        memmove(buf, buf + room, room * sizeof(U));
+        memcpy(buf, buf + room, room * sizeof(U));
     }
 }
 /** destroys room at the beginning of buf, which has a current size of n */
-template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
+template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_assignable< U >::value)
 destroy_room(U *buf, I n, I room)
 {
     if(room < n)
@@ -355,6 +357,7 @@ destroy_room(U *buf, I n, I room)
     }
 }
 
+/** destroy room to the right of pos, copying to a different buffer */
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
 destroy_room(U *dst, U const* src, I n, I room, I pos) noexcept
 {
@@ -362,6 +365,7 @@ destroy_room(U *dst, U const* src, I n, I room, I pos) noexcept
     memcpy(dst, src, pos * sizeof(U));
     memcpy(dst + pos, src + room + pos, (n - pos - room) * sizeof(U));
 }
+/** destroy room to the right of pos, copying to a different buffer */
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
 destroy_room(U *dst, U const* src, I n, I room, I pos)
 {

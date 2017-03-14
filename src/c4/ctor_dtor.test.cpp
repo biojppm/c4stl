@@ -78,14 +78,30 @@ void create_make_room_buffer< std::string >(std::vector<std::string> &orig)
         orig[i].assign(10, c);
     }
 }
+
 template< class T >
-void do_make_room_inplace_check(std::vector< T > const& orig, std::vector< T > & buf,
-                        size_t bufsz, size_t room, size_t pos)
+void do_make_room_inplace(std::vector< T > const& orig, std::vector< T > & buf,
+                          size_t bufsz, size_t room, size_t pos)
 {
     buf = orig;
-
     make_room(buf.data() + pos, bufsz, room);
+}
+template< class T >
+void do_make_room_srcdst(std::vector< T > const& orig, std::vector< T > & buf,
+                         size_t bufsz, size_t room, size_t pos)
+{
+    buf.resize(orig.size());
+    for(auto &t : buf)
+    {
+        t = T();
+    }
+    make_room(buf.data(), orig.data(), bufsz, room, pos);
+}
 
+template< class T >
+void do_make_room_check(std::vector< T > const& orig, std::vector< T > & buf,
+                        size_t bufsz, size_t room, size_t pos)
+{
     for(size_t i = 0, e = orig.size(); i < e; ++i)
     {
         if(i < pos)
@@ -115,7 +131,23 @@ void do_make_room_inplace_check(std::vector< T > const& orig, std::vector< T > &
 };
 
 template< class T >
-void test_make_room_inplace()
+void do_make_room_inplace_test(std::vector< T > const& orig, std::vector< T > & buf,
+                               size_t bufsz, size_t room, size_t pos)
+{
+    do_make_room_inplace(orig, buf, bufsz, room, pos);
+    do_make_room_check(orig, buf, bufsz, room, pos);
+}
+
+template< class T >
+void do_make_room_srcdst_test(std::vector< T > const& orig, std::vector< T > & buf,
+                              size_t bufsz, size_t room, size_t pos)
+{
+    do_make_room_srcdst(orig, buf, buf.size() - room, room, pos);
+    do_make_room_check(orig, buf, buf.size() - room, room, pos);
+}
+
+template< class T, class Func >
+void test_make_room(Func test_func)
 {
     std::vector< T > orig(100), buf(100);
 
@@ -123,45 +155,53 @@ void test_make_room_inplace()
 
     {
         SCOPED_TRACE("in the beginning without overlap");
-        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/10, /*pos*/0);
+        test_func(orig, buf, /*bufsz*/10, /*room*/10, /*pos*/0);
     }
 
     {
         SCOPED_TRACE("in the beginning with overlap");
-        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/5, /*pos*/0);
+        test_func(orig, buf, /*bufsz*/10, /*room*/15, /*pos*/0);
     }
 
     {
         SCOPED_TRACE("in the middle without overlap");
-        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/10, /*pos*/10);
+        test_func(orig, buf, /*bufsz*/10, /*room*/10, /*pos*/10);
     }
 
     {
-        SCOPED_TRACE("in beginning with overlap");
-        do_make_room_inplace_check(orig, buf, /*bufsz*/10, /*room*/5, /*pos*/10);
+        SCOPED_TRACE("in the middle with overlap");
+        test_func(orig, buf, /*bufsz*/10, /*room*/15, /*pos*/10);
     }
-
 }
 TEST(make_room, inplace)
 {
     {
         SCOPED_TRACE("uint8_t");
-        test_make_room_inplace< uint8_t >();
+        test_make_room< uint8_t >(do_make_room_inplace_test< uint8_t >);
     }
     {
         SCOPED_TRACE("uint64_t");
-        test_make_room_inplace< uint64_t >();
+        test_make_room< uint64_t >(do_make_room_inplace_test< uint64_t >);
     }
     {
         SCOPED_TRACE("std::string");
-        test_make_room_inplace< std::string >();
+        test_make_room< std::string >(&do_make_room_inplace_test< std::string >);
     }
 }
-
-template< class T >
-void test_destroy_room_inplace()
+TEST(make_room, srcdst)
 {
-
+    {
+        SCOPED_TRACE("uint8_t");
+        test_make_room< uint8_t >(&do_make_room_srcdst_test< uint8_t >);
+    }
+    {
+        SCOPED_TRACE("uint64_t");
+        test_make_room< uint64_t >(&do_make_room_srcdst_test< uint64_t >);
+    }
+    {
+        SCOPED_TRACE("std::string");
+        test_make_room< std::string >(&do_make_room_srcdst_test< std::string >);
+    }
 }
 
 C4_END_NAMESPACE(c4)
