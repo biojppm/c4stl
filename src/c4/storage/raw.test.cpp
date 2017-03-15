@@ -126,52 +126,6 @@ TEST(raw_small, instantiation)
 }
 
 //-----------------------------------------------------------------------------
-template< class T >
-struct raw_inheriting : public raw< T >
-{
-    using raw< T >::raw;
-};
-TEST(raw, inheriting)
-{
-    using ci = Counting< raw_inheriting< int > >;
-    {
-        auto cd = ci::check_ctors_dtors(1, 1);
-        {
-            ci rf(10);
-            EXPECT_EQ(rf.obj.capacity(), 10);
-        }
-    }
-}
-template< class T >
-struct raw_small_inheriting : public raw_small< T >
-{
-    using raw_small< T >::raw_small;
-};
-TEST(raw_small, inheriting)
-{
-    using ci = Counting< raw_small_inheriting< int > >;
-    auto array_size = raw_small< int >::array_size;
-
-    {
-        SCOPED_TRACE("small");
-        auto cd = ci::check_ctors_dtors(1, 1);
-        {
-            ci rf(array_size - 1);
-            EXPECT_EQ(rf.obj.capacity(), array_size);
-        }
-    }
-
-    {
-        SCOPED_TRACE("large");
-        auto cd = ci::check_ctors_dtors(1, 1);
-        {
-            ci rf(array_size + 1);
-            EXPECT_EQ(rf.obj.capacity(), array_size + 1);
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
 TEST(raw_paged, instantiation)
 {
     using ci = Counting< int >;
@@ -279,6 +233,52 @@ TEST(raw_paged_rt, instantiation)
         }
     }
 
+}
+
+//-----------------------------------------------------------------------------
+template< class T >
+struct raw_inheriting : public raw< T >
+{
+    using raw< T >::raw;
+};
+TEST(raw, inheriting)
+{
+    using ci = Counting< raw_inheriting< int > >;
+    {
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(10);
+            EXPECT_EQ(rf.obj.capacity(), 10);
+        }
+    }
+}
+template< class T >
+struct raw_small_inheriting : public raw_small< T >
+{
+    using raw_small< T >::raw_small;
+};
+TEST(raw_small, inheriting)
+{
+    using ci = Counting< raw_small_inheriting< int > >;
+    auto array_size = raw_small< int >::array_size;
+
+    {
+        SCOPED_TRACE("small");
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(array_size - 1);
+            EXPECT_EQ(rf.obj.capacity(), array_size);
+        }
+    }
+
+    {
+        SCOPED_TRACE("large");
+        auto cd = ci::check_ctors_dtors(1, 1);
+        {
+            ci rf(array_size + 1);
+            EXPECT_EQ(rf.obj.capacity(), array_size + 1);
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -468,7 +468,7 @@ void test_raw_construction_paged(Raw &rp)
     C4_STATIC_ASSERT(std::is_integral< T >::value);
     C4_STATIC_ASSERT(std::is_trivially_destructible< T >::value);
 
-    auto do_test = [](const char *name, Raw &r_, I first, I num, T val)
+    const auto do_test = [](const char *name, Raw &r_, I first, I num, T val)
     {
         SCOPED_TRACE(name);
         C4_ASSERT(r_.capacity() >= first + num);
