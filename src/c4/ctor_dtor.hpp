@@ -328,7 +328,7 @@ make_room(U *dst, U const* src, I n, I room, I pos)
 
 //-----------------------------------------------------------------------------
 /** destroy room at the beginning of buf, which has a current size of n */
-template< class U, class I > _C4REQUIRE(std::is_trivially_move_assignable< U >::value)
+template< class U, class I > _C4REQUIRE(std::is_scalar< U >::value || std::is_pod< U >::value)
 destroy_room(U *buf, I n, I room) C4_NOEXCEPT_A
 {
     C4_ASSERT(n >= 0 && room >= 0);
@@ -342,7 +342,7 @@ destroy_room(U *buf, I n, I room) C4_NOEXCEPT_A
     }
 }
 /** destroy room at the beginning of buf, which has a current size of n */
-template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_assignable< U >::value)
+template< class U, class I > _C4REQUIRE( ! (std::is_scalar< U >::value || std::is_pod< U >::value))
 destroy_room(U *buf, I n, I room)
 {
     C4_ASSERT(n >= 0 && room >= 0);
