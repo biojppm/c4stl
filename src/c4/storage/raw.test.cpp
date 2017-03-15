@@ -80,7 +80,7 @@ TEST(raw_small, instantiation)
         {
             auto cd = ci::check_ctors_dtors(0, 0);
             rs rf;
-            EXPECT_EQ(rf.capacity(), 0);
+            EXPECT_EQ(rf.capacity(), rs::array_size);
         }
         ch.check_all_delta(0, 0, 0);
     }
@@ -88,11 +88,11 @@ TEST(raw_small, instantiation)
     {
         SCOPED_TRACE("small");
         AllocationCountsChecker ch;
-        auto num = rs::threshold - 1; // fits in the inplace storage
+        auto num = rs::array_size - 1; // fits in the inplace storage
         {
             auto cd = ci::check_ctors_dtors(0, 0);
             rs rf(num);
-            EXPECT_EQ(rf.capacity(), rs::threshold);
+            EXPECT_EQ(rf.capacity(), rs::array_size);
         }
         ch.check_all_delta(0, 0, 0);
     }
@@ -100,11 +100,11 @@ TEST(raw_small, instantiation)
     {
         SCOPED_TRACE("small-limit");
         AllocationCountsChecker ch;
-        auto num = rs::threshold; // fits in the inplace storage
+        auto num = rs::array_size; // fits in the inplace storage
         {
             auto cd = ci::check_ctors_dtors(0, 0);
             rs rf(num);
-            EXPECT_EQ(rf.capacity(), rs::threshold);
+            EXPECT_EQ(rf.capacity(), rs::array_size);
             ch.check_curr_delta(0, 0);
         }
         ch.check_all_delta(0, 0, 0);
@@ -113,7 +113,7 @@ TEST(raw_small, instantiation)
     {
         SCOPED_TRACE("large");
         AllocationCountsChecker ch;
-        auto num = rs::threshold + 1; // does not fit in the inplace storage
+        auto num = rs::array_size + 1; // does not fit in the inplace storage
         {
             SCOPED_TRACE("large-test");
             auto cd = ci::check_ctors_dtors(0, 0);
@@ -150,14 +150,14 @@ struct raw_small_inheriting : public raw_small< T >
 TEST(raw_small, inheriting)
 {
     using ci = Counting< raw_small_inheriting< int > >;
-    auto threshold = raw_small< int >::threshold;
+    auto array_size = raw_small< int >::array_size;
 
     {
         SCOPED_TRACE("small");
         auto cd = ci::check_ctors_dtors(1, 1);
         {
-            ci rf(threshold - 1);
-            EXPECT_EQ(rf.obj.capacity(), threshold);
+            ci rf(array_size - 1);
+            EXPECT_EQ(rf.obj.capacity(), array_size);
         }
     }
 
@@ -165,8 +165,8 @@ TEST(raw_small, inheriting)
         SCOPED_TRACE("large");
         auto cd = ci::check_ctors_dtors(1, 1);
         {
-            ci rf(threshold + 1);
-            EXPECT_EQ(rf.obj.capacity(), threshold + 1);
+            ci rf(array_size + 1);
+            EXPECT_EQ(rf.obj.capacity(), array_size + 1);
         }
     }
 }

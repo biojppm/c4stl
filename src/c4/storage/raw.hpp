@@ -30,9 +30,11 @@ struct growth_default;
  * offers a contiguous index range with constant-time access. Note the following:
  *
  * - The memory used by these objects is automatically freed. Allocation
- *   requires explicit calls to the function _raw_resize(I n).
+ *   requires explicit calls to the function _raw_reserve(I currsz, I cap).
+ *
  * - The elements contained in the raw storage are NOT automatically constructed
- *   or destroyed.
+ *   or destroyed. The exception to this is in _raw_resize(), which adds empty
+ *   space for a certain number of elements at, unless through .
  */
 
 //-----------------------------------------------------------------------------
@@ -265,9 +267,10 @@ public:
     C4_ALWAYS_INLINE T      * data()       noexcept { return m_arr; }
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_arr; }
 
-    C4_ALWAYS_INLINE constexpr I  max_capacity()      const noexcept { return N; }
-    C4_ALWAYS_INLINE constexpr I      capacity()      const noexcept { return N; }
-    C4_ALWAYS_INLINE constexpr I next_capacity(I cap) const noexcept { return N; }
+    C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return N; }
+
+    C4_ALWAYS_INLINE constexpr static I next_capacity(I cap) noexcept { return N; }
+    C4_ALWAYS_INLINE constexpr static I  max_capacity()      noexcept { return N; }
 
 public:
 
@@ -276,7 +279,38 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE void _raw_resize(I n) const C4_NOEXCEPT_A { C4_ASSERT(n <= N); }
+    void _raw_reserve(I cap) const C4_NOEXCEPT_A
+    {
+        C4_ASSERT(cap <= N);
+    }
+
+    /** Resize the buffer at pos, so that the previous size increases to the
+     *  value of next; when growing, ___adds to the right___ of pos; when
+     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+     *  will increase to the value obtained with the growth policy; if shrinking,
+     *  the capacity will stay the same. Use _raw_reserve() to diminish the
+     *  capacity.
+     *
+     *  @param pos the position from which room is to be created (to the right)
+     *         or destroyed (to the left)
+     *  @param prev the previous size
+     *  @param next the next size */
+    void _raw_resize(I pos, I prev, I next)
+    {
+        C4_ASSERT(next >= 0 && next < N);
+        C4_ASSERT(prev >= 0 && prev < N);
+        C4_ASSERT(pos  >= 0 && pos  < N);
+        if(next > prev)
+        {
+            c4::make_room(m_arr + pos, prev - pos, next - prev);
+        }
+        else if(next < prev)
+        {
+            I delta = prev - next;
+            C4_ASSERT(pos > delta);
+            c4::destroy_room(m_arr + pos - delta, prev - pos, delta);
+        }
+    }
 
 };
 
@@ -309,12 +343,12 @@ public:
     raw() : raw(0) {}
     raw(Alloc const& a) : raw(0, a) {}
 
-    raw(I cap) : m_ptr(nullptr), m_capacity(0), m_allocator() { _raw_resize(cap); }
-    raw(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(0), m_allocator(a) { _raw_resize(cap); }
+    raw(I cap) : m_ptr(nullptr), m_capacity(0), m_allocator() { _raw_reserve(0, cap); }
+    raw(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(0), m_allocator(a) { _raw_reserve(0, cap); }
 
     ~raw()
     {
-        _raw_resize(0);
+        _raw_reserve(0, 0);
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
@@ -324,15 +358,18 @@ public:
     raw& operator=(raw const& that) = delete;
     raw& operator=(raw     && that) = delete;
 
+public:
+
     C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_ptr[i]; }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_ptr[i]; }
 
     C4_ALWAYS_INLINE T      * data()       noexcept { return m_ptr; }
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_ptr; }
 
-    C4_ALWAYS_INLINE I max_capacity() const noexcept { return std::numeric_limits< I >::max() - 1; }
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
-    C4_ALWAYS_INLINE I next_capacity(I desired) const
+
+    C4_ALWAYS_INLINE static I max_capacity() noexcept { return std::numeric_limits< I >::max() - 1; }
+    C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
     {
         return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
     }
@@ -344,18 +381,70 @@ public:
 
 public:
 
-    void _raw_resize(I cap)
+    void _raw_reserve(I curr, I cap) C4_NOEXCEPT_A
     {
+        C4_ASSERT(curr <= cap);
+        T *tmp = nullptr;
+        if(cap != m_capacity && cap != 0)
+        {
+            tmp = m_allocator.allocate(cap, Alignment);
+        }
         if(m_ptr)
         {
+            if(tmp)
+            {
+                c4::move_construct_n(tmp, m_ptr, curr);
+            }
             m_allocator.deallocate(m_ptr, m_capacity, Alignment);
-            m_ptr = nullptr;
-        }
-        if(cap > 0)
-        {
-            m_ptr = m_allocator.allocate(cap, Alignment);
         }
         m_capacity = cap;
+        m_ptr = tmp;
+    }
+
+    /** Resize the buffer at pos, so that the previous size increases to the
+     *  value of next; when growing, ___adds to the right___ of pos; when
+     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+     *  will increase to the value obtained with the growth policy; if shrinking,
+     *  the capacity will stay the same. Use _raw_reserve() to diminish the
+     *  capacity.
+     *
+     *  @param pos the position from which room is to be created (to the right)
+     *         or destroyed (to the left)
+     *  @param prev the previous size
+     *  @param next the next size */
+    void _raw_resize(I pos, I prev, I next)
+    {
+        C4_ASSERT(next >= 0 && next < m_capacity);
+        C4_ASSERT(prev >= 0 && prev < m_capacity);
+        C4_ASSERT(pos  >= 0 && pos  < m_capacity);
+        if(next > prev)
+        {
+            if(next <= m_capacity)
+            {
+                c4::make_room(m_ptr + pos, prev - pos, next - prev);
+            }
+            else
+            {
+                m_capacity = next_capacity(next);
+                T* tmp = m_allocator.allocate(m_capacity, Alignment);
+                if(m_ptr)
+                {
+                    c4::make_room(tmp, m_ptr, prev, next - prev, pos);
+                    m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+                }
+                else
+                {
+                    C4_ASSERT(prev == 0);
+                }
+                m_ptr = tmp;
+            }
+        }
+        else if(next < prev)
+        {
+            I delta = prev - next;
+            C4_ASSERT(pos > delta);
+            c4::destroy_room(m_ptr + pos - delta, prev - pos, delta);
+        }
     }
 
 };
@@ -368,7 +457,7 @@ public:
 /** raw contiguous storage with in-place storage for a small number of objects
  * @tparam N the number of objects
  * @ingroup raw_storage_classes */
-template< class T, size_t N, class I, I Alignment, class Alloc, class GrowthPolicy >
+template< class T, size_t N_, class I, I Alignment, class Alloc, class GrowthPolicy >
 struct raw_small
 {
 
@@ -376,8 +465,8 @@ struct raw_small
 
     union {
         union {
-            alignas(Alignment) T    m_arr[N];
-            alignas(Alignment) char m_buf[N * sizeof(T)];
+            alignas(Alignment) T    m_arr[N_];
+            alignas(Alignment) char m_buf[N_ * sizeof(T)];
         };
         T * m_ptr;
     };
@@ -394,20 +483,20 @@ public:
     using allocator_traits = std::allocator_traits< Alloc >;
     using growth_policy = GrowthPolicy;
 
-    C4_STATIC_ASSERT(N < (size_t)std::numeric_limits< I >::max());
-    enum : I { threshold = (I)N };
+    C4_STATIC_ASSERT(N_ < (size_t)std::numeric_limits< I >::max());
+    enum : I { array_size = (I)N_, N = (I)N_ };
 
 public:
 
     raw_small() : raw_small(0) {}
     raw_small(Alloc const& a) : raw_small(0, a) {}
 
-    raw_small(I cap) : m_ptr(nullptr), m_capacity(0), m_allocator() { _raw_resize(cap); }
-    raw_small(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(0), m_allocator(a) { _raw_resize(cap); }
+    raw_small(I cap) : m_ptr(nullptr), m_capacity(N), m_allocator() { _raw_reserve(0, cap); }
+    raw_small(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(N), m_allocator(a) { _raw_reserve(0, cap); }
 
     ~raw_small()
     {
-        _raw_resize(0);
+        _raw_reserve(0, 0);
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
@@ -417,45 +506,118 @@ public:
     raw_small& operator=(raw_small const& that) = delete;
     raw_small& operator=(raw_small     && that) = delete;
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity < N ? m_arr[i] : m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity < N ? m_arr[i] : m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity <= N ? m_arr[i] : m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity <= N ? m_arr[i] : m_ptr[i]; }
 
-    C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity < N ? m_arr : m_ptr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity < N ? m_arr : m_ptr; }
+    C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity <= N ? m_arr : m_ptr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? m_arr : m_ptr; }
 
-    C4_ALWAYS_INLINE I max_capacity() const noexcept { return std::numeric_limits< I >::max() - 1; }
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
-    C4_ALWAYS_INLINE I next_capacity(I desired) const
+
+    C4_ALWAYS_INLINE static I max_capacity() noexcept { return std::numeric_limits< I >::max() - 1; }
+    C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
     {
         return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
     }
 
 public:
 
-    iterator       _raw_iterator(I id)       noexcept { return m_capacity < N ? m_arr + id : m_ptr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return m_capacity < N ? m_arr + id : m_ptr + id; }
+    iterator       _raw_iterator(I id)       noexcept { return m_capacity <= N ? m_arr + id : m_ptr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return m_capacity <= N ? m_arr + id : m_ptr + id; }
 
 public:
 
-    void _raw_resize(I cap)
+    void _raw_reserve(I curr, I cap) C4_NOEXCEPT_A
     {
-        if(m_capacity > N)
+        C4_ASSERT(curr <= cap);
+        T *tmp = nullptr;
+        if(cap == m_capacity) return;
+        if(cap <= N)
         {
-            m_allocator.deallocate(m_ptr, m_capacity, Alignment);
-            m_ptr = nullptr;
-        }
-        if(cap == 0)
-        {
-            return;
-        }
-        if(cap > N)
-        {
-            m_ptr = m_allocator.allocate(cap, Alignment);
-            m_capacity = cap;
+            if(m_capacity <= N)
+            {
+                return; // nothing to do
+            }
+            else
+            {
+                tmp = m_arr; // move the storage to the array
+            }
         }
         else
         {
-            m_capacity = N;
+            // since here we know that cap != m_capacity and that cap
+            // is larger than the array, we'll always need a new buffer
+            tmp = m_allocator.allocate(cap, Alignment);
+        }
+        if(m_capacity)
+        {
+            if(m_capacity <= N)
+            {
+                C4_ASSERT(tmp != m_arr);
+                c4::move_construct_n(tmp, m_arr, curr);
+            }
+            else
+            {
+                c4::move_construct_n(tmp, m_ptr, curr);
+                m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+            }
+        }
+        m_capacity = cap;
+        m_ptr = tmp;
+    }
+
+    /** Resize the buffer at pos, so that the previous size increases to the
+     *  value of next; when growing, ___adds to the right___ of pos; when
+     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+     *  will increase to the value obtained with the growth policy; if shrinking,
+     *  the capacity will stay the same. Use _raw_reserve() to diminish the
+     *  capacity.
+     *
+     *  @param pos the position from which room is to be created (to the right)
+     *         or destroyed (to the left)
+     *  @param prev the previous size
+     *  @param next the next size */
+    void _raw_resize(I pos, I prev, I next)
+    {
+        C4_ASSERT(next >= 0 && next < m_capacity);
+        C4_ASSERT(prev >= 0 && prev < m_capacity);
+        C4_ASSERT(pos  >= 0 && pos  < m_capacity);
+        if(next > prev)
+        {
+            if(m_capacity <= N && next <= N)
+            {
+                c4::make_room(m_arr + pos, prev - pos, next - prev);
+            }
+            else
+            {
+                C4_ASSERT(next > N);
+                if(next <= m_capacity)
+                {
+                    c4::make_room(m_ptr + pos, prev - pos, next - prev);
+                }
+                else
+                {
+                    I cap = next_capacity(next);
+                    T* tmp = m_allocator.allocate(cap, Alignment);
+                    if(m_capacity <= N)
+                    {
+                        c4::make_room(tmp, m_arr, prev, next - prev, pos);
+                    }
+                    else if(m_capacity > N)
+                    {
+                        c4::make_room(tmp, m_ptr, prev, next - prev, pos);
+                        m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+                    }
+                    m_ptr = tmp;
+                    m_capacity = cap;
+                }
+            }
+        }
+        else if(next < prev)
+        {
+            I delta = prev - next;
+            C4_ASSERT(pos > delta);
+            c4::destroy_room(data() + pos - delta, prev - pos, delta);
         }
     }
 
