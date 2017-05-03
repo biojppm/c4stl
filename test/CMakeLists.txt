@@ -18,7 +18,7 @@ set(testsrc
     c4/archetypes.hpp
     c4/test.hpp
     )
-c4stl_add_target(c4test LIBRARY SANITIZE
+c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
     SOURCES ${testsrc}
     LIBS c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
     INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
@@ -29,7 +29,7 @@ c4stl_add_target(c4test LIBRARY SANITIZE
 function(c4stl_add_test name)
     c4stl_add_target(${name} EXECUTABLE SANITIZE
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
-        LIBS c4test ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+        LIBS c4stl-libtest ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
         INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
         )
     add_custom_target(${name}-build)
