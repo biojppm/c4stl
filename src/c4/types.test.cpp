@@ -73,5 +73,4 @@ TEST(TestSizeStructs, UbufSized)
     EXPECT_EQ((sizeof(UbufSized<ufonix<char[65]>>)), 80);
 }
 
-
 C4_END_NAMESPACE(c4)

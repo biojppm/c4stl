@@ -70,6 +70,10 @@ struct EmptyStructVirtual
 };
 
 
+/** */
+template< class T >
+struct inheritfrom : public T {};
+
 //--------------------------------------------------
 // Utilities to make a class obey size restrictions (eg, min size or size multiple of).
 // DirectX usually makes this restriction with uniform buffers.
@@ -213,18 +217,20 @@ public:                                                                 \
 };
 
 //-----------------------------------------------------------------------------
-#define _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I)   \
-                                                        \
-    using value_type = T;                               \
-    using size_type = I;                                \
-                                                        \
-    using pointer = T*;                                 \
-    using const_pointer = T const*;                     \
-                                                        \
-    using reference = T&;                               \
-    using const_reference = T const&;                   \
-                                                        \
+#define _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I)       \
+                                                            \
+    using value_type = T;                                   \
+    using size_type = I;                                    \
+    using ssize_type = typename std::make_signed<I>::type;  \
+                                                            \
+    using pointer = T*;                                     \
+    using const_pointer = T const*;                         \
+                                                            \
+    using reference = T&;                                   \
+    using const_reference = T const&;                       \
+                                                            \
     using difference_type = ptrdiff_t;
+
 
 #define _c4_DEFINE_ARRAY_TYPES(T, I)                                    \
                                                                         \
@@ -241,6 +247,30 @@ public:                                                                 \
 // http://stackoverflow.com/questions/10821380/is-t-an-instance-of-a-template-in-c
 template< template < typename... > class X, typename    T > struct is_instance_of_tpl             : std::false_type {};
 template< template < typename... > class X, typename... Y > struct is_instance_of_tpl<X, X<Y...>> : std::true_type {};
+
+//-----------------------------------------------------------------------------
+// A template parameter pack is mass-forwardable if
+// all of its types are mass-forwardable...
+template< class T, class ...Args >
+struct is_mass_forwardable : public std::conditional<
+    is_mass_forwardable< T >::value && is_mass_forwardable< Args... >::value,
+    std::true_type, std::false_type
+    >::type
+{};
+// ... and a type is mass-forwardable if:
+template< class T >
+struct is_mass_forwardable<T> : public std::conditional<
+    (
+        !std::is_rvalue_reference<T>::value ||
+        (
+            std::is_trivially_move_constructible<typename std::remove_reference<T>::type>::value &&
+            std::is_trivially_move_assignable<typename std::remove_reference<T>::type>::value
+        )
+    ),
+    std::true_type,
+    std::false_type
+    >::type
+{};
 
 C4_END_NAMESPACE(c4)
 

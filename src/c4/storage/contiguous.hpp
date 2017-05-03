@@ -25,10 +25,12 @@ template< class T > class Allocator;
  * initializer_list, minus the initializer_list overload problems.
  * @see */
 struct aggregate_t {};
+/** @see aggregate_t */
 constexpr const aggregate_t aggregate{};
 
 /** a tag type for specifying the initial capacity of allocatable contiguous storage */
 struct with_capacity_t {};
+/** @see with_capacity_t */
 constexpr const with_capacity_t with_capacity{};
 
 //-----------------------------------------------------------------------------
@@ -155,7 +157,7 @@ struct _ctgrs_crtp : public _ctg_crtp< T, I, Storage >
 {
     using _ctg_crtp< T, I, Storage >::is_valid_iterator;
     using _base_crtp = _ctg_crtp< T, I, Storage >;
-    _c4_USING_BASE_ARRAY_TYPES(_base_crtp)
+    _c4_DEFINE_ARRAY_TYPES(T, I)
 
 public:
 
@@ -163,23 +165,23 @@ public:
     // emplace ----------------------------------
 
     template< class... Args >
-    T& emplace(const_iterator pos, Args&&... args)
+    C4_ALWAYS_INLINE T& emplace(const_iterator pos, Args &&... args)
     {
-        iterator wpos = _growat(pos, 1);
+        iterator wpos = _growat(pos);
         construct(wpos, std::forward< Args >(args)...);
         return *wpos;
     }
     template< class... Args >
-    T& emplace_back(Args&& ...args)
+    C4_ALWAYS_INLINE T& emplace_back(Args && ...args)
     {
-        iterator wpos = _growat(_c4this->end(), 1);
+        iterator wpos = _growat(_c4this->end());
         construct(wpos, std::forward< Args >(args)...);
         return *wpos;
     }
     template< class... Args >
-    T& emplace_front(Args&& ...args)
+    C4_ALWAYS_INLINE T& emplace_front(Args && ...args)
     {
-        iterator wpos = _growat(_c4this->begin(), 1);
+        iterator wpos = _growat(_c4this->begin());
         construct(wpos, std::forward< Args >(args)...);
         return *wpos;
     }
@@ -187,28 +189,28 @@ public:
 
     // push -------------------------------------
 
-    void push_back(T const& val)
+    C4_ALWAYS_INLINE void push_back(T const& val)
     {
-        iterator wpos = _growat(_c4this->end(), 1);
+        iterator wpos = _growat(_c4this->end());
         construct(wpos, val);
         return *wpos;
     }
-    void push_back(T && val)
+    C4_ALWAYS_INLINE void push_back(T && val)
     {
-        iterator wpos = _growat(_c4this->end(), 1);
+        iterator wpos = _growat(_c4this->end());
         construct(wpos, std::move(val));
         return *wpos;
     }
 
-    void push_front(T const& val)
+    C4_ALWAYS_INLINE void push_front(T const& val)
     {
-        iterator wpos = _growat(_c4this->begin(), 1);
+        iterator wpos = _growat(_c4this->begin());
         construct(wpos, val);
         return *wpos;
     }
-    void push_front(T && val)
+    C4_ALWAYS_INLINE void push_front(T && val)
     {
-        iterator wpos = _growat(_c4this->begin(), 1);
+        iterator wpos = _growat(_c4this->begin());
         construct(wpos, std::move(val));
         return *wpos;
     }
@@ -233,7 +235,8 @@ public:
         C4_XASSERT(last > first);
         I count = szconv<I>(std::distance(first, last));
         iterator wpos = _growat(pos, count);
-        construct_n(wpos, count, first);
+        copy_construct_n(wpos, first, count);
+        return wpos;
     }
     template< class InputIt >
     iterator insert(const_iterator pos, InputIt first, InputIt last)
@@ -243,7 +246,7 @@ public:
         iterator wpos = _growat(pos, count);
         for(I i = 0; first != last; ++first, ++i)
         {
-            construct(wpos + i, first);
+            copy_construct(wpos + i, *first);
         }
         return wpos;
     }
@@ -251,7 +254,7 @@ public:
     template< class ...Args >
     iterator insert(const_iterator pos, Args && ...args)
     {
-        iterator wpos = _growat(pos, 1);
+        iterator wpos = _growat(pos);
         construct(wpos, std::forward< Args >(args)...);
         return wpos;
     }
@@ -271,30 +274,36 @@ public:
 
     // replace ----------------------------------
 
+
+    /** unconditionally replace element at pos */
     void replace(iterator pos, T const& val)
     {
         C4_XASSERT(is_valid_iterator(pos));
-        copy_construct(pos, val);
+        copy_assign(pos, val);
     }
+    /** unconditionally replace n elements starting at pos */
     void replace_n(iterator pos, I n, T const& val)
     {
         C4_XASSERT(is_valid_iterator(pos));
         C4_XASSERT(is_valid_iterator(pos + n));
-        copy_construct_n(pos, n, val);
+        copy_assign_n(pos, val, n);
     }
 
+    /** unconditionally replace element at pos */
     void replace(iterator pos, T && val)
     {
         C4_XASSERT(is_valid_iterator(pos));
-        move_construct(pos, val);
+        move_assign(pos, val);
     }
+    /** unconditionally replace n elements starting at pos */
     void replace_n(iterator pos, I n, T && val)
     {
         C4_XASSERT(is_valid_iterator(pos));
         C4_XASSERT(is_valid_iterator(pos + n));
-        move_construct_n(pos, n, val);
+        move_assign_n(pos, val, n);
     }
 
+    /** unconditionally replace element at pos. Construct the new elements with the given args. */
     template< class ...Args >
     void replace(iterator pos, Args && ...args)
     {
@@ -302,6 +311,7 @@ public:
         destroy(pos);
         construct(pos, std::forward< Args >(args)...);
     }
+    /** unconditionally replace n elements starting at pos. Construct the new elements with the given args. */
     template< class ...Args >
     void replace_n(iterator pos, I n, Args && ...args)
     {
@@ -317,18 +327,15 @@ public:
     /** removes the element at pos */
     iterator erase(const_iterator pos)
     {
-        iterator wpos = _shrinkat(pos, 1);
-        destroy(wpos);
-        return wpos;
+        return _shrinkat(pos);
     }
     /** removes the elements in the range [first; last). */
     iterator erase(const_iterator first, const_iterator last)
     {
         C4_ASSERT(last >= first);
         I less = szconv<I>(std::distance(first, last));
-        iterator wpos = _shrinkat(first, less);
-        destroy_n(wpos, less);
-        return wpos;
+        destroy_n(first, less);
+        return _shrinkat(first, less);
     }
 
 
@@ -354,6 +361,13 @@ public:
 
 protected:
 
+    C4_ALWAYS_INLINE iterator _growat(const_iterator pos)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = static_cast<I>(pos - _c4this->data());
+        _c4this->_resizeto(_c4this->size() + 1, pos);
+        return _c4this->data() + ipos;
+    }
     C4_ALWAYS_INLINE iterator _growat(const_iterator pos, I count)
     {
         C4_XASSERT(is_valid_iterator(pos));
@@ -361,10 +375,18 @@ protected:
         _c4this->_resizeto(_c4this->size() + count, pos);
         return _c4this->data() + ipos;
     }
+
+    C4_ALWAYS_INLINE iterator _shrinkat(const_iterator pos)
+    {
+        C4_XASSERT(is_valid_iterator(pos));
+        I ipos = static_cast<I>(pos - _c4this->data());
+        _c4this->_resizeto(_c4this->size() - 1, pos);
+        return _c4this->data() + ipos;
+    }
     C4_ALWAYS_INLINE iterator _shrinkat(const_iterator pos, I count)
     {
         C4_XASSERT(is_valid_iterator(pos));
-        C4_XASSERT(_c4this->size() >= count);
+        C4_XASSERT(is_valid_iterator(pos + count));
         I ipos = static_cast<I>(pos - _c4this->data());
         _c4this->_resizeto(_c4this->size() - count, pos);
         return _c4this->data() + ipos;
@@ -470,7 +492,6 @@ public:
 
     C4_ALWAYS_INLINE void fill(T const& v)
     {
-        c4::destroy_n(m_arr, N);
         c4::copy_assign_n(m_arr, v, N);
     }
 
@@ -482,10 +503,9 @@ public:
 
 /**
  *
- * @todo maybe using multiple-level inheritance wouldn't be bad: the
- * layout is safe in C++11, as it has a standard class layout provided
- * only one of the bases is non-empty: see
- * http://stackoverflow.com/questions/11048045
+ * @todo maybe using multiple inheritance wouldn't be bad here: the layout is safe
+ * in C++11, as it results in a standard class layout because only one of
+ * the bases is non-empty: see http://stackoverflow.com/questions/11048045
  */
 template< class T, class I, class RawStorage >
 class contiguous : public _ctgrs_crtp< T, I, contiguous< T, I, RawStorage > >
@@ -575,6 +595,12 @@ public:
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_size); return m_storage.data()[i]; }
 
 public:
+
+    void reserve(I cap)
+    {
+        if(cap <= m_storage.capacity()) return;
+        m_storage._raw_grow(m_size, cap);
+    }
 
     C4_ALWAYS_INLINE void _resizeto(I sz)
     {

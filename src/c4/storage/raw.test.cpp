@@ -252,6 +252,8 @@ TEST(raw, inheriting)
         }
     }
 }
+
+//-----------------------------------------------------------------------------
 template< class T >
 struct raw_small_inheriting : public raw_small< T >
 {

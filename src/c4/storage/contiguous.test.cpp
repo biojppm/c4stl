@@ -316,7 +316,7 @@ REGISTER_TYPED_TEST_CASE_P(test_fixed_capacity,
                            get_etched_span, etched_span_conversion);
 
 INSTANTIATE_TYPED_TEST_CASE_P(containers, test_fixed_size, c4::archetypes::containees);
-INSTANTIATE_TYPED_TEST_CASE_P(containers, test_fixed_capacity, c4::archetypes::containees);
+//INSTANTIATE_TYPED_TEST_CASE_P(containers, test_fixed_capacity, c4::archetypes::containees);
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)

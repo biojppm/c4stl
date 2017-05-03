@@ -352,7 +352,7 @@ public:
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
-    // as this will involve knowledge over what elements are to copied or moved
+    // as this will involve knowledge over what elements are to be copied or moved
     raw(raw const& that) = delete;
     raw(raw     && that) = delete;
     raw& operator=(raw const& that) = delete;
@@ -917,7 +917,7 @@ struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Al
     T    **m_pages;       ///< array containing the pages
     I      m_num_pages;   ///< number of current pages in the array
     I      m_id_mask;     ///< page size - 1: cannot be changed after construction.
-    I      m_page_lsb;    ///< least significant bit of the page size
+    I      m_page_lsb;    ///< least significant bit of the page size: cannot be changed after construction.
     Alloc  m_allocator;
 
 public:
