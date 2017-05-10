@@ -671,11 +671,12 @@ TEST(span, reverse_iter)
 {
     cspan< int > s(larri);
     using rit = cspan< int >::const_reverse_iterator;
-    int pos = s.size() - 1;
+    int pos = szconv< int >(s.size()) - 1;
     for(rit b = s.rbegin(), e = s.rend(); b != e; ++b)
     {
         EXPECT_EQ(*b, s[pos--]);
     }
+        EXPECT_EQ(pos, -1);
 }
 
 //-----------------------------------------------------------------------------

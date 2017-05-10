@@ -42,7 +42,7 @@ C4_BEGIN_NAMESPACE(stg)
 // forward declarations
 
 template< class T, class I, class RawStorage >
-struct contiguous;
+class contiguous;
 
 template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
 class fixed_size;
@@ -420,7 +420,7 @@ public:
     static constexpr const I N = arr_size;
 
     using base_type = _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >;
-    friend class _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >;
+    friend struct _ctg_crtp< T, I, fixed_size< T, N, I, Alignment > >;
 
 public:
 
