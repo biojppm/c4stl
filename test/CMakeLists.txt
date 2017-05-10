@@ -26,6 +26,14 @@ c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
 
 #------------------------------------------------------------------------------
 
+macro(c4stl_get_exe bin_dir exe_name)
+    if(MSVC)
+        set(${bin_dir} "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${exe_name}.exe")
+    else()
+        set(${bin_dir} "${CMAKE_CURRENT_BINARY_DIR}/${exe_name}")
+    endif()
+endmacro()
+
 function(c4stl_add_test name)
     c4stl_add_target(${name} EXECUTABLE SANITIZE
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
