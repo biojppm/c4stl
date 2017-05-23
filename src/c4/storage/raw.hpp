@@ -666,7 +666,7 @@ public:
 
         iterator_impl(RawPaged *rp, I i_) : this_(rp), i(i_) {}
 
-        U& operator*  () const C4_NOEXCEPT_X { return &(*this_)[i]; }
+        U& operator*  () const C4_NOEXCEPT_X { return  (*this_)[i]; }
         U* operator-> () const C4_NOEXCEPT_X { return &(*this_)[i]; }
 
         iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
