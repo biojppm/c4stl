@@ -171,6 +171,20 @@ struct growth_composed_wm
     }
 };
 
+
+//-----------------------------------------------------------------------------
+/** @ingroup storage_growth_policies */
+template< class GrowthPolicy >
+struct growth_watermark
+{
+    C4_ALWAYS_INLINE static size_t next_size(size_t elm_size, size_t curr, size_t at_least) noexcept
+    {
+        size_t ns = GrowthPolicy::next_size(elm_size, curr, at_least);
+        if(ns <= curr) return curr;
+        return ns;
+    }
+};
+
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
 
