@@ -84,6 +84,7 @@ c4stl_add_test(c4stl-test-raw        ${s}/c4/storage/raw.test.cpp ${s}/c4/storag
 c4stl_add_test(c4stl-test-contiguous ${s}/c4/storage/contiguous.test.cpp)
 c4stl_add_test(c4stl-test-sstream    ${s}/c4/sstream.test.cpp)
 c4stl_add_test(c4stl-test-string     ${s}/c4/string.test.cpp ${s}/c4/string.test.hpp)
+c4stl_add_test(c4stl-test-list       ${s}/c4/list.test.cpp)
 
 if(WIN32)
     if(MSVC)

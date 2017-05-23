@@ -60,7 +60,7 @@ struct raw_paged;
 
 /** raw paged with page size determined at runtime. @ingroup raw_storage_classes */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
-using raw_paged_rt=raw_paged< T, 0, I, Alignment, Alloc >;
+using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 

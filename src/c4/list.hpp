@@ -2,12 +2,15 @@
 #define _C4_LIST_HPP_
 
 #include "c4/config.hpp"
+#include "c4/error.hpp"
 #include "c4/storage/raw.hpp"
+
+#include <iterator>
 
 C4_BEGIN_NAMESPACE(c4)
 
 template< class T, class I=C4_SIZE_TYPE >
-using default_list_storage = c4::stg::vector< T, I, alignof(T) >;
+using default_list_storage = stg::raw_paged_rt< T, I >;
 
 template< class T, class I=C4_SIZE_TYPE, template< class T_, class I_ > class LinearStorage=default_list_storage >
 class split_list;
@@ -93,9 +96,9 @@ class split_list
 {
 public:
 
-    Storage< T, I > m_elm;
-    Storage< I, I > m_prev;
-    Storage< I, I > m_next;
+    RawStorage< T, I > m_elm;
+    RawStorage< I, I > m_prev;
+    RawStorage< I, I > m_next;
 
     I m_head;
     I m_tail;
@@ -114,7 +117,7 @@ public:
 
 public:
 
-    split_list() : m_elm(), m_prev(), m_next(), m_head(0), m_tail(0), m_size(0), m_fhead(0), m_ftail(0) {}
+    split_list() : m_elm(), m_prev(), m_next(), m_head(0), m_tail(0), m_size(0), m_fhead(0) {}
 
     void _init_seq()
     {
@@ -167,6 +170,7 @@ public:
              _growto(cap, cap+1);
          }
          I pos = m_fhead;
+         C4_XASSERT(pos != npos && pos < m_size);
          c4::construct(&m_elm[pos], var);
          m_prev[pos] = m_tail;
          m_next[pos] = npos;
@@ -184,11 +188,11 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 template< class T, class I, template< class T, class I > class RawStorage >
-struct flat_list
+class flat_list
 {
 public:
 
-    Storage< flat_list_elm<T, I>, I > m_elms;
+    RawStorage< flat_list_elm<T, I>, I > m_elms;
 
     I m_head;
     I m_tail;
@@ -227,8 +231,8 @@ class split_fwd_list
 {
 public:
 
-    Storage< T, I > m_elm;
-    Storage< I, I > m_next;
+    RawStorage< T, I > m_elm;
+    RawStorage< I, I > m_next;
 
     I m_head;
     I m_tail;
@@ -265,7 +269,7 @@ class flat_fwd_list
 {
 public:
 
-    Storage< flat_fwd_list_elm<T, I>, I > m_elms;
+    RawStorage< flat_fwd_list_elm<T, I>, I > m_elms;
 
     I m_head;
     I m_tail;

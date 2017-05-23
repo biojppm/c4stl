@@ -13,6 +13,7 @@ set(src
     c4/hash.hpp
     c4/language.hpp
     c4/language.cpp
+    c4/list.hpp
     c4/log.cpp
     c4/log.hpp
     c4/memory_resource.cpp

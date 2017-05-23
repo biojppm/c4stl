@@ -436,6 +436,34 @@ using containees = ::testing::Types<
     archetypes::InsidePtr<int>, archetypes::InsidePtr<std::string>
 >;
 
+#define CALL_FOR_SCALAR_ARCHETYPES(mcr) \
+mcr(char     , char    )        \
+mcr(wchar_t  , wchar_t )        \
+mcr(int8_t   , int8_t  )        \
+mcr(uint8_t  , uint8_t )        \
+mcr(int16_t  , int16_t )        \
+mcr(uint16_t , uint16_t)        \
+mcr(int32_t  , int32_t )        \
+mcr(uint32_t , uint32_t)        \
+mcr(int64_t  , int64_t )        \
+mcr(uint64_t , uint64_t)        \
+mcr(float    , float   )        \
+mcr(double   , double  )
+
+
+#define CALL_FOR_CONTAINEE_ARCHETYPES(mcr) \
+CALL_FOR_SCALAR_ARCHETYPES(mcr) \
+mcr(exvec3_int                 , archetypes::exvec3<int>               ) \
+mcr(exvec3_float               , archetypes::exvec3<float>             ) \
+mcr(IdOwner                    , archetypes::IdOwner                   ) \
+mcr(MemOwner_int               , archetypes::MemOwner<int>             ) \
+mcr(MemOwner_std_string        , archetypes::MemOwner<std::string>     ) \
+mcr(MemOwnerAlloc_int          , archetypes::MemOwnerAlloc<int>        ) \
+mcr(MemOwnerAlloc_std_string   , archetypes::MemOwnerAlloc<std::string>) \
+mcr(InsidePtr_int              , archetypes::InsidePtr<int>            ) \
+mcr(InsidePtr_std_string       , archetypes::InsidePtr<std::string>    )
+
+
 C4_END_NAMESPACE(archetypes)
 C4_END_NAMESPACE(c4)
 
