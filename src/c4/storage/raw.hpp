@@ -15,7 +15,6 @@ C4_BEGIN_NAMESPACE(c4)
 
 // external forward declarations
 template< class T > class Allocator;
-template< class T, size_t N, size_t Alignment > class SmallAllocator;
 
 C4_BEGIN_NAMESPACE(stg)
 
