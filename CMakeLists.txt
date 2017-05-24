@@ -52,12 +52,13 @@ function(c4stl_add_target name)
     if(NOT ${_c4al_SANITIZE})
         set(targets ${name})
     else()
-        sanitize_target(${name} C4STL
+        sanitize_target(${name} c4stl
             ${_what}
             SOURCES ${_c4al_SOURCES}
             INC_DIRS ${_c4al_INC_DIRS}
             LIBS ${_c4al_LIBS}
             OUTPUT_TARGET_NAMES targets
+            FOLDER sanitize
         )
         list(INSERT targets 0 ${name})
     endif()

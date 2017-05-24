@@ -1,7 +1,9 @@
-add_custom_target(unit_tests ${CMAKE_CTEST_COMMAND} -V)
+add_custom_target(c4stl-test ${CMAKE_CTEST_COMMAND} -V)
+set_target_properties(c4stl-test PROPERTIES FOLDER c4stl-test)
 
-add_custom_target(unit_tests-build)
-add_dependencies(unit_tests unit_tests-build)
+add_custom_target(c4stl-test-build)
+add_dependencies(c4stl-test c4stl-test-build)
+set_target_properties(c4stl-test-build PROPERTIES FOLDER c4stl-test)
 
 #------------------------------------------------------------------------------
 
@@ -23,6 +25,7 @@ c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
     LIBS c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
     INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
     )
+set_target_properties(c4stl-libtest PROPERTIES FOLDER c4stl-test)
 
 #------------------------------------------------------------------------------
 
@@ -42,14 +45,17 @@ function(c4stl_add_test name)
         )
     add_custom_target(${name}-build)
     add_dependencies(${name}-build ${name})
-    add_dependencies(unit_tests-build ${name}-build)
+    add_dependencies(c4stl-test-build ${name}-build)
     add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
+    set_target_properties(${name} PROPERTIES FOLDER c4stl-test/${name})
+    set_target_properties(${name}-build PROPERTIES FOLDER c4stl-test/${name})
     foreach(s asan msan tsan ubsan)
-        set(t ${name}-${s})
+        set(t c4stl-${name}-${s})
         if(TARGET ${t})
             add_dependencies(${name}-build ${t})
             sanitize_get_target_command(${CMAKE_CURRENT_BINARY_DIR}/${t} C4STL ${s} cmd)
             add_test(NAME ${t}-run COMMAND ${cmd})
+            set_target_properties(${t} PROPERTIES FOLDER c4stl-test/${name})
         endif()
     endforeach()
     if(UNIX)
@@ -58,6 +64,7 @@ function(c4stl_add_test name)
         # for now we explicitly run it:
         add_test(NAME ${name}-valgrind
             COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
+        set_target_properties(${name}-valgrind PROPERTIES FOLDER c4stl-test/${name})
     endif()
 endfunction(c4stl_add_test)
 
