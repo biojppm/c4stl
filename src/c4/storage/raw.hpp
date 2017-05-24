@@ -7,6 +7,7 @@
 #include "c4/error.hpp"
 #include "c4/ctor_dtor.hpp"
 #include "c4/memory_util.hpp"
+#include "c4/szconv.hpp"
 
 #include <limits>
 #include <memory>
@@ -625,6 +626,24 @@ public:
 
 //-----------------------------------------------------------------------------
 
+template< class T, class I >
+struct default_page_size
+{
+    enum : I { value = 256 };
+};
+template< class T >
+struct default_page_size< T, uint8_t >
+{
+    enum : uint8_t { value = 128 };
+};
+template< class T >
+struct default_page_size< T, int8_t >
+{
+    enum : int8_t { value = 64 };
+};
+
+//-----------------------------------------------------------------------------
+
 // utility defines, undefined below
 #define _c4this static_cast< RawPaged* >(this)
 #define _c4cthis static_cast< RawPaged const* >(this)
@@ -857,7 +876,7 @@ public:
     {
         crtp_base::_raw_resize(cap);
     }
-    raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_allocator(a)
+    raw_paged(I cap, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_allocator(a)
     {
         crtp_base::_raw_resize(cap);
     }
@@ -879,8 +898,8 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i >> _raw_pglsb;
         I id = i & _raw_idmask;
-        C4_XASSERT(pg < m_num_pages);
-        C4_XASSERT(id < PageSize);
+        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(id >= 0 && id < PageSize);
         return m_pages[pg][id];
     }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
@@ -888,8 +907,8 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i >> _raw_pglsb;
         I id = i & _raw_idmask;
-        C4_XASSERT(pg < m_num_pages);
-        C4_XASSERT(id < PageSize);
+        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(id >= 0 && id < PageSize);
         return m_pages[pg][id];
     }
 
@@ -928,11 +947,11 @@ public:
 
 public:
 
-    raw_paged() : raw_paged(0, 256) {}
-    raw_paged(Alloc const& a) : raw_paged(0, 256, a) {}
+    raw_paged() : raw_paged(szconv<I>(0), default_page_size<T,I>::value) {}
+    raw_paged(Alloc const& a) : raw_paged(szconv<I>(0), default_page_size<T,I>::value, a) {}
 
-    raw_paged(I cap) : raw_paged(cap, 256) {}
-    raw_paged(I cap, Alloc const& a) : raw_paged(cap, 256, a) {}
+    raw_paged(I cap) : raw_paged(cap, default_page_size<T,I>::value) {}
+    raw_paged(I cap, Alloc const& a) : raw_paged(cap, default_page_size<T,I>::value, a) {}
 
     raw_paged(I cap, I page_sz) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator()
     {
@@ -964,8 +983,8 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i >> m_page_lsb;
         I id = i & m_id_mask;
-        C4_XASSERT(pg < m_num_pages);
-        C4_XASSERT(id < m_id_mask + 1);
+        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(id >= 0 && id < m_id_mask + 1);
         return m_pages[pg][id];
     }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
@@ -973,8 +992,8 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         I pg = i >> m_page_lsb;
         I id = i & m_id_mask;
-        C4_XASSERT(pg < m_num_pages);
-        C4_XASSERT(id < m_id_mask + 1);
+        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(id >= 0 && id < m_id_mask + 1);
         return m_pages[pg][id];
     }
 
