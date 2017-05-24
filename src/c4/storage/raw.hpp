@@ -845,7 +845,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSiz
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
     static_assert(std::is_integral< I >::value, "I must be an integral type");
-    static_assert(PageSize <= std::numeric_limits< T >::max(), "PageSize overflow");
+    static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
 
     enum : I {
         //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
