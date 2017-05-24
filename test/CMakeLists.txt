@@ -38,6 +38,7 @@ macro(c4stl_get_exe bin_dir exe_name)
 endmacro()
 
 function(c4stl_add_test name)
+    create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${ARGN}")
     c4stl_add_target(${name} EXECUTABLE SANITIZE
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
         LIBS c4stl-libtest ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}

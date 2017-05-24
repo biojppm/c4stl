@@ -43,8 +43,6 @@ set(src
     c4/c4stl.natvis
 )
 
-create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${src}")
-
 c4stl_add_target(c4stl LIBRARY SANITIZE
     SOURCES ${src}
     INC_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern

@@ -36,6 +36,7 @@ function(c4stl_add_target name)
         MORE_ARGS
     )
     cmake_parse_arguments(_c4al "${options0arg}" "${options1arg}" "${optionsnarg}" ${ARGN})
+    create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${_c4al_SOURCES}")
     if(${_c4al_LIBRARY})
         add_library(${name} ${_c4al_SOURCES} ${_c4al_MORE_ARGS})
         set(_what LIBRARY)
