@@ -9,7 +9,7 @@
 C4_BEGIN_NAMESPACE(c4)
 
 template< class List >
-void list_test0_empty_ctor()
+void list_test0_ctor_empty()
 {
     List li;
     EXPECT_TRUE(li.empty());
@@ -18,8 +18,9 @@ void list_test0_empty_ctor()
     EXPECT_EQ(li.begin(), li.end());
     EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
 }
+
 template< class List >
-void list_test0_with_capacity()
+void list_test0_ctor_with_capacity()
 {
     List li(c4::with_capacity, 5);
     EXPECT_TRUE(li.empty());
@@ -29,18 +30,44 @@ void list_test0_with_capacity()
     EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
 }
 
+template< class List >
+void list_test0_ctor_with_initlist()
+{
+    using T = typename List::value_type;
+    using I = typename List::size_type;
+
+    std::initializer_list< T > il = c4::archetypes::archetype_proto< T >::il();
+    List li(c4::aggregate, il);
+    EXPECT_FALSE(li.empty());
+    EXPECT_EQ(li.size(), il.size());
+    EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+    EXPECT_NE(li.begin(), li.end());
+    EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
+
+    int pos = 0;
+    for(auto const& v : li)
+    {
+        auto const& ref = c4::archetypes::archetype_proto< T >::get(pos++);
+        EXPECT_EQ(v, ref);
+    }
+}
+
 #define _C4_TEST_LIST_BASIC_TESTS(listtestname, listtype)       \
 TEST(listtestname, ctor_empty)                                  \
 {                                                               \
-    list_test0_empty_ctor< listtype >();                        \
+    list_test0_ctor_empty< listtype >();                        \
 }                                                               \
 TEST(listtestname, ctor_empty_const)                            \
 {                                                               \
-    list_test0_empty_ctor< const listtype >();                  \
+    list_test0_ctor_empty< const listtype >();                  \
 }                                                               \
 TEST(listtestname, ctor_with_capacity)                          \
 {                                                               \
-    list_test0_with_capacity< listtype >();                     \
+    list_test0_ctor_with_capacity< listtype >();                \
+}                                                               \
+TEST(listtestname, ctor_with_initlist)                          \
+{                                                               \
+    list_test0_ctor_with_initlist< listtype >();                \
 }
 
 #define _C4_CALL_LIST_TESTS(list_type_name, list_type, containee_type_name, containee_type, sztype_name, sztype) \

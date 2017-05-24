@@ -139,7 +139,7 @@ public:
         _c4this->_set_prev(pos, _c4cthis->m_tail);
         _c4this->_set_next(pos, ListType::npos);
         _c4this->m_tail = pos;
-        m_fhead = _c4cthis->next(_c4cthis->m_fhead);
+        _c4this->m_fhead = _c4cthis->next(_c4cthis->m_fhead);
         _c4this->_set_prev(_c4cthis->m_fhead, ListType::npos);
         ++_c4this->m_size;
     }
@@ -239,18 +239,18 @@ public:
     flat_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
         _init_seq(0, capacity());
-        I sz = 0;
+        I pos = 0;
         for(auto const& e : il)
         {
-            c4::copy_construct(&(m_elms[sz++].elm), e);
+            c4::copy_construct(&(m_elms[pos++].elm), e);
         }
-        C4_XASSERT(sz == szconv< I >(il.size()));
-        if(sz)
+        C4_XASSERT(pos == szconv<I>(il.size()));
+        if(pos)
         {
-            m_head = 0;
-            m_tail = sz - 1;
-            m_fhead = sz;
-            m_size = sz;
+            _set_head(0);
+            _set_tail(pos - 1);
+            _set_fhead(pos);
+            m_size = pos;
         }
     }
 
@@ -271,6 +271,11 @@ public:
     C4_ALWAYS_INLINE void _set_prev(I i, I val) C4_NOEXCEPT_X { m_elms[i].prev = val; }
     C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_elms[i].next = val; }
 
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; m_elms[i].prev = npos; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_elms[i].next = npos; }
+
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_elms[i].prev = npos; }
+
 public:
 
     C4_ALWAYS_INLINE bool empty() const noexcept { return m_size == 0; }
@@ -279,10 +284,10 @@ public:
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elms.capacity(); }
 
     C4_ALWAYS_INLINE iterator begin() noexcept { return iterator(this, m_head); }
-    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, m_tail); }
+    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, npos); }
 
     C4_ALWAYS_INLINE const_iterator begin() const noexcept { return const_iterator(this, m_head); }
-    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, m_tail); }
+    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, npos); }
 
 };
 
