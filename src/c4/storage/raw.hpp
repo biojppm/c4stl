@@ -246,7 +246,7 @@ struct raw_fixed
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
-    using raw_traits = raw_storage_traits< raw_fixed, fixed_t >;
+    using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
 
 public:
 
@@ -331,7 +331,7 @@ struct raw
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
-    using raw_traits = raw_storage_traits< raw, contiguous_t >;
+    using storage_traits = raw_storage_traits< raw, contiguous_t >;
 
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
@@ -476,7 +476,7 @@ struct raw_small
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
-    using raw_traits = raw_storage_traits< raw_small, contiguous_t >;
+    using storage_traits = raw_storage_traits< raw_small, contiguous_t >;
 
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
@@ -844,7 +844,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSiz
 public:
 
     _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I)
-    using raw_traits = raw_storage_traits< raw_paged, paged_t >;
+    using storage_traits = raw_storage_traits< raw_paged, paged_t >;
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
 
@@ -922,7 +922,7 @@ struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Al
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
-    using raw_traits = raw_storage_traits< raw_paged, paged_t >;
+    using storage_traits = raw_storage_traits< raw_paged, paged_t >;
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
 
