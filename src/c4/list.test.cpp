@@ -42,24 +42,22 @@ _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  uint8_t,  uint8_t) \
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,   int8_t,   int8_t)
 
-#define _c4adaptor(tyname, ty) \
+#define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
 _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_list, flat_list, tyname, ty)
-CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
-#undef _c4adaptor
 
-#define _c4adaptor(tyname, ty) \
+#define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
 _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_list, split_list, tyname, ty)
-CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
-#undef _c4adaptor
 
-#define _c4adaptor(tyname, ty) \
+#define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
 _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_fwd_list, flat_fwd_list, tyname, ty)
-CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
-#undef _c4adaptor
 
-#define _c4adaptor(tyname, ty) \
+#define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
 _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_fwd_list, split_fwd_list, tyname, ty)
-CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
-#undef _c4adaptor
+
+
+CALL_FOR_CONTAINEE_ARCHETYPES(_C4_CALL_FLAT_LIST_TESTS_ADAPTOR)
+CALL_FOR_CONTAINEE_ARCHETYPES(_C4_CALL_SPLIT_LIST_TESTS_ADAPTOR)
+CALL_FOR_CONTAINEE_ARCHETYPES(_C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR)
+CALL_FOR_CONTAINEE_ARCHETYPES(_C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR)
 
 C4_END_NAMESPACE(c4)
