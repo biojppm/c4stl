@@ -276,12 +276,12 @@ public:
 public:
 
     C4_ALWAYS_INLINE I size() const noexcept { return m_size; }
-    C4_ALWAYS_INLINE I capacity() const noexcept { return m_elm.capacity(); }
+    C4_ALWAYS_INLINE I capacity() const noexcept { return m_elms.capacity(); }
 
-    C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_elm.size()); return m_elms[i].elm; }
-    C4_ALWAYS_INLINE T const& elm(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_elm.size()); return m_elms[i].elm; }
+    C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_elms.capacity()); return m_elms[i].elm; }
+    C4_ALWAYS_INLINE T const& elm(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_elms.capacity()); return m_elms[i].elm; }
 
-    C4_ALWAYS_INLINE I next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_next.size()); return m_next[i].next; }
+    C4_ALWAYS_INLINE I next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_elms.capacity()); return m_elms[i].next; }
 
     C4_ALWAYS_INLINE iterator begin() noexcept { return iterator(this, m_head); }
     C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, m_tail); }
