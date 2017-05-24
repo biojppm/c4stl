@@ -430,7 +430,7 @@ TEST(raw_paged_rt, addressing)
 template< class Raw >
 void test_raw_construction(Raw &rp)
 {
-    using traits = typename Raw::raw_traits;
+    using traits = typename Raw::storage_traits;
     using value_type = typename Raw::value_type;
 
     C4_STATIC_ASSERT(is_instance_of_tpl< Counting C4_COMMA value_type >::value);
@@ -460,7 +460,7 @@ void test_raw_construction(Raw &rp)
 template< class Raw >
 void test_raw_construction_paged(Raw &rp)
 {
-    using traits = typename Raw::raw_traits;
+    using traits = typename Raw::storage_traits;
     using value_type = typename Raw::value_type;
     using T = typename Raw::value_type::value_type;
     using I = typename Raw::size_type;
