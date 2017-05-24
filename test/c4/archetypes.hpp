@@ -429,11 +429,15 @@ using scalars = ::testing::Types<
 >;
 using containees = ::testing::Types<
     char, wchar_t, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double,
-    archetypes::exvec3<int>, archetypes::exvec3<float>,
+    archetypes::exvec3<int>,
+    archetypes::exvec3<float>,
     archetypes::IdOwner,
-    archetypes::MemOwner<int>, archetypes::MemOwner<std::string>,
-    archetypes::MemOwnerAlloc<int>, archetypes::MemOwnerAlloc<std::string>,
-    archetypes::InsidePtr<int>, archetypes::InsidePtr<std::string>
+    archetypes::MemOwner<int>,
+    archetypes::MemOwner<std::string>,
+    archetypes::MemOwnerAlloc<int>,
+    archetypes::MemOwnerAlloc<std::string>,
+    archetypes::InsidePtr<int>,
+    archetypes::InsidePtr<std::string>
 >;
 
 #define CALL_FOR_SCALAR_ARCHETYPES(mcr) \
