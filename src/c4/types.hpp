@@ -40,6 +40,11 @@ struct with_capacity_t {};
 /** @see with_capacity_t */
 constexpr const with_capacity_t with_capacity{};
 
+/** a tag type which can be used to disambiguate in variadic template overloads */
+struct varargs_t {};
+/** a tag variable which can be used to disambiguate in variadic template overloads */
+constexpr const varargs_t varargs{};
+
 //--------------------------------------------------
 
 /** whether a value should be used in place of a const-reference in argument passing. */
@@ -66,10 +71,6 @@ template< class T >
 using fastcref = typename std::conditional< c4::cref_uses_val< T >::value, T, T const& >::type;
 
 //--------------------------------------------------
-/** a tag type which can be used to disambiguate in variadic template overloads */
-struct varargs_t {};
-/** a tag variable which can be used to disambiguate in variadic template overloads */
-constexpr const varargs_t varargs{};
 
 /** Just what its name says. Useful sometimes as a default empty policy class. */
 struct EmptyStruct
