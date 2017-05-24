@@ -6,6 +6,8 @@
 #include "c4/allocator.hpp"
 #include "c4/char_traits.hpp"
 
+#include <array>
+
 C4_BEGIN_NAMESPACE(c4)
 
 template< class String > class sstream;
@@ -47,30 +49,62 @@ inline void check_archetype(double   a, double   ref) { EXPECT_EQ(a, ref); }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template< class T >
-struct archetype_proto
+template< class T, class Proto >
+struct archetype_proto_base
 {
-    static T get(int which)
+    static std::initializer_list< T > il()
     {
-        C4_ASSERT(which < 8);
-        T p = which;
-        return p;
+        auto const& a = Proto::arr();
+        T const* d = a.data();
+        std::initializer_list< T > i(d, d+a.size());
+        return i;
+    }
+    static T const& get(int which)
+    {
+        auto const& a = Proto::arr();
+        C4_ASSERT(which < a.size());
+        return a[which];
     }
 };
 
-template<>
-struct archetype_proto<std::string>
+// for scalar types: ints and floats
+template< class T >
+struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
 {
-    static std::string const& get(int which)
+    static_assert(std::is_fundamental< T >::value, "T must be a fundamental type");
+    static std::array<T, 8> const& arr()
     {
-        C4_ASSERT(which < 8);
-        static const std::string arr[8] = {
-            "str0", "str1", "str2", "str3",
-            "str4", "str5", "str6", "str7",
-        };
-        return arr[which];
+        static const std::array<T, 8> arr_{0, 1, 2, 3, 4, 5, 6, 7};
+        return arr_;
     }
 };
+
+#define _C4_DECLARE_ARCHETYPE_PROTO(ty, ...) \
+template<>\
+struct archetype_proto<ty> : public archetype_proto_base< ty, archetype_proto<ty> >\
+{\
+    static std::array<ty, 8> const& arr()\
+    {\
+        static const std::array<ty, 8> arr_{__VA_ARGS__};\
+        return arr_;\
+    }\
+}
+
+#define _C4_DECLARE_ARCHETYPE_PROTO_TPL1(tplparam1, ty, ...) \
+template< tplparam1 >\
+struct archetype_proto< ty > : public archetype_proto_base< ty, archetype_proto<ty> >\
+{\
+    static std::array<ty, 8> const& arr()\
+    {\
+        static const std::array<ty, 8> arr_{__VA_ARGS__};\
+        return arr_;\
+    }\
+}
+
+
+_C4_DECLARE_ARCHETYPE_PROTO(std::string,
+    "str0", "str1", "str2", "str3",
+    "str4", "str5", "str6", "str7");
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -101,19 +135,14 @@ sstream< String >& operator>> (sstream< String >& ss, exvec3<T> & v)
     return ss;
 }
 
-template< class T >
-struct archetype_proto<exvec3<T>>
-{
-    static exvec3<T> get(int which)
-    {
-        C4_ASSERT(which < 8);
-        static const exvec3<T> arr[8] = {
-            {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {6, 7, 8},
-            {6, 7, 8}, {6, 7, 8}, {6, 7, 8}, {6, 7, 8}
-        };
-        return arr[which];
-    }
-};
+#define _ C4_COMMA
+#define c4v(v0, v1, v2) exvec3<T>{v0 _ v1 _ v2}
+_C4_DECLARE_ARCHETYPE_PROTO_TPL1(class T, exvec3<T>,
+            c4v(0, 1, 2), c4v(3, 4, 5), c4v(6, 7, 8), c4v(9, 10, 11),
+            c4v(100, 101, 102), c4v(103, 104, 105), c4v(106, 107, 108), c4v(109, 110, 111)
+        );
+#undef c4v
+#undef _
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -147,18 +176,7 @@ struct IdOwner
     }
 };
 
-template<>
-struct archetype_proto<IdOwner>
-{
-    static IdOwner get(int which)
-    {
-        C4_ASSERT(which < 8);
-        static const IdOwner arr[8] = {
-            0, 1, 2, 3, 4, 5, 6, 7
-        };
-        return arr[which];
-    }
-};
+_C4_DECLARE_ARCHETYPE_PROTO(IdOwner, 0, 1, 2, 3, 4, 5, 6, 7);
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -238,21 +256,15 @@ struct MemOwner
     }
 };
 
-template <class T>
-struct archetype_proto<MemOwner<T>>
-{
-    static MemOwner<T> get(int which)
-    {
-        C4_ASSERT(which < 8);
-#define c4v(which) {varargs, archetype_proto<T>::get(which) }
-        static const MemOwner<T> arr[8] = {
+#define _ C4_COMMA
+#define c4v(which) MemOwner<T>{varargs _ archetype_proto<T>::get(which)}
+_C4_DECLARE_ARCHETYPE_PROTO_TPL1(class T, MemOwner<T>,
             c4v(0), c4v(1), c4v(2), c4v(3),
             c4v(4), c4v(5), c4v(6), c4v(7)
-        };
+        );
 #undef c4v
-        return arr[which];
-    }
-};
+#undef _
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -341,21 +353,14 @@ struct MemOwnerAlloc
     }
 };
 
-template <class T>
-struct archetype_proto<MemOwnerAlloc<T>>
-{
-    static MemOwnerAlloc<T> get(int which)
-    {
-        C4_ASSERT(which < 8);
-#define c4v(which) {varargs, archetype_proto<T>::get(which) }
-        static const MemOwnerAlloc<T> arr[8] = {
+#define _ C4_COMMA
+#define c4v(which) MemOwnerAlloc<T>{varargs _ archetype_proto<T>::get(which)}
+_C4_DECLARE_ARCHETYPE_PROTO_TPL1(class T, MemOwnerAlloc<T>,
             c4v(0), c4v(1), c4v(2), c4v(3),
             c4v(4), c4v(5), c4v(6), c4v(7)
-        };
+        );
 #undef c4v
-        return arr[which];
-    }
-};
+#undef _
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -407,18 +412,11 @@ struct InsidePtr
 
 };
 
-template <class T>
-struct archetype_proto<InsidePtr<T>>
-{
-    static InsidePtr<T> get(int which)
-    {
-        C4_ASSERT(which < 8);
-        static const InsidePtr<T> arr[8] = {
+#define _ C4_COMMA
+_C4_DECLARE_ARCHETYPE_PROTO_TPL1(class T, InsidePtr<T>,
             0, 1, 2, 3, 4, 5, 6, 7
-        };
-        return arr[which];
-    }
-};
+        );
+#undef _
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
