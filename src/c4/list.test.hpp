@@ -12,20 +12,35 @@ template< class List >
 void list_test0_empty_ctor()
 {
     List li;
+    EXPECT_TRUE(li.empty());
     EXPECT_EQ(li.size(), 0);
     EXPECT_EQ(li.capacity(), 0);
     EXPECT_EQ(li.begin(), li.end());
     EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
 }
+template< class List >
+void list_test0_with_capacity()
+{
+    List li(c4::with_capacity, 5);
+    EXPECT_TRUE(li.empty());
+    EXPECT_EQ(li.size(), 0);
+    EXPECT_GE(li.capacity(), (typename List::size_type)5);
+    EXPECT_EQ(li.begin(), li.end());
+    EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+}
 
 #define _C4_TEST_LIST_BASIC_TESTS(listtestname, listtype)       \
-TEST(listtestname, empty_ctor)                                  \
+TEST(listtestname, ctor_empty)                                  \
 {                                                               \
     list_test0_empty_ctor< listtype >();                        \
 }                                                               \
-TEST(listtestname, empty_ctor_const)                            \
+TEST(listtestname, ctor_empty_const)                            \
 {                                                               \
     list_test0_empty_ctor< const listtype >();                  \
+}                                                               \
+TEST(listtestname, ctor_with_capacity)                          \
+{                                                               \
+    list_test0_with_capacity< listtype >();                     \
 }
 
 #define _C4_CALL_LIST_TESTS(list_type_name, list_type, containee_type_name, containee_type, sztype_name, sztype) \
