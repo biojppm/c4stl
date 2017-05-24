@@ -120,6 +120,10 @@ public:
 
 };
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 /** common code to implement doubly linked lists */
 template< class T, class I, class ListType >
 class _doubly_list_crtp : public _list_crtp< T, I, ListType >
@@ -224,6 +228,8 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** an array-based doubly-linked list where the indices are interleaved
+ * with the contained elements. Using paged raw storage, insertions are O(1). */
 template< class T, class I, template< class T, class I > class RawStorage >
 class flat_list : public _doubly_list_crtp< T, I, flat_list<T, I, RawStorage> >
 {
@@ -306,6 +312,9 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** an array-based doubly-linked list where the indices are stored in separate
+ * arrays from the contained elements. Using paged raw storage, insertions
+ * are O(1). */
 template< class T, class I, template< class T, class I > class RawStorage >
 class split_list : public _doubly_list_crtp< T, I, split_list<T, I, RawStorage> >
 {
@@ -395,6 +404,8 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** an array-based forward-linked list where the indices are interleaved
+ * with the contained elements. Using paged raw storage, insertions are O(1). */
 template< class T, class I, template< class T, class I > class RawStorage >
 class flat_fwd_list : public _fwd_list_crtp< T, I, flat_fwd_list<T, I, RawStorage> >
 {
@@ -469,6 +480,9 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** an array-based forward-linked list where the indices are stored in a
+ * separate array from the contained elements. Using paged raw storage,
+ * insertions are O(1). */
 template< class T, class I, template< class T, class I > class RawStorage >
 class split_fwd_list : public _fwd_list_crtp< T, I, split_fwd_list<T, I, RawStorage> >
 {
