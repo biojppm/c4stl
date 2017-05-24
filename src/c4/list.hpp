@@ -105,6 +105,8 @@ public:
 
 public:
 
+    enum : I { npos = static_cast< I >(-1) };
+
     using value_type = T;
     using size_type = I;
     using storage_type = RawStorage< flat_list_elm<T, I>, I >;
@@ -153,9 +155,9 @@ public:
     I m_size;
     I m_fhead; //< the head of the free list (the list containing free elements)
 
-    enum : I { npos = static_cast< I >(-1) };
-
 public:
+
+    enum : I { npos = static_cast< I >(-1) };
 
     using value_type = T;
     using size_type = I;
@@ -211,6 +213,8 @@ public:
     }
 
 public:
+
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_size > 0; }
 
     C4_ALWAYS_INLINE I size() const noexcept { return m_size; }
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elm.capacity(); }
@@ -269,6 +273,8 @@ public:
 
 public:
 
+    enum : I { npos = static_cast< I >(-1) };
+
     using value_type = T;
     using size_type = I;
     using storage_type = RawStorage< flat_fwd_list_elm<T, I>, I >;
@@ -282,6 +288,8 @@ public:
     flat_fwd_list() : m_elms(), m_head(0), m_tail(0), m_size(0), m_fhead(0) {}
 
 public:
+
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_size > 0; }
 
     C4_ALWAYS_INLINE I size() const noexcept { return m_size; }
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elms.capacity(); }
@@ -317,6 +325,8 @@ public:
 
 public:
 
+    enum : I { npos = static_cast< I >(-1) };
+
     using value_type = T;
     using size_type = I;
     using storage_type = RawStorage< T, I >;
@@ -332,6 +342,8 @@ public:
     split_fwd_list() : m_elm(), m_next(), m_head(0), m_tail(0), m_size(0), m_fhead(0) {}
 
 public:
+
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_size > 0; }
 
     C4_ALWAYS_INLINE I size() const noexcept { return m_size; }
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elm.capacity(); }
