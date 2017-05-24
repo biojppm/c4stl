@@ -47,7 +47,7 @@ template< class T > C4_CONSTEXPR14 cspan<char> type_name()
 #ifdef _MSC_VER
 #   if defined(C4_MSVC_2015) || defined(C4_MSVC_2017)
     // Note: subtract 7 at the end because the function terminates with ">(void)" in VS2015+
-    cspan<char>::size_type tstart = 48, tend = 7;
+    cspan<char>::size_type tstart = 26, tend = 7;
 
     const char *s = p.str + tstart; // look at the start
 
