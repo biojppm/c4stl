@@ -19,20 +19,6 @@ template< class T, class I > using cetched_span = etched_span< const T, I >;
 
 template< class T > class Allocator;
 
-// some tag types
-
-/** a tag type for initializing the containers with variadic arguments a la
- * initializer_list, minus the initializer_list overload problems.
- * @see */
-struct aggregate_t {};
-/** @see aggregate_t */
-constexpr const aggregate_t aggregate{};
-
-/** a tag type for specifying the initial capacity of allocatable contiguous storage */
-struct with_capacity_t {};
-/** @see with_capacity_t */
-constexpr const with_capacity_t with_capacity{};
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

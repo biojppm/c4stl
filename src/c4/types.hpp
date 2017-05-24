@@ -26,6 +26,22 @@ using ssize_t = std::make_signed< size_t >::type;
 
 //--------------------------------------------------
 
+// some tag types
+
+/** a tag type for initializing the containers with variadic arguments a la
+ * initializer_list, minus the initializer_list overload problems.
+ * @see */
+struct aggregate_t {};
+/** @see aggregate_t */
+constexpr const aggregate_t aggregate{};
+
+/** a tag type for specifying the initial capacity of allocatable contiguous storage */
+struct with_capacity_t {};
+/** @see with_capacity_t */
+constexpr const with_capacity_t with_capacity{};
+
+//--------------------------------------------------
+
 /** whether a value should be used in place of a const-reference in argument passing. */
 template< class T >
 struct cref_uses_val
