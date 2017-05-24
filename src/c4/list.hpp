@@ -95,9 +95,34 @@ struct fwd_list_iterator : public std::iterator< std::forward_iterator_tag, type
 #define _c4this  (static_cast<ListType      *>(this))
 #define _c4cthis (static_cast<ListType const*>(this))
 
-/** base class to implement doubly linked lists */
+/** common code to implement doubly or singly linked lists */
 template< class T, class I, class ListType >
 class _list_crtp
+{
+public:
+
+    void _init_initlist(std::initializer_list< T > il)
+    {
+        I sz = szconv< I >(il.size());
+        if(sz)
+        {
+            _c4this->_set_head(0);
+            _c4this->_set_tail(sz - 1);
+            _c4this->_set_fhead(sz);
+            _c4this->m_size = sz;
+        }
+        sz = 0;
+        for(auto const& e : il)
+        {
+            c4::copy_construct(&(_c4this->elm(sz++)), e);
+        }
+    }
+
+};
+
+/** common code to implement doubly linked lists */
+template< class T, class I, class ListType >
+class _doubly_list_crtp : public _list_crtp< T, I, ListType >
 {
 public:
 
@@ -138,9 +163,8 @@ public:
         c4::construct(&_c4this->elm(pos), var);
         _c4this->_set_prev(pos, _c4cthis->m_tail);
         _c4this->_set_next(pos, ListType::npos);
-        _c4this->m_tail = pos;
-        _c4this->m_fhead = _c4cthis->next(_c4cthis->m_fhead);
-        _c4this->_set_prev(_c4cthis->m_fhead, ListType::npos);
+        _c4this->_set_tail(pos);
+        _c4this->_set_fhead(_c4cthis->next(_c4cthis->m_fhead));
         ++_c4this->m_size;
     }
 
@@ -150,9 +174,9 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** base class to implement forward linked lists */
+/** common code to implement forward linked lists */
 template< class T, class I, class ListType >
-class _fwd_list_crtp
+class _fwd_list_crtp : public _list_crtp< T, I, ListType >
 {
 public:
 
@@ -201,7 +225,7 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 template< class T, class I, template< class T, class I > class RawStorage >
-class flat_list : public _list_crtp< T, I, flat_list<T, I, RawStorage> >
+class flat_list : public _doubly_list_crtp< T, I, flat_list<T, I, RawStorage> >
 {
 public:
 
@@ -239,19 +263,7 @@ public:
     flat_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
         _init_seq(0, capacity());
-        I pos = 0;
-        for(auto const& e : il)
-        {
-            c4::copy_construct(&(m_elms[pos++].elm), e);
-        }
-        C4_XASSERT(pos == szconv<I>(il.size()));
-        if(pos)
-        {
-            _set_head(0);
-            _set_tail(pos - 1);
-            _set_fhead(pos);
-            m_size = pos;
-        }
+        _init_initlist(il);
     }
 
     void _growto(I next_cap)
@@ -295,7 +307,7 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 template< class T, class I, template< class T, class I > class RawStorage >
-class split_list : public _list_crtp< T, I, split_list<T, I, RawStorage> >
+class split_list : public _doubly_list_crtp< T, I, split_list<T, I, RawStorage> >
 {
 public:
 
@@ -337,6 +349,7 @@ public:
     split_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_prev(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
         _init_seq(0, capacity());
+        _init_initlist(il);
     }
 
     void _growto(I next_cap)
@@ -350,14 +363,19 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elms[i]; }
-    C4_ALWAYS_INLINE T const& elm(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elms[i]; }
+    C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elm[i]; }
+    C4_ALWAYS_INLINE T const& elm(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elm[i]; }
 
     C4_ALWAYS_INLINE I prev(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_prev[i]; }
     C4_ALWAYS_INLINE I next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_next[i]; }
 
     C4_ALWAYS_INLINE void _set_prev(I i, I val) C4_NOEXCEPT_X { m_prev[i] = val; }
     C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_next[i] = val; }
+
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; m_prev[i] = npos; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_next[i] = npos; }
+
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_prev[i] = npos; }
 
 public:
     
@@ -367,10 +385,10 @@ public:
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elm.capacity(); }
 
     C4_ALWAYS_INLINE iterator begin() noexcept { return iterator(this, m_head); }
-    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, m_tail); }
+    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, npos); }
 
     C4_ALWAYS_INLINE const_iterator begin() const noexcept { return const_iterator(this, m_head); }
-    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, m_tail); }
+    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, npos); }
 
 };
 
@@ -413,6 +431,12 @@ public:
         _init_seq(0, capacity());
     }
 
+    flat_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    {
+        _init_seq(0, capacity());
+        _init_initlist(il);
+    }
+
 public:
 
     C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elms[i].elm; }
@@ -422,6 +446,11 @@ public:
 
     C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_elms[i].next = val; }
 
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_elms[i].next = npos; }
+
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
+
 public:
     
     C4_ALWAYS_INLINE bool empty() const noexcept { return m_size == 0; }
@@ -430,10 +459,10 @@ public:
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elms.capacity(); }
 
     C4_ALWAYS_INLINE iterator begin() noexcept { return iterator(this, m_head); }
-    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, m_tail); }
+    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, npos); }
 
     C4_ALWAYS_INLINE const_iterator begin() const noexcept { return const_iterator(this, m_head); }
-    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, m_tail); }
+    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, npos); }
 
 };
 
@@ -479,14 +508,25 @@ public:
         _init_seq(0, capacity());
     }
 
+    split_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    {
+        _init_seq(0, capacity());
+        _init_initlist(il);
+    }
+
 public:
 
-    C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elms[i]; }
-    C4_ALWAYS_INLINE T const& elm(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elms[i]; }
+    C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elm[i]; }
+    C4_ALWAYS_INLINE T const& elm(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_elm[i]; }
 
     C4_ALWAYS_INLINE I next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < m_size); return m_next[i]; }
 
     C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_next[i] = val; }
+
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_next[i] = npos; }
+
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
 
 public:
 
@@ -496,10 +536,10 @@ public:
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_elm.capacity(); }
 
     C4_ALWAYS_INLINE iterator begin() noexcept { return iterator(this, m_head); }
-    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, m_tail); }
+    C4_ALWAYS_INLINE iterator end  () noexcept { return iterator(this, npos); }
 
     C4_ALWAYS_INLINE const_iterator begin() const noexcept { return const_iterator(this, m_head); }
-    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, m_tail); }
+    C4_ALWAYS_INLINE const_iterator end  () const noexcept { return const_iterator(this, npos); }
 
 };
 
