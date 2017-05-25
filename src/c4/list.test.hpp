@@ -8,26 +8,45 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+#define _C4_DEFINE_LIST_TEST_TYPES(List) \
+    using T = typename List::value_type;\
+    using I = typename List::size_type;\
+    using CT = Counting< T >;\
+    using proto = c4::archetypes::archetype_proto< T >;\
+    using C ## List = typename List::container_type< CT >;\
+    using iltype = std::initializer_list< T >;\
+    using ciltype = std::initializer_list< CT >;
+
 template< class List >
 void list_test0_ctor_empty()
 {
-    List li;
-    EXPECT_TRUE(li.empty());
-    EXPECT_EQ(li.size(), 0);
-    EXPECT_EQ(li.capacity(), 0);
-    EXPECT_EQ(li.begin(), li.end());
-    EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+    _C4_DEFINE_LIST_TEST_TYPES(List);
+
+    auto cch = CT::check_ctors_dtors(0, 0);
+    {
+        CList li;
+        EXPECT_TRUE(li.empty());
+        EXPECT_EQ(li.size(), 0);
+        EXPECT_EQ(li.capacity(), 0);
+        EXPECT_EQ(li.begin(), li.end());
+        EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+    }
 }
 
 template< class List >
 void list_test0_ctor_with_capacity()
 {
-    List li(c4::with_capacity, 5);
-    EXPECT_TRUE(li.empty());
-    EXPECT_EQ(li.size(), 0);
-    EXPECT_GE(li.capacity(), (typename List::size_type)5);
-    EXPECT_EQ(li.begin(), li.end());
-    EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+    _C4_DEFINE_LIST_TEST_TYPES(List);
+
+    auto cch = CT::check_ctors_dtors(0, 0);
+    {
+        CList li(c4::with_capacity, 5);
+        EXPECT_TRUE(li.empty());
+        EXPECT_EQ(li.size(), 0);
+        EXPECT_GE(li.capacity(), (typename List::size_type)5);
+        EXPECT_EQ(li.begin(), li.end());
+        EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+    }
 }
 
 template< class List >

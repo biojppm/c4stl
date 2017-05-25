@@ -59,6 +59,13 @@ struct archetype_proto_base
         std::initializer_list< T > i(d, d+a.size());
         return i;
     }
+    static std::initializer_list< Counting<T> > cil()
+    {
+        auto const& a = Proto::carr();
+        Counting<T> const* d = a.data();
+        std::initializer_list< Counting<T> > i(d, d+a.size());
+        return i;
+    }
     static T const& get(int which)
     {
         auto const& a = Proto::arr();
@@ -70,10 +77,26 @@ struct archetype_proto_base
         std::array< T, 8 > d = Proto::arr;
         return d;
     }
+    static std::array< Counting<T>, 8 > cdup()
+    {
+        std::array< Counting<T>, 8 > d = Proto::carr;
+        return d;
+    }
     static std::vector< T > dup(size_t n)
     {
         auto const& a = Proto::arr();
         std::vector< T > d;
+        d.reserve(n);
+        for(size_t i = 0, pos = 0; i < n; ++i, pos = ((pos+1)%a.size()))
+        {
+            d.push_back(a[pos]);
+        }
+        return d;
+    }
+    static std::vector< Counting<T> > cdup(size_t n)
+    {
+        auto const& a = Proto::arr();
+        std::vector< Counting<T> > d;
         d.reserve(n);
         for(size_t i = 0, pos = 0; i < n; ++i, pos = ((pos+1)%a.size()))
         {
@@ -93,6 +116,11 @@ struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
         static const std::array<T, 8> arr_{0, 1, 2, 3, 4, 5, 6, 7};
         return arr_;
     }
+    static std::array<Counting<T>, 8> const& carr()
+    {
+        static const std::array<Counting<T>, 8> arr_{0, 1, 2, 3, 4, 5, 6, 7};
+        return arr_;
+    }
 };
 
 #define _C4_DECLARE_ARCHETYPE_PROTO(ty, ...) \
@@ -104,6 +132,11 @@ struct archetype_proto<ty> : public archetype_proto_base< ty, archetype_proto<ty
         static const std::array<ty, 8> arr_{__VA_ARGS__};\
         return arr_;\
     }\
+    static std::array<Counting<ty>, 8> const& carr()\
+    {\
+        static const std::array<Counting<ty>, 8> arr_{__VA_ARGS__};\
+        return arr_;\
+    }\
 }
 
 #define _C4_DECLARE_ARCHETYPE_PROTO_TPL1(tplparam1, ty, ...) \
@@ -113,6 +146,11 @@ struct archetype_proto< ty > : public archetype_proto_base< ty, archetype_proto<
     static std::array<ty, 8> const& arr()\
     {\
         static const std::array<ty, 8> arr_{__VA_ARGS__};\
+        return arr_;\
+    }\
+    static std::array<Counting<ty>, 8> const& carr()\
+    {\
+        static const std::array<Counting<ty>, 8> arr_{__VA_ARGS__};\
         return arr_;\
     }\
 }

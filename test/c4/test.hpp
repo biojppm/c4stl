@@ -72,6 +72,8 @@ struct Counting
 
     T obj;
 
+    bool operator== (T const& that) const { return obj == that; }
+
     static bool log_ctors;
     static size_t num_ctors;
     template< class ...Args >
