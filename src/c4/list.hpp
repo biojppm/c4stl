@@ -305,6 +305,8 @@ public:
     using size_type = I;
     using storage_type = RawStorage< flat_list_elm<T, I>, I >;
     using storage_traits = typename RawStorage< flat_list_elm<T, I>, I >::storage_traits;
+    template< class U >
+    using container_type = flat_list< U, I, RawStorage >;
 
     using iterator = list_iterator< T, flat_list >;
     using const_iterator = list_iterator< const T, const flat_list >;
@@ -403,6 +405,8 @@ public:
     using storage_traits = typename RawStorage< T, I >::storage_traits;
     using index_storage_type = RawStorage< I, I >;
     using index_storage_traits = typename RawStorage< I, I >::storage_traits;
+    template< class U >
+    using container_type = split_list< U, I, RawStorage >;
 
     using iterator = list_iterator< T, split_list >;
     using const_iterator = list_iterator< const T, const split_list >;
@@ -500,6 +504,8 @@ public:
     using size_type = I;
     using storage_type = RawStorage< flat_fwd_list_elm<T, I>, I >;
     using storage_traits = typename RawStorage< flat_fwd_list_elm<T, I>, I >::storage_traits;
+    template< class U >
+    using container_type = flat_fwd_list< U, I, RawStorage >;
 
     using iterator = list_iterator< T, flat_fwd_list >;
     using const_iterator = list_iterator< const T, const flat_fwd_list >;
@@ -595,6 +601,8 @@ public:
     using storage_traits = typename RawStorage< T, I >::storage_traits;
     using index_storage_type = RawStorage< I, I >;
     using index_storage_traits = typename RawStorage< I, I >::storage_traits;
+    template< class U >
+    using container_type = split_fwd_list< U, I, RawStorage >;
 
     using iterator = list_iterator< T, split_fwd_list >;
     using const_iterator = list_iterator< const T, const split_fwd_list >;
