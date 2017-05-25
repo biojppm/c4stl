@@ -194,14 +194,14 @@ Counting< T >::~Counting()
 }
 
 template< class T >
-Counting< T >::Counting(Counting const& that)
+Counting< T >::Counting(Counting const& that) : obj(that.obj)
 {
     if(log_copy_ctors) C4_LOGP("Counting[{}]::copy_ctor #{}\n", (void*)this, num_copy_ctors);
     ++num_copy_ctors;
 }
 
 template< class T >
-Counting< T >::Counting(Counting && that)
+Counting< T >::Counting(Counting && that) : obj(std::move(that.obj))
 {
     if(log_move_ctors) C4_LOGP("Counting[{}]::move_ctor #{}\n", (void*)this, num_move_ctors);
     ++num_move_ctors;
@@ -210,6 +210,7 @@ Counting< T >::Counting(Counting && that)
 template< class T >
 Counting< T >& Counting< T >::operator= (Counting const& that)
 {
+    obj = that.obj;
     if(log_copy_assigns) C4_LOGP("Counting[{}]::copy_assign #{}\n", (void*)this, num_copy_assigns);
     ++num_copy_assigns;
     return *this;
@@ -218,6 +219,7 @@ Counting< T >& Counting< T >::operator= (Counting const& that)
 template< class T >
 Counting< T >& Counting< T >::operator= (Counting && that)
 {
+    obj = std::move(that.obj);
     if(log_move_assigns) C4_LOGP("Counting[{}]::move_assign #{}\n", (void*)this, num_move_assigns);
     ++num_move_assigns;
     return *this;

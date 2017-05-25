@@ -52,52 +52,59 @@ void list_test0_ctor_with_capacity()
 template< class List >
 void list_test0_ctor_with_initlist()
 {
-    using T = typename List::value_type;
-    using I = typename List::size_type;
+    _C4_DEFINE_LIST_TEST_TYPES(List);
 
-    std::initializer_list< T > il = c4::archetypes::archetype_proto< T >::il();
-    List li(c4::aggregate, il);
-    EXPECT_FALSE(li.empty());
-    EXPECT_EQ(li.size(), il.size());
-    EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
-    EXPECT_NE(li.begin(), li.end());
-    EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
-
-    int pos = 0;
-    for(auto const& v : li)
+    ciltype il = proto::cil();
     {
-        auto const& ref = c4::archetypes::archetype_proto< T >::get(pos++);
-        EXPECT_EQ(v, ref);
+        auto cpch = CT::check_copy_ctors(il.size());
+        auto dtch = CT::check_dtors(il.size());
+        {
+            CList li(c4::aggregate, il);
+            EXPECT_FALSE(li.empty());
+            EXPECT_EQ(li.size(), il.size());
+            EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+            EXPECT_NE(li.begin(), li.end());
+            EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
+
+            int pos = 0;
+            for(auto const& v : li)
+            {
+                auto const& ref = proto::get(pos++);
+                EXPECT_EQ(v, ref);
+            }
+        }
     }
 }
-
 
 template< class List >
 void list_test0_push_back_copy()
 {
-    using T = typename List::value_type;
-    using I = typename List::size_type;
-    using proto = c4::archetypes::archetype_proto< T >;
+    _C4_DEFINE_LIST_TEST_TYPES(List);
 
-    std::initializer_list< T > il = proto::il();
-
-    List li;
-    for(auto const& elm : il)
+    ciltype il = proto::cil();
     {
-        li.push_back(elm);
-    }
+        auto cpch = CT::check_copy_ctors(il.size());
+        auto dtch = CT::check_dtors(il.size());
+        {
+            CList li;
+            for(auto const& elm : il)
+            {
+                li.push_back(elm);
+            }
 
-    EXPECT_FALSE(li.empty());
-    EXPECT_EQ(li.size(), il.size());
-    EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
-    EXPECT_NE(li.begin(), li.end());
-    EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
+            EXPECT_FALSE(li.empty());
+            EXPECT_EQ(li.size(), il.size());
+            EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+            EXPECT_NE(li.begin(), li.end());
+            EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
 
-    int pos = 0;
-    for(auto const& v : li)
-    {
-        auto const& ref = proto::get(pos++);
-        EXPECT_EQ(v, ref);
+            int pos = 0;
+            for(auto const& v : li)
+            {
+                auto const& ref = proto::get(pos++);
+                EXPECT_EQ(v, ref);
+            }
+        }
     }
 }
 
