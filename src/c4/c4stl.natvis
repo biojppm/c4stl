@@ -210,7 +210,7 @@ See also:
     </Expand>
   </Type>
 
-  <Type Name="c4::raw_fixed&lt;*,*,*,*&gt;">
+  <Type Name="c4::stg::raw_fixed&lt;*,*,*,*&gt;">
     <DisplayString>{{cap={$T2}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T2</Item>
@@ -221,7 +221,7 @@ See also:
     </Expand>
   </Type>
 
-  <Type Name="c4::raw&lt;*,*,*,*,*&gt;">
+  <Type Name="c4::stg::raw&lt;*,*,*,*,*&gt;">
     <DisplayString>{{cap={m_capacity}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">m_capacity</Item>
@@ -232,7 +232,7 @@ See also:
     </Expand>
   </Type>
 
-  <Type Name="c4::raw_small&lt;*,*,*,*,*,*&gt;">
+  <Type Name="c4::stg::raw_small&lt;*,*,*,*,*,*&gt;">
     <DisplayString Condition="m_capacity &lt;= $T2">{{cap={m_capacity}}} [SHORT]</DisplayString>
     <DisplayString Condition="m_capacity &gt;  $T2">{{cap={m_capacity}}} [LONG]</DisplayString>
     <Expand>
@@ -247,36 +247,92 @@ See also:
     </Expand>
   </Type>
 
-  <Type Name="c4::raw_paged&lt;*,*,*,*,*&gt;">
-    <DisplayString>{{cap={ {$T2} * {m_num_pages} } pg_sz={$T2} num_pgs={m_num_pages}}}</DisplayString>
+  <Type Name="c4::stg::raw_paged&lt;*,*,*,*,*&gt;">
+    <DisplayString>{{pg_sz={$T2} num_pgs={m_num_pages}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T2 * m_num_pages</Item>
       <Item Name="[page size]">$T2</Item>
       <Item Name="[num pages]">m_num_pages</Item>
-      <ArrayItems>
-        <Size>m_num_pages</Size>
-        <ValuePointer>m_pages</ValuePointer>
-      </ArrayItems>
+      <Synthetic Name="[page 0]" Condition="m_num_pages > 0"><Expand><ArrayItems Condition="m_num_pages > 0"><Size>$T2</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 1]" Condition="m_num_pages > 1"><Expand><ArrayItems Condition="m_num_pages > 1"><Size>$T2</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 2]" Condition="m_num_pages > 2"><Expand><ArrayItems Condition="m_num_pages > 2"><Size>$T2</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 3]" Condition="m_num_pages > 3"><Expand><ArrayItems Condition="m_num_pages > 3"><Size>$T2</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 4]" Condition="m_num_pages > 4"><Expand><ArrayItems Condition="m_num_pages > 4"><Size>$T2</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 5]" Condition="m_num_pages > 5"><Expand><ArrayItems Condition="m_num_pages > 5"><Size>$T2</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[......]" Condition="m_num_pages > 6"><DisplayString>(there are more pages)</DisplayString></Synthetic>
     </Expand>
   </Type>
-  <Type Name="c4::raw_paged&lt;*,0,*,*,*&gt;">
-    <DisplayString>{{cap={ ({m_id_mask}+1) * {m_num_pages} } pg_sz={m_id_mask+1} num_pgs={m_num_pages}}}</DisplayString>
+  
+  <Type Name="c4::stg::raw_paged&lt;*,0,*,*,*&gt;">
+    <AlternativeType Name="c4::stg::raw_paged_rt&lt;*,*&gt;"/>
+    <AlternativeType Name="c4::default_list_storage&lt;*,*&gt;"/>
+    <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_num_pages}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">(m_id_mask+1) * m_num_pages</Item>
       <Item Name="[page size]">(m_id_mask+1)</Item>
       <Item Name="[num pages]">m_num_pages</Item>
-      <ArrayItems>
-        <Size>m_num_pages</Size>
-        <ValuePointer>m_pages</ValuePointer>
-      </ArrayItems>
+      <Synthetic Name="[page 0]" Condition="m_num_pages > 0"><Expand><ArrayItems Condition="m_num_pages > 0"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 1]" Condition="m_num_pages > 1"><Expand><ArrayItems Condition="m_num_pages > 1"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 2]" Condition="m_num_pages > 2"><Expand><ArrayItems Condition="m_num_pages > 2"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 3]" Condition="m_num_pages > 3"><Expand><ArrayItems Condition="m_num_pages > 3"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 4]" Condition="m_num_pages > 4"><Expand><ArrayItems Condition="m_num_pages > 4"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 5]" Condition="m_num_pages > 5"><Expand><ArrayItems Condition="m_num_pages > 5"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[......]" Condition="m_num_pages > 6"><DisplayString>(there are more pages)</DisplayString></Synthetic>
     </Expand>
   </Type>
 
-  <Type Name="c4::flat_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+  <Type Name="c4::_list_crtp&lt;*,*,*&gt;">
+    <AlternativeType Name="c4::_fwd_list_crtp&lt;*,*,*&gt;"/>
+    <AlternativeType Name="c4::_dbl_list_crtp&lt;*,*,*&gt;"/>
+    <DisplayString>{{sz={(($T3*)this)->m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="_crtp ->">($T3*)this</Item>
+    </Expand>
+  </Type>
+
+  <!-- flat_list+flat_fwd_list, paged storage, dynamic page size -->
+  <Type Name="c4::flat_fwd_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
+    <AlternativeType Name="c4::flat_fwd_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
+    <AlternativeType Name="c4::flat_fwd_list&lt;*,*,c4::default_list_storage&gt;"/>
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;"/>
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::default_list_storage&gt;"/>
+    <!-- -->
     <DisplayString>{{sz={m_size}}}</DisplayString>
     <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elms]">m_elms</Item>
       <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
-      <CustomListItems MaxItemsPerView="5000" ExcludeView="Test">
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elms.m_pages[cursor >> m_elm.m_page_lsb][cursor &amp; m_elm.m_id_mask].elm</Item>
+            <Exec>cursor = m_elms.m_pages[cursor >> m_next.m_page_lsb][cursor &amp; m_next.m_id_mask].next</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <!-- flat_list+flat_fwd_list, paged storage, fixed page size -->
+  <Type Name="c4::flat_fwd_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;"/>
+    <!-- -->
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elms]">m_elms</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
         <Variable Name="cursor" InitialValue="m_head" />
         <Size>m_size</Size>
         <Loop>
@@ -288,17 +344,105 @@ See also:
       </CustomListItems>
     </Expand>
   </Type>
-  <Type Name="c4::flat_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
+
+  <!-- split_list, paged storage, dynamic page size -->
+  <Type Name="c4::split_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
+    <AlternativeType Name="c4::split_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
+    <AlternativeType Name="c4::split_list&lt;*,*,c4::default_list_storage&gt;"/>
     <DisplayString>{{sz={m_size}}}</DisplayString>
     <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elm]">m_elm</Item>
+      <Item Name="[m_prev]">m_prev</Item>
+      <Item Name="[m_next]">m_next</Item>
       <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
-      <CustomListItems MaxItemsPerView="5000" ExcludeView="Test">
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
         <Variable Name="cursor" InitialValue="m_head" />
         <Size>m_size</Size>
         <Loop>
           <If Condition="cursor != npos">
-            <Item>m_elms.m_pages[cursor >> m_elms.m_page_lsb][cursor &amp; m_elms.m_id_mask].elm</Item>
-            <Exec>cursor = m_elms.m_pages[cursor >> m_elms.m_page_lsb][cursor &amp; m_elms.m_id_mask].next</Exec>
+            <Item>m_elm.m_pages[cursor >> m_elm.m_page_lsb][cursor &amp; m_elm.m_id_mask]</Item>
+            <Exec>cursor = m_next.m_pages[cursor >> m_next.m_page_lsb][cursor &amp; m_next.m_id_mask]</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <!-- split_list, paged storage, fixed page size -->
+  <Type Name="c4::split_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elm]">m_elm</Item>
+      <Item Name="[m_prev]">m_prev</Item>
+      <Item Name="[m_next]">m_next</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elm.m_pages[cursor >> m_elms._raw_page_lsb][cursor &amp; m_elms._raw_id_mask]</Item>
+            <Exec>cursor = m_next.m_pages[cursor >> m_elms._raw_page_lsb][cursor &amp; m_elms._raw_id_mask]</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  
+  <!-- split_fwd_list, paged storage, dynamic page size -->
+  <Type Name="c4::split_fwd_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
+    <AlternativeType Name="c4::split_fwd_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
+    <AlternativeType Name="c4::split_fwd_list&lt;*,*,c4::default_list_storage&gt;"/>
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elm]">m_elm</Item>
+      <Item Name="[m_next]">m_next</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elm.m_pages[cursor >> m_elm.m_page_lsb][cursor &amp; m_elm.m_id_mask]</Item>
+            <Exec>cursor = m_next.m_pages[cursor >> m_next.m_page_lsb][cursor &amp; m_next.m_id_mask]</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <!-- split_fwd_list, paged storage, fixed page size -->
+  <Type Name="c4::split_fwd_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elm]">m_elm</Item>
+      <Item Name="[m_next]">m_next</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elm.m_pages[cursor >> m_elms._raw_page_lsb][cursor &amp; m_elms._raw_id_mask]</Item>
+            <Exec>cursor = m_next.m_pages[cursor >> m_elms._raw_page_lsb][cursor &amp; m_elms._raw_id_mask]</Exec>
           </If>
         </Loop>
       </CustomListItems>
