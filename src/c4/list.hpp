@@ -435,10 +435,13 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        m_elm._raw_reserve(next_cap);
-        m_prev._raw_reserve(next_cap);
-        m_next._raw_reserve(next_cap);
-        _init_seq(curr_cap, next_cap);
+        //m_elm ._raw_reserve(next_cap);
+        //m_prev._raw_reserve(next_cap);
+        //m_next._raw_reserve(next_cap);
+        m_elm ._raw_resize(next_cap);
+        m_prev._raw_resize(next_cap);
+        m_next._raw_resize(next_cap);
+        _init_seq(curr_cap, capacity());
     }
 
 public:
@@ -527,6 +530,13 @@ public:
         _init_initlist(il);
     }
 
+    void _growto(I cap, I next_cap)
+    {
+        //m_elms._raw_reserve(next_cap);
+        m_elms._raw_resize(next_cap);
+        _init_seq(cap, capacity());
+    }
+
 public:
 
     C4_ALWAYS_INLINE T      & elm(I i)       C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_elms[i].elm; }
@@ -613,6 +623,15 @@ public:
     {
         _init_seq(0, capacity());
         _init_initlist(il);
+    }
+
+    void _growto(I curr_cap, I next_cap)
+    {
+        //m_elm ._raw_reserve(next_cap);
+        //m_next._raw_reserve(next_cap);
+        m_elm ._raw_resize(next_cap);
+        m_next._raw_resize(next_cap);
+        _init_seq(curr_cap, next_cap);
     }
 
 public:
