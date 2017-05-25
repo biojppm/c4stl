@@ -311,6 +311,14 @@ public:
 
 public:
 
+    ~flat_list()
+    {
+        for(I i = m_head; i != npos; i = m_elms[i].next)
+        {
+            c4::destroy(&m_elms[i].elm);
+        }
+    }
+
     flat_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
         _init_seq(0, capacity());
@@ -401,6 +409,14 @@ public:
 
 public:
 
+    ~split_list()
+    {
+        for(I i = m_head; i != npos; i = m_next[i])
+        {
+            c4::destroy(&m_elm[i]);
+        }
+    }
+
     split_list() : m_elm(), m_prev(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
         _init_seq(0, capacity());
@@ -487,6 +503,14 @@ public:
 
 public:
 
+    ~flat_fwd_list()
+    {
+        for(I i = m_head; i != npos; i = m_elms[i].next)
+        {
+            c4::destroy(&m_elms[i].elm);
+        }
+    }
+
     flat_fwd_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
         _init_seq(0, capacity());
@@ -566,6 +590,14 @@ public:
     using const_iterator = list_iterator< const T, const split_fwd_list >;
 
 public:
+
+    ~split_fwd_list()
+    {
+        for(I i = m_head; i != npos; i = m_next[i])
+        {
+            c4::destroy(&m_elm[i]);
+        }
+    }
 
     split_fwd_list() : m_elm(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
