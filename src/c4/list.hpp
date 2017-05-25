@@ -178,7 +178,7 @@ public:
     {
         I pos = _c4this->_append();
         T *elm = &_c4this->elm(pos);
-        c4::move_construct(elm, std::move(var));
+        c4::move_construct(elm, &var);
     }
 
     template< class... Args >

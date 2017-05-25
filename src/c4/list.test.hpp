@@ -108,6 +108,39 @@ void list_test0_push_back_copy()
     }
 }
 
+template< class List >
+void list_test0_push_back_move()
+{
+    _C4_DEFINE_LIST_TEST_TYPES(List);
+
+    ciltype il = proto::cil();
+    {
+        auto cpch = CT::check_move_ctors(il.size());
+        auto dtch = CT::check_dtors(2 * il.size()); // 1 movedfrom + 1 movedto
+        {
+            CList li;
+            for(auto const& elm : il)
+            {
+                auto tmp = elm;
+                li.push_back(std::move(tmp));
+            }
+
+            EXPECT_FALSE(li.empty());
+            EXPECT_EQ(li.size(), il.size());
+            EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+            EXPECT_NE(li.begin(), li.end());
+            EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
+
+            int pos = 0;
+            for(auto const& v : li)
+            {
+                auto const& ref = proto::get(pos++);
+                EXPECT_EQ(v, ref);
+            }
+        }
+    }
+}
+
 #define _C4_TEST_LIST_BASIC_TESTS(listtestname, listtype)       \
 TEST(listtestname, ctor_empty)                                  \
 {                                                               \
@@ -128,7 +161,12 @@ TEST(listtestname, ctor_with_initlist)                          \
 TEST(listtestname, push_back_copy)                              \
 {                                                               \
     list_test0_push_back_copy< listtype >();                    \
-}
+}                                                               \
+TEST(listtestname, push_back_move)                              \
+{                                                               \
+    list_test0_push_back_move< listtype >();                    \
+}                                                               \
+
 
 #define _C4_CALL_LIST_TESTS(list_type_name, list_type, containee_type_name, containee_type, sztype_name, sztype) \
 _C4_TEST_LIST_BASIC_TESTS                                               \
