@@ -631,7 +631,7 @@ public:
         //m_next._raw_reserve(next_cap);
         m_elm ._raw_resize(next_cap);
         m_next._raw_resize(next_cap);
-        _init_seq(curr_cap, next_cap);
+        _init_seq(curr_cap, capacity());
     }
 
 public:
