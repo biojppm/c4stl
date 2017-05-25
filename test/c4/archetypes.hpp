@@ -65,6 +65,22 @@ struct archetype_proto_base
         C4_ASSERT(which < a.size());
         return a[which];
     }
+    static std::array< T, 8 > dup()
+    {
+        std::array< T, 8 > d = Proto::arr;
+        return d;
+    }
+    static std::vector< T > dup(size_t n)
+    {
+        auto const& a = Proto::arr();
+        std::vector< T > d;
+        d.reserve(n);
+        for(size_t i = 0, pos = 0; i < n; ++i, pos = ((pos+1)%a.size()))
+        {
+            d.push_back(a[pos]);
+        }
+        return d;
+    }
 };
 
 // for scalar types: ints and floats
