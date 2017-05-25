@@ -147,6 +147,29 @@ public:
         _c4this->_set_next(last-1, next_);
     }
 
+    I _append()
+    {
+        I cap = _c4cthis->capacity();
+        if(_c4cthis->m_size == cap || cap == 0)
+        {
+            _c4this->_growto(cap, cap+1);
+        }
+        I pos = _c4cthis->m_fhead;
+        C4_XASSERT(pos != ListType::npos);
+        if(_c4this->m_size == 0)
+        {
+            _c4this->_set_head(0);
+        }
+        if(_c4cthis->m_tail != ListType::npos)
+        {
+            _c4this->_set_next(_c4cthis->m_tail, pos);
+        }
+        ++_c4this->m_size;
+        _c4this->_set_fhead(_c4cthis->next(pos));
+        _c4this->_set_tail(pos);
+        return pos;
+    }
+
 public:
 
     void push_front(T const& var)
@@ -156,20 +179,23 @@ public:
 
     void push_back(T const& var)
     {
-        C4_NOT_IMPLEMENTED();
-        I cap = _c4cthis->capacity();
-        if(_c4cthis->size() == cap)
-        {
-            _c4this->_growto(cap, cap+1);
-        }
-        C4_XASSERT(_c4cthis->m_fhead != ListType::npos && pos < _c4cthis->m_size);
-        I pos = _c4cthis->m_fhead;
-        c4::construct(&_c4this->elm(pos), var);
-        _c4this->_set_prev(pos, _c4cthis->m_tail);
-        _c4this->_set_next(pos, ListType::npos);
-        _c4this->_set_tail(pos);
-        _c4this->_set_fhead(_c4cthis->next(_c4cthis->m_fhead));
-        ++_c4this->m_size;
+        I pos = _append();
+        T *elm = &_c4this->elm(pos);
+        c4::copy_construct(elm, var);
+    }
+    void push_back(T && var)
+    {
+        I pos = _append();
+        T *elm = &_c4this->elm(pos);
+        c4::move_construct(elm, var);
+    }
+
+    template< class... Args >
+    void emplace_back(Args&&... args)
+    {
+        I pos = _append();
+        T *elm = &_c4this->elm(pos);
+        c4::construct(elm, std::forward< Args >(args)...);
     }
 
 };
@@ -194,30 +220,6 @@ public:
             _c4this->_set_next(i, i+1);
         }
         _c4this->_set_next(last-1, next_);
-    }
-
-public:
-
-    void push_front(T const& var)
-    {
-        C4_NOT_IMPLEMENTED();
-    }
-
-    void push_back(T const& var)
-    {
-        C4_NOT_IMPLEMENTED();
-        I cap = _c4cthis->capacity();
-        if(_c4cthis->size() == cap)
-        {
-            _c4this->_growto(cap, cap+1);
-        }
-        C4_XASSERT(_c4cthis->m_fhead != ListType::npos && pos < _c4cthis->m_size);
-        I pos = _c4cthis->m_fhead;
-        c4::construct(&_c4this->elm(pos), var);
-        _c4this->_set_next(pos, ListType::npos);
-        _c4this->m_tail = pos;
-        m_fhead = _c4cthis->next(_c4cthis->m_fhead);
-        ++_c4this->m_size;
     }
 
 };
@@ -272,10 +274,11 @@ public:
         _init_initlist(il);
     }
 
-    void _growto(I next_cap)
+    void _growto(I cap, I next_cap)
     {
-        I curr = capacity();
-        m_elms._raw_reserve(next_cap);
+        //m_elms._raw_reserve(next_cap);
+        m_elms._raw_resize(next_cap);
+        _init_seq(cap, capacity());
     }
 
 public:
@@ -361,13 +364,12 @@ public:
         _init_initlist(il);
     }
 
-    void _growto(I next_cap)
+    void _growto(I curr_cap, I next_cap)
     {
-        I curr = capacity();
         m_elm._raw_reserve(next_cap);
         m_prev._raw_reserve(next_cap);
         m_next._raw_reserve(next_cap);
-        _init_seq(curr, next_cap);
+        _init_seq(curr_cap, next_cap);
     }
 
 public:

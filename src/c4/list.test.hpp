@@ -52,6 +52,36 @@ void list_test0_ctor_with_initlist()
     }
 }
 
+
+template< class List >
+void list_test0_push_back_copy()
+{
+    using T = typename List::value_type;
+    using I = typename List::size_type;
+    using proto = c4::archetypes::archetype_proto< T >;
+
+    std::initializer_list< T > il = proto::il();
+
+    List li;
+    for(auto const& elm : il)
+    {
+        li.push_back(elm);
+    }
+
+    EXPECT_FALSE(li.empty());
+    EXPECT_EQ(li.size(), il.size());
+    EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+    EXPECT_NE(li.begin(), li.end());
+    EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
+
+    int pos = 0;
+    for(auto const& v : li)
+    {
+        auto const& ref = proto::get(pos++);
+        EXPECT_EQ(v, ref);
+    }
+}
+
 #define _C4_TEST_LIST_BASIC_TESTS(listtestname, listtype)       \
 TEST(listtestname, ctor_empty)                                  \
 {                                                               \
@@ -68,6 +98,10 @@ TEST(listtestname, ctor_with_capacity)                          \
 TEST(listtestname, ctor_with_initlist)                          \
 {                                                               \
     list_test0_ctor_with_initlist< listtype >();                \
+}                                                               \
+TEST(listtestname, push_back_copy)                              \
+{                                                               \
+    list_test0_push_back_copy< listtype >();                    \
 }
 
 #define _C4_CALL_LIST_TESTS(list_type_name, list_type, containee_type_name, containee_type, sztype_name, sztype) \
