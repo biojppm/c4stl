@@ -44,8 +44,14 @@ template< class T > C4_CONSTEXPR14 cspan<char> type_name()
     printf("\n");
 #endif
 
-#ifdef _MSC_VER
-#   if defined(C4_MSVC_2015) || defined(C4_MSVC_2017)
+#if defined(_MSC_VER)
+#   if defined(__clang__) // Visual Studio has the clang toolset
+    // example:
+    // ..........................xxx.
+    // _c4t __cdecl _c4tn() [T = int]
+    enum { tstart = 26, tend = 1};
+
+#   elif defined(C4_MSVC_2015) || defined(C4_MSVC_2017)
     // Note: subtract 7 at the end because the function terminates with ">(void)" in VS2015+
     cspan<char>::size_type tstart = 26, tend = 7;
 
@@ -67,16 +73,19 @@ template< class T > C4_CONSTEXPR14 cspan<char> type_name()
 #   else
         C4_NOT_IMPLEMENTED();
 #   endif
+
 #elif defined(__ICC)
     // example:
     // ........................xxx.
     // "_c4t _c4tn() [with T = int]"
     enum { tstart = 23, tend = 1};
+
 #elif defined(__clang__)
     // example:
     // ...................xxx.
     // "_c4t _c4tn() [T = int]"
     enum { tstart = 18, tend = 1};
+
 #elif defined(__GNUC__)
     // example:
     // ........................xxx.
