@@ -121,6 +121,7 @@ public:
         }
     }
 
+    /** resize the storage so that more elements fit in it */
     void _make_room_for(I how_many)
     {
         I cap = _c4cthis->capacity();
@@ -200,7 +201,7 @@ public:
 
 /** common code to implement doubly linked lists */
 template< class T, class I, class ListType >
-class _doubly_list_crtp : public _list_crtp< T, I, ListType >
+class _dbl_list_crtp : public _list_crtp< T, I, ListType >
 {
 public:
 
@@ -289,7 +290,7 @@ public:
 /** an array-based doubly-linked list where the indices are interleaved
  * with the contained elements. Using paged raw storage, insertions are O(1). */
 template< class T, class I, template< class T, class I > class RawStorage >
-class flat_list : public _doubly_list_crtp< T, I, flat_list<T, I, RawStorage> >
+class flat_list : public _dbl_list_crtp< T, I, flat_list<T, I, RawStorage> >
 {
 public:
 
@@ -385,7 +386,7 @@ public:
  * arrays from the contained elements. Using paged raw storage, insertions
  * are O(1). */
 template< class T, class I, template< class T, class I > class RawStorage >
-class split_list : public _doubly_list_crtp< T, I, split_list<T, I, RawStorage> >
+class split_list : public _dbl_list_crtp< T, I, split_list<T, I, RawStorage> >
 {
 public:
 
