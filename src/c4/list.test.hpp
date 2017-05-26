@@ -180,6 +180,7 @@ _C4_TEST_LIST_BASIC_TESTS                                               \
     list_type< containee_type C4_COMMA sztype >                         \
 )
 
+#ifndef C4_QUICKTEST
 #define _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(list_tyname, list_ty, containee_type_name, containee_type) \
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, uint64_t, uint64_t) \
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  int64_t,  int64_t) \
@@ -189,6 +190,10 @@ _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, u
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  int16_t,  int16_t) \
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  uint8_t,  uint8_t) \
 _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,   int8_t,   int8_t)
+#else
+#define _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(list_tyname, list_ty, containee_type_name, containee_type) \
+_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, size_t, size_t)
+#endif
 
 #define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
 _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_list, flat_list, tyname, ty)
