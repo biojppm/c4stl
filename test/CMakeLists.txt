@@ -1,3 +1,18 @@
+# add a configuration type with the define C4_QUICKTEST
+# to make a quick test covering less combinations
+
+include(GetFlags)
+include(ConfigurationTypes)
+
+get_define(dquicktest C4_QUICKTEST)
+add_configuration_type(quicktest
+    DEFAULT_FROM DEBUG
+    C_FLAGS ${dquicktest}
+    CXX_FLAGS ${dquicktest}
+    )
+
+#------------------------------------------------------------------------------
+
 add_custom_target(c4stl-test ${CMAKE_CTEST_COMMAND} -V)
 set_target_properties(c4stl-test PROPERTIES FOLDER c4stl-test)
 
@@ -14,7 +29,6 @@ ExternalProject_Import(gtest
 find_package(Threads REQUIRED)
 
 #------------------------------------------------------------------------------
-
 set(testsrc
     c4/archetypes.cpp
     c4/archetypes.hpp
@@ -38,7 +52,7 @@ macro(c4stl_get_exe bin_dir exe_name)
 endmacro()
 
 function(c4stl_add_test name)
-    create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${ARGN}")
+    create_source_group("" "../src" "${ARGN}")
     c4stl_add_target(${name} EXECUTABLE SANITIZE
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
         LIBS c4stl-libtest ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
