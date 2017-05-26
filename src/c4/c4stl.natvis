@@ -81,6 +81,7 @@ See also:
     </Expand>
   </Type>
 
+  <!-- =========================================================================================== -->
   <Type Name="c4::string_impl&lt;*,*,*,*&gt;">
     <DisplayString>{(($T3*)this)->m_str,[(($T3*)this)->m_size]} (sz={(($T3*)this)->m_size})</DisplayString>
     <StringView>(($T3*)this)->m_str,[(($T3*)this)->m_size]</StringView>
@@ -190,7 +191,8 @@ See also:
       </Synthetic>
     </Expand>
   </Type>
-  
+
+  <!-- =========================================================================================== -->
   <Type Name="c4::sstream">
     <DisplayString>{m_buf,[m_size]} (sz={m_size})</DisplayString>
     <StringView>m_buf,[m_size]</StringView>
@@ -210,6 +212,7 @@ See also:
     </Expand>
   </Type>
 
+  <!-- =========================================================================================== -->
   <Type Name="c4::stg::raw_fixed&lt;*,*,*,*&gt;">
     <DisplayString>{{cap={$T2}}}</DisplayString>
     <Expand>
@@ -281,6 +284,7 @@ See also:
     </Expand>
   </Type>
 
+  <!-- =========================================================================================== -->
   <Type Name="c4::_list_crtp&lt;*,*,*&gt;">
     <AlternativeType Name="c4::_fwd_list_crtp&lt;*,*,*&gt;"/>
     <AlternativeType Name="c4::_dbl_list_crtp&lt;*,*,*&gt;"/>
