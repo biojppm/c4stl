@@ -106,6 +106,11 @@ struct archetype_proto_base
     }
 };
 
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wmissing-braces" //  warning : suggest braces around initialization of subobject [-Wmissing-braces]
+#endif
+
 // for scalar types: ints and floats
 template< class T >
 struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
@@ -154,7 +159,6 @@ struct archetype_proto< ty > : public archetype_proto_base< ty, archetype_proto<
         return arr_;\
     }\
 }
-
 
 _C4_DECLARE_ARCHETYPE_PROTO(std::string,
     "str0", "str1", "str2", "str3",
@@ -519,6 +523,10 @@ mcr(MemOwnerAlloc_std_string   , archetypes::MemOwnerAlloc<std::string>) \
 mcr(InsidePtr_int              , archetypes::InsidePtr<int>            ) \
 mcr(InsidePtr_std_string       , archetypes::InsidePtr<std::string>    )
 
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 C4_END_NAMESPACE(archetypes)
 C4_END_NAMESPACE(c4)

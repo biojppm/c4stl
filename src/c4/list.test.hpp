@@ -6,6 +6,11 @@
 #include "c4/test.hpp"
 #include "c4/archetypes.hpp"
 
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wunused-local-typedef"
+#endif
+
 C4_BEGIN_NAMESPACE(c4)
 
 #define _C4_DEFINE_LIST_TEST_TYPES(List) \
@@ -13,7 +18,7 @@ C4_BEGIN_NAMESPACE(c4)
     using I = typename List::size_type;\
     using CT = Counting< T >;\
     using proto = c4::archetypes::archetype_proto< T >;\
-    using C ## List = typename List::container_type< CT >;\
+    using C ## List = typename List::template container_type< CT >;\
     using iltype = std::initializer_list< T >;\
     using ciltype = std::initializer_list< CT >;
 
@@ -198,5 +203,9 @@ _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_fwd_list, flat_fwd_list, tyname, ty)
 _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_fwd_list, split_fwd_list, tyname, ty)
 
 C4_END_NAMESPACE(c4)
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 #endif // _C4_LIST_TEST_HPP

@@ -1,7 +1,7 @@
 #include "c4/preprocessor.hpp"
 #include "c4/language.hpp"
 
-#include <gtest/gtest.h>
+#include "c4/test.hpp"
 
 #ifdef WE_LL_GET_THERE___MSVC_CANT_HANDLE_THE_FOREACH_MACRO___NEEDS_TO_BE_FIXED
 #include <string>

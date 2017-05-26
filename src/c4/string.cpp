@@ -3,6 +3,11 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wdeprecated-declarations" //  warning : 'mbsrtowcs' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead
+#endif
+
 void s2ws(char const* mbstr, size_t len, wchar_t *output)
 {
     std::mbstate_t state = std::mbstate_t();
@@ -13,6 +18,10 @@ void ws2s(wchar_t const* mbstr, size_t len, char *output)
     std::mbstate_t state = std::mbstate_t();
     std::wcsrtombs(&output[0], &mbstr, len, &state);
 }
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 C4_END_NAMESPACE(c4)
 

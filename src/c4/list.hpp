@@ -224,7 +224,7 @@ public:
 
     I _append()
     {
-        I pos = _claim();
+        I pos = this->_claim();
         if(_c4this->m_size > 0)
         {
             _c4this->_set_prev(pos, _c4cthis->m_tail);
@@ -265,7 +265,7 @@ public:
 
     I _append()
     {
-        I pos = _claim();
+        I pos = this->_claim();
         if(_c4this->m_size > 0)
         {
             _c4this->_set_next(_c4cthis->m_tail, pos);
@@ -327,25 +327,25 @@ public:
 
     flat_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     flat_list(c4::with_capacity_t, I cap) : m_elms(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     flat_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
-        _init_initlist(il);
+        this->_init_seq(0, capacity());
+        this->_init_initlist(il);
     }
 
     void _growto(I cap, I next_cap)
     {
         //m_elms._raw_reserve(next_cap);
         m_elms._raw_resize(next_cap);
-        _init_seq(cap, capacity());
+        this->_init_seq(cap, capacity());
     }
 
 public:
@@ -427,18 +427,18 @@ public:
 
     split_list() : m_elm(), m_prev(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     split_list(c4::with_capacity_t, I cap) : m_elm(cap), m_prev(cap), m_next(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     split_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_prev(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
-        _init_initlist(il);
+        this->_init_seq(0, capacity());
+        this->_init_initlist(il);
     }
 
     void _growto(I curr_cap, I next_cap)
@@ -449,7 +449,7 @@ public:
         m_elm ._raw_resize(next_cap);
         m_prev._raw_resize(next_cap);
         m_next._raw_resize(next_cap);
-        _init_seq(curr_cap, capacity());
+        this->_init_seq(curr_cap, capacity());
     }
 
 public:
@@ -526,25 +526,25 @@ public:
 
     flat_fwd_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     flat_fwd_list(c4::with_capacity_t, I cap) : m_elms(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     flat_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
-        _init_initlist(il);
+        this->_init_seq(0, capacity());
+        this->_init_initlist(il);
     }
 
     void _growto(I cap, I next_cap)
     {
         //m_elms._raw_reserve(next_cap);
         m_elms._raw_resize(next_cap);
-        _init_seq(cap, capacity());
+        this->_init_seq(cap, capacity());
     }
 
 public:
@@ -623,18 +623,18 @@ public:
 
     split_fwd_list() : m_elm(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     split_fwd_list(c4::with_capacity_t, I cap) : m_elm(cap), m_next(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
+        this->_init_seq(0, capacity());
     }
 
     split_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
     {
-        _init_seq(0, capacity());
-        _init_initlist(il);
+        this->_init_seq(0, capacity());
+        this->_init_initlist(il);
     }
 
     void _growto(I curr_cap, I next_cap)
@@ -643,7 +643,7 @@ public:
         //m_next._raw_reserve(next_cap);
         m_elm ._raw_resize(next_cap);
         m_next._raw_resize(next_cap);
-        _init_seq(curr_cap, capacity());
+        this->_init_seq(curr_cap, capacity());
     }
 
 public:

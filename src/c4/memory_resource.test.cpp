@@ -28,6 +28,7 @@ TEST(ScopedMemoryResourceCounts, basic)
 TEST(ScopedMemoryResourceCounts, counts)
 {
     auto *before = get_memory_resource();
+    C4_UNUSED(before);
 
     {
         auto checker = AllocationCountsChecker();

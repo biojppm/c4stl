@@ -2,6 +2,11 @@
 #include "c4/test.hpp"
 #include "c4/archetypes.hpp"
 
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wunused-local-typedef"
+#endif
+
 C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
 

@@ -1,7 +1,7 @@
 #include "c4/config.hpp"
 
 #include <string>
-#include <gtest/gtest.h>
+#include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 

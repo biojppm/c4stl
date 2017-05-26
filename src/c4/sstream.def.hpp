@@ -187,6 +187,12 @@ void sstream< StringType >::read_(char *str, size_type sz, wchar_t /*overload ta
 }
 
 //-----------------------------------------------------------------------------
+
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wdeprecated-declarations" //  warning : 'sscanf' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead
+#endif
+
 template< class StringType >
 void sstream< StringType >::scanf____(const char_type *fmt, void *arg, char /*overload tag*/)
 {
@@ -226,6 +232,10 @@ void sstream< StringType >::scanf____(const char_type *fmt, void *arg, wchar_t /
     }
     m_getpos += snum;
 }
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 //-----------------------------------------------------------------------------
 template< class StringType >
@@ -422,7 +432,6 @@ template< class StringType >
 typename sstream< StringType >::size_type sstream< StringType >::nextarg_(const char_type *fmt)
 {
     size_type next = 0;
-    value_type prev = '\0';
     while(fmt[next] != '\0')
     {
         if(fmt[next] == '{' && fmt[next + 1] == '}')

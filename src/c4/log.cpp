@@ -308,6 +308,11 @@ void LogBuffer::write(const char *cstr)
     write(cstr, strlen(cstr));
 }
 
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wdeprecated-declarations" //  warning : 'mbsrtowcs' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead
+#endif
+
 void LogBuffer::write(const char *str, size_t sz)
 {
     assert(sz <= max_idx);
@@ -317,6 +322,10 @@ void LogBuffer::write(const char *str, size_t sz)
     pos += sz;
     buf[pos] = '\0';
 }
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 void LogBuffer::printf(const char *fmt, ...)
 {

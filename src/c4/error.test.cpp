@@ -1,5 +1,5 @@
 #include "c4/error.hpp"
-#include <gtest/gtest.h>
+#include "c4/test.hpp"
 
 C4_BEGIN_HIDDEN_NAMESPACE
 bool was_called = false;

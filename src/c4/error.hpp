@@ -228,23 +228,20 @@ void handle_warning(const char *fmt, ...);
 // extreme assertions
 
 #ifdef _DOXYGEN_
-/** Explicitly enables extreme assertions; this is meant to allow enabling
- * assertions even when NDEBUG is defined. Defaults to undefined.
- * @ingroup error_checking */
+    /** Explicitly enables extreme assertions; this is meant to allow enabling
+     * assertions even when NDEBUG is defined. Defaults to undefined.
+     * @ingroup error_checking */
 #   define C4_USE_XASSERT
-
-/** extreme assertion: can be switched off independently of
- * the regular assertion; use for example for bounds checking in hot code.
- * Turned on only when C4_USE_XASSERT is defined
- * @ingroup error_checking */
+    /** extreme assertion: can be switched off independently of
+     * the regular assertion; use for example for bounds checking in hot code.
+     * Turned on only when C4_USE_XASSERT is defined
+     * @ingroup error_checking */
 #   define C4_XASSERT
-
-/** same as C4_XASSERT(), and additionally prints a printf-formatted message
- * @ingroup error_checking */
+    /** same as C4_XASSERT(), and additionally prints a printf-formatted message
+     * @ingroup error_checking */
 #   define C4_XASSERT_MSG
-
-/** evaluates to C4_NOEXCEPT when C4_XASSERT is disabled; otherwise, defaults to noexcept
- * @ingroup error_checking */
+    /** evaluates to C4_NOEXCEPT when C4_XASSERT is disabled; otherwise, defaults to noexcept
+     * @ingroup error_checking */
 #   define C4_NOEXCEPT_X
 #endif // _DOXYGEN_
 
@@ -260,7 +257,7 @@ void handle_warning(const char *fmt, ...);
 #   define C4_NOEXCEPT_X C4_NOEXCEPT
 #else
 #   define C4_XASSERT(cond)
-#   define C4_XASSERT_MSG(cond, fmt, ...))
+#   define C4_XASSERT_MSG(cond, fmt, ...)
 #   define C4_NOEXCEPT_X noexcept
 #endif
 

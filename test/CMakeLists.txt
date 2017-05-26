@@ -99,12 +99,12 @@ c4stl_add_test(c4stl-test-list-flat_fwd  ${s}/c4/list.flat_fwd.test.cpp  ${s}/c4
 c4stl_add_test(c4stl-test-list-split_fwd ${s}/c4/list.split_fwd.test.cpp ${s}/c4/list.test.hpp)
 
 if(WIN32)
-    if(MSVC)
+    if(MSVC AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC") # it may be clang as well
         set_property(SOURCE ${s}/c4/list.flat.test.cpp      APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
         set_property(SOURCE ${s}/c4/list.split.test.cpp     APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
         set_property(SOURCE ${s}/c4/list.flat_fwd.test.cpp  APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
         set_property(SOURCE ${s}/c4/list.split_fwd.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/sstream.test.cpp    APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/string.test.cpp     APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
+        set_property(SOURCE ${s}/c4/sstream.test.cpp        APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
+        set_property(SOURCE ${s}/c4/string.test.cpp         APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
     endif()
 endif()

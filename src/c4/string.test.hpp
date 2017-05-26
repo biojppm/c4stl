@@ -5,9 +5,11 @@
 #ifdef __clang__
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wwritable-strings" // ISO C++11 does not allow conversion from string literal to char*
+#   pragma clang diagnostic ignored "-Wunused-variable"
 #elif defined(__GNUC__)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wwrite-strings" // ISO C++ forbids converting a string constant to ‘C* {aka char*}’
+#   pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
 C4_BEGIN_NAMESPACE(c4)

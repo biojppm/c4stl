@@ -6,7 +6,16 @@
 #include "c4/allocator.hpp"
 #include "c4/log.hpp"
 
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wdeprecated-declarations" //  warning : 'mbsrtowcs' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead
+#endif
+
 #include <gtest/gtest.h>
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 #define C4_EXPECT(expr) EXPECT_TRUE(expr) << C4_PRETTY_FUNC << "\n"
 #define C4_EXPECT_FALSE(expr) EXPECT_FALSE(expr) << C4_PRETTY_FUNC << "\n"
