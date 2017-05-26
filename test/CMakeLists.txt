@@ -104,6 +104,7 @@ c4stl_add_test(c4stl-test-sstream      ${s}/c4/sstream.test.cpp)
 c4stl_add_test(c4stl-test-string             ${s}/c4/string.test.cpp ${s}/c4/string.test.hpp)
 c4stl_add_test(c4stl-test-string-interop     ${s}/c4/string.test.interop.cpp ${s}/c4/string.test.hpp)
 c4stl_add_test(c4stl-test-string-substring   ${s}/c4/string.test.substring.cpp ${s}/c4/string.test.hpp)
+c4stl_add_test(c4stl-test-string-substringrs ${s}/c4/string.test.substringrs.cpp ${s}/c4/string.test.hpp)
 
 c4stl_add_test(c4stl-test-growth       ${s}/c4/storage/growth.test.cpp)
 

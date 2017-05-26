@@ -8,7 +8,6 @@ C4_BEGIN_NAMESPACE(c4)
 
 C4_BEGIN_HIDDEN_NAMESPACE
 
-_C4_TEST_STRINGBASE_DERIVED(substringrs, substringrs)
 _C4_TEST_STRINGBASE_DERIVED(string, string)
 _C4_TEST_STRINGBASE_DERIVED(text, text)
 //WIP..._C4_TEST_STRINGBASE_DERIVED(small_string_u8 , basic_small_string< char C4_COMMA uint8_t  >)
