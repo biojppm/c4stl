@@ -113,6 +113,7 @@ c4stl_add_test(c4stl-test-growth       ${s}/c4/storage/growth.test.cpp)
 c4stl_add_test(c4stl-test-raw          ${s}/c4/storage/raw.test.cpp ${s}/c4/storage/raw.test.hpp)
 c4stl_add_test(c4stl-test-contiguous   ${s}/c4/storage/contiguous.test.cpp)
 
+# the list tests are separated to save compile time
 c4stl_add_test(c4stl-test-list-flat      ${s}/c4/list.flat.test.cpp      ${s}/c4/list.test.hpp)
 c4stl_add_test(c4stl-test-list-split     ${s}/c4/list.split.test.cpp     ${s}/c4/list.test.hpp)
 c4stl_add_test(c4stl-test-list-flat_fwd  ${s}/c4/list.flat_fwd.test.cpp  ${s}/c4/list.test.hpp)
@@ -120,11 +121,19 @@ c4stl_add_test(c4stl-test-list-split_fwd ${s}/c4/list.split_fwd.test.cpp ${s}/c4
 
 if(WIN32)
     if(MSVC AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC") # it may be clang as well
-        set_property(SOURCE ${s}/c4/list.flat.test.cpp      APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/list.split.test.cpp     APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/list.flat_fwd.test.cpp  APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/list.split_fwd.test.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/sstream.test.cpp        APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
-        set_property(SOURCE ${s}/c4/string.test.cpp         APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
+        set(bigfiles
+            ${s}/c4/list.flat.test.cpp
+            ${s}/c4/list.split.test.cpp
+            ${s}/c4/list.flat_fwd.test.cpp
+            ${s}/c4/list.split_fwd.test.cpp
+            ${s}/c4/sstream.test.cpp
+            ${s}/c4/string.test.string.cpp
+            ${s}/c4/string.test.substring.cpp
+            ${s}/c4/string.test.substringrs.cpp
+            ${s}/c4/string.test.text.cpp
+            )
+        foreach(_bf ${bigfiles})
+            set_property(SOURCE ${_bf} APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
+        endforeach()
     endif()
 endif()
