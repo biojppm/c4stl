@@ -52,20 +52,6 @@ inline void check_archetype(double   a, double   ref) { EXPECT_EQ(a, ref); }
 template< class T, class Proto >
 struct archetype_proto_base
 {
-    static std::initializer_list< T > il()
-    {
-        auto const& a = Proto::arr();
-        T const* d = a.data();
-        std::initializer_list< T > i(d, d+a.size());
-        return i;
-    }
-    static std::initializer_list< Counting<T> > cil()
-    {
-        auto const& a = Proto::carr();
-        Counting<T> const* d = a.data();
-        std::initializer_list< Counting<T> > i(d, d+a.size());
-        return i;
-    }
     static T const& get(int which)
     {
         auto const& a = Proto::arr();
@@ -126,38 +112,68 @@ struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
         static const std::array<Counting<T>, 8> arr_{0, 1, 2, 3, 4, 5, 6, 7};
         return arr_;
     }
+    static std::initializer_list< T > il()
+    {
+        std::initializer_list< T > i = {0, 1, 2, 3, 4, 5, 6, 7};
+        return i;
+    }
+    static std::initializer_list< Counting<T> > cil()
+    {
+        std::initializer_list< Counting<T> > i = {0, 1, 2, 3, 4, 5, 6, 7};
+        return i;
+    }
 };
 
-#define _C4_DECLARE_ARCHETYPE_PROTO(ty, ...) \
-template<>\
-struct archetype_proto<ty> : public archetype_proto_base< ty, archetype_proto<ty> >\
-{\
-    static std::array<ty, 8> const& arr()\
-    {\
-        static const std::array<ty, 8> arr_{__VA_ARGS__};\
-        return arr_;\
-    }\
-    static std::array<Counting<ty>, 8> const& carr()\
-    {\
-        static const std::array<Counting<ty>, 8> arr_{__VA_ARGS__};\
-        return arr_;\
-    }\
+#define _C4_DECLARE_ARCHETYPE_PROTO(ty, ...)                            \
+template<>                                                              \
+struct archetype_proto<ty> : public archetype_proto_base< ty, archetype_proto<ty> > \
+{                                                                       \
+    static std::array<ty, 8> const& arr()                               \
+    {                                                                   \
+        static const std::array<ty, 8> arr_{__VA_ARGS__};               \
+        return arr_;                                                    \
+    }                                                                   \
+    static std::array<Counting<ty>, 8> const& carr()                    \
+    {                                                                   \
+        static const std::array<Counting<ty>, 8> arr_{__VA_ARGS__};     \
+        return arr_;                                                    \
+    }                                                                   \
+    static std::initializer_list< ty > il()                             \
+    {                                                                   \
+        std::initializer_list< ty > i = {__VA_ARGS__};                  \
+        return i;                                                       \
+    }                                                                   \
+    static std::initializer_list< Counting<ty> > cil()                  \
+    {                                                                   \
+        std::initializer_list< Counting<ty> > i = {__VA_ARGS__};        \
+        return i;                                                       \
+    }                                                                   \
 }
 
-#define _C4_DECLARE_ARCHETYPE_PROTO_TPL1(tplparam1, ty, ...) \
-template< tplparam1 >\
-struct archetype_proto< ty > : public archetype_proto_base< ty, archetype_proto<ty> >\
-{\
-    static std::array<ty, 8> const& arr()\
-    {\
-        static const std::array<ty, 8> arr_{__VA_ARGS__};\
-        return arr_;\
-    }\
-    static std::array<Counting<ty>, 8> const& carr()\
-    {\
-        static const std::array<Counting<ty>, 8> arr_{__VA_ARGS__};\
-        return arr_;\
-    }\
+#define _C4_DECLARE_ARCHETYPE_PROTO_TPL1(tplparam1, ty, ...)            \
+template< tplparam1 >                                                   \
+struct archetype_proto< ty > : public archetype_proto_base< ty, archetype_proto<ty> > \
+{                                                                       \
+    static std::array<ty, 8> const& arr()                               \
+    {                                                                   \
+        static const std::array<ty, 8> arr_{__VA_ARGS__};               \
+        return arr_;                                                    \
+    }                                                                   \
+    static std::array<Counting<ty>, 8> const& carr()                    \
+    {                                                                   \
+        static const std::array<Counting<ty>, 8> arr_{__VA_ARGS__};     \
+        return arr_;                                                    \
+    }                                                                   \
+    static std::initializer_list< ty > il()                             \
+    {                                                                   \
+        std::initializer_list< ty > i = {__VA_ARGS__};                  \
+        return i;                                                       \
+    }                                                                   \
+    static std::initializer_list< Counting<ty> > cil()                  \
+    {                                                                   \
+        std::initializer_list< Counting<ty> > i = {__VA_ARGS__};        \
+        return i;                                                       \
+    }                                                                   \
 }
 
 _C4_DECLARE_ARCHETYPE_PROTO(std::string,

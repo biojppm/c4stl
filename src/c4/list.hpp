@@ -289,7 +289,7 @@ public:
 //-----------------------------------------------------------------------------
 /** an array-based doubly-linked list where the indices are interleaved
  * with the contained elements. Using paged raw storage, insertions are O(1). */
-template< class T, class I, template< class T, class I > class RawStorage >
+template< class T, class I, template< class T_, class I_ > class RawStorage >
 class flat_list : public _dbl_list_crtp< T, I, flat_list<T, I, RawStorage> >
 {
 public:
@@ -385,7 +385,7 @@ public:
 /** an array-based doubly-linked list where the indices are stored in separate
  * arrays from the contained elements. Using paged raw storage, insertions
  * are O(1). */
-template< class T, class I, template< class T, class I > class RawStorage >
+template< class T, class I, template< class T_, class I_ > class RawStorage >
 class split_list : public _dbl_list_crtp< T, I, split_list<T, I, RawStorage> >
 {
 public:
@@ -469,7 +469,7 @@ public:
     C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_prev[i] = npos; }
 
 public:
-    
+
     C4_ALWAYS_INLINE bool empty() const noexcept { return m_size == 0; }
 
     C4_ALWAYS_INLINE I size() const noexcept { return m_size; }
@@ -488,7 +488,7 @@ public:
 //-----------------------------------------------------------------------------
 /** an array-based forward-linked list where the indices are interleaved
  * with the contained elements. Using paged raw storage, insertions are O(1). */
-template< class T, class I, template< class T, class I > class RawStorage >
+template< class T, class I, template< class T_, class I_ > class RawStorage >
 class flat_fwd_list : public _fwd_list_crtp< T, I, flat_fwd_list<T, I, RawStorage> >
 {
 public:
@@ -562,7 +562,7 @@ public:
     C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
 
 public:
-    
+
     C4_ALWAYS_INLINE bool empty() const noexcept { return m_size == 0; }
 
     C4_ALWAYS_INLINE I size() const noexcept { return m_size; }
@@ -582,7 +582,7 @@ public:
 /** an array-based forward-linked list where the indices are stored in a
  * separate array from the contained elements. Using paged raw storage,
  * insertions are O(1). */
-template< class T, class I, template< class T, class I > class RawStorage >
+template< class T, class I, template< class T_, class I_ > class RawStorage >
 class split_fwd_list : public _fwd_list_crtp< T, I, split_fwd_list<T, I, RawStorage> >
 {
 public:

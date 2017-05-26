@@ -79,7 +79,6 @@ function(c4stl_add_test name)
         # for now we explicitly run it:
         add_test(NAME ${name}-valgrind
             COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
-        set_target_properties(${name}-valgrind PROPERTIES FOLDER c4stl-test/${name})
     endif()
 endfunction(c4stl_add_test)
 
