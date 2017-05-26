@@ -55,8 +55,8 @@ struct list_iterator : public std::iterator< std::bidirectional_iterator_tag, ty
 
     list_iterator(List *l, I i_) : list(l), i(i_) {}
 
-    C4_ALWAYS_INLINE T& operator*  () { return  list->elm(i); }
     C4_ALWAYS_INLINE T* operator-> () { return &list->elm(i); }
+    C4_ALWAYS_INLINE T& operator*  () { return  list->elm(i); }
 
     C4_ALWAYS_INLINE list_iterator& operator++ (   ) noexcept {                           i = list->next(i); return *this; }
     C4_ALWAYS_INLINE list_iterator& operator++ (int) noexcept { list_iterator it = *this; i = list->next(i); return    it; }
@@ -64,8 +64,8 @@ struct list_iterator : public std::iterator< std::bidirectional_iterator_tag, ty
     C4_ALWAYS_INLINE list_iterator& operator-- (   ) noexcept {                           i = list->prev(i); return *this; }
     C4_ALWAYS_INLINE list_iterator& operator-- (int) noexcept { list_iterator it = *this; i = list->prev(i); return    it; }
 
-    C4_ALWAYS_INLINE bool operator== (list_iterator const& that) const noexcept { return i == that.i && list == that.list; }
-    C4_ALWAYS_INLINE bool operator!= (list_iterator const& that) const noexcept { return i != that.i || list != that.list; }
+    C4_ALWAYS_INLINE bool operator== (list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i == that.i; }
+    C4_ALWAYS_INLINE bool operator!= (list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i != that.i; }
 };
 
 template< class T, class List >
@@ -84,16 +84,19 @@ struct fwd_list_iterator : public std::iterator< std::forward_iterator_tag, type
     C4_ALWAYS_INLINE fwd_list_iterator& operator++ (   ) noexcept {                               i = list->next(i); return *this; }
     C4_ALWAYS_INLINE fwd_list_iterator& operator++ (int) noexcept { fwd_list_iterator it = *this; i = list->next(i); return    it; }
 
-    C4_ALWAYS_INLINE bool operator== (fwd_list_iterator const& that) const noexcept { return i == that.i && list == that.list; }
-    C4_ALWAYS_INLINE bool operator!= (fwd_list_iterator const& that) const noexcept { return i != that.i || list != that.list; }
+    C4_ALWAYS_INLINE bool operator== (fwd_list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i == that.i; }
+    C4_ALWAYS_INLINE bool operator!= (fwd_list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i != that.i; }
 };
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
 // convenience defines; undefined below
+/// @cond dev
 #define _c4this  (static_cast<ListType      *>(this))
 #define _c4cthis (static_cast<ListType const*>(this))
+/// @endcond
 
 /** common code to implement doubly or singly linked lists */
 template< class T, class I, class ListType >
