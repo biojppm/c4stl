@@ -30,17 +30,17 @@ C4_BEGIN_NAMESPACE(stg)
 template< class T, class I, class RawStorage >
 class contiguous;
 
-template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 class fixed_size;
 
-template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
-using fixed_capacity = contiguous< T, I, raw_fixed<T, N, I, Alignment> >;
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
+using fixed_capacity=contiguous< T, I, raw_fixed<T, N, I, Alignment> >;
 
-template< class T, size_t N, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
-using small_vector = contiguous< T, I, raw_small<T, N, I, Alignment> >;
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
+using small_vector=contiguous< T, I, raw_small<T, N, I, Alignment> >;
 
-template< class T, class I = C4_SIZE_TYPE, I Alignment = alignof(T) >
-using vector = contiguous< T, I, raw< T, I, Alignment > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
+using vector=contiguous< T, I, raw< T, I, Alignment > >;
 
 
 //-----------------------------------------------------------------------------
@@ -350,14 +350,14 @@ protected:
     C4_ALWAYS_INLINE iterator _growat(const_iterator pos)
     {
         C4_XASSERT(is_valid_iterator(pos));
-        I ipos = static_cast<I>(pos - _c4this->data());
+        I ipos = szconv<I>(pos - _c4this->data());
         _c4this->_resizeto(_c4this->size() + 1, pos);
         return _c4this->data() + ipos;
     }
     C4_ALWAYS_INLINE iterator _growat(const_iterator pos, I count)
     {
         C4_XASSERT(is_valid_iterator(pos));
-        I ipos = static_cast<I>(pos - _c4this->data());
+        I ipos = szconv<I>(pos - _c4this->data());
         _c4this->_resizeto(_c4this->size() + count, pos);
         return _c4this->data() + ipos;
     }
@@ -365,7 +365,7 @@ protected:
     C4_ALWAYS_INLINE iterator _shrinkat(const_iterator pos)
     {
         C4_XASSERT(is_valid_iterator(pos));
-        I ipos = static_cast<I>(pos - _c4this->data());
+        I ipos = szconv<I>(pos - _c4this->data());
         _c4this->_resizeto(_c4this->size() - 1, pos);
         return _c4this->data() + ipos;
     }
@@ -373,7 +373,7 @@ protected:
     {
         C4_XASSERT(is_valid_iterator(pos));
         C4_XASSERT(is_valid_iterator(pos + count));
-        I ipos = static_cast<I>(pos - _c4this->data());
+        I ipos = szconv<I>(pos - _c4this->data());
         _c4this->_resizeto(_c4this->size() - count, pos);
         return _c4this->data() + ipos;
     }
