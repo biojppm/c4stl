@@ -73,25 +73,26 @@ endfunction(c4stl_add_test)
 
 set(s ../src)
 
-c4stl_add_test(c4stl-test-core
-    ${s}/c4/allocator.test.cpp
-    ${s}/c4/char_traits.test.cpp
-    ${s}/c4/ctor_dtor.test.cpp
-    ${s}/c4/error.test.cpp
-    ${s}/c4/log.test.cpp
-    ${s}/c4/memory_resource.test.cpp
-    ${s}/c4/memory_util.test.cpp
-    ${s}/c4/preprocessor.test.cpp
-    ${s}/c4/storage/growth.test.cpp
-    ${s}/c4/type_name.test.cpp
-    ${s}/c4/types.test.cpp
-    )
+c4stl_add_test(c4stl-test-preprocessor ${s}/c4/preprocessor.test.cpp)
+c4stl_add_test(c4stl-test-typename     ${s}/c4/type_name.test.cpp)
+c4stl_add_test(c4stl-test-types        ${s}/c4/types.test.cpp)
+c4stl_add_test(c4stl-test-log          ${s}/c4/log.test.cpp)
+c4stl_add_test(c4stl-test-error        ${s}/c4/error.test.cpp)
+c4stl_add_test(c4stl-test-memutil      ${s}/c4/memory_util.test.cpp)
+c4stl_add_test(c4stl-test-memresource  ${s}/c4/memory_resource.test.cpp)
+c4stl_add_test(c4stl-test-allocator    ${s}/c4/allocator.test.cpp)
+c4stl_add_test(c4stl-test-ctordtor     ${s}/c4/ctor_dtor.test.cpp)
 
-c4stl_add_test(c4stl-test-span       ${s}/c4/span.test.cpp)
-c4stl_add_test(c4stl-test-raw        ${s}/c4/storage/raw.test.cpp ${s}/c4/storage/raw.test.hpp)
-c4stl_add_test(c4stl-test-contiguous ${s}/c4/storage/contiguous.test.cpp)
-c4stl_add_test(c4stl-test-sstream    ${s}/c4/sstream.test.cpp)
-c4stl_add_test(c4stl-test-string     ${s}/c4/string.test.cpp ${s}/c4/string.test.hpp)
+c4stl_add_test(c4stl-test-span         ${s}/c4/span.test.cpp)
+
+c4stl_add_test(c4stl-test-chartraits   ${s}/c4/char_traits.test.cpp)
+c4stl_add_test(c4stl-test-sstream      ${s}/c4/sstream.test.cpp)
+c4stl_add_test(c4stl-test-string       ${s}/c4/string.test.cpp ${s}/c4/string.test.hpp)
+
+c4stl_add_test(c4stl-test-growth       ${s}/c4/storage/growth.test.cpp)
+
+c4stl_add_test(c4stl-test-raw          ${s}/c4/storage/raw.test.cpp ${s}/c4/storage/raw.test.hpp)
+c4stl_add_test(c4stl-test-contiguous   ${s}/c4/storage/contiguous.test.cpp)
 
 c4stl_add_test(c4stl-test-list-flat      ${s}/c4/list.flat.test.cpp      ${s}/c4/list.test.hpp)
 c4stl_add_test(c4stl-test-list-split     ${s}/c4/list.split.test.cpp     ${s}/c4/list.test.hpp)
