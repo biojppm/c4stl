@@ -114,13 +114,13 @@ struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
     }
     static std::initializer_list< T > il()
     {
-        std::initializer_list< T > i = {0, 1, 2, 3, 4, 5, 6, 7};
-        return i;
+        static const std::initializer_list< T > l{0, 1, 2, 3, 4, 5, 6, 7};
+        return l;
     }
     static std::initializer_list< Counting<T> > cil()
     {
-        std::initializer_list< Counting<T> > i = {0, 1, 2, 3, 4, 5, 6, 7};
-        return i;
+        static const std::initializer_list< Counting<T> > l{0, 1, 2, 3, 4, 5, 6, 7};
+        return l;
     }
 };
 
@@ -140,13 +140,13 @@ struct archetype_proto<ty> : public archetype_proto_base< ty, archetype_proto<ty
     }                                                                   \
     static std::initializer_list< ty > il()                             \
     {                                                                   \
-        std::initializer_list< ty > i = {__VA_ARGS__};                  \
-        return i;                                                       \
+        static const std::initializer_list< ty > l{__VA_ARGS__};        \
+        return l;                                                       \
     }                                                                   \
     static std::initializer_list< Counting<ty> > cil()                  \
     {                                                                   \
-        std::initializer_list< Counting<ty> > i = {__VA_ARGS__};        \
-        return i;                                                       \
+        static const std::initializer_list< Counting<ty> > l{__VA_ARGS__}; \
+        return l;                                                       \
     }                                                                   \
 }
 
@@ -166,13 +166,13 @@ struct archetype_proto< ty > : public archetype_proto_base< ty, archetype_proto<
     }                                                                   \
     static std::initializer_list< ty > il()                             \
     {                                                                   \
-        std::initializer_list< ty > i = {__VA_ARGS__};                  \
-        return i;                                                       \
+        static const std::initializer_list< ty > l{__VA_ARGS__};        \
+        return l;                                                       \
     }                                                                   \
     static std::initializer_list< Counting<ty> > cil()                  \
     {                                                                   \
-        std::initializer_list< Counting<ty> > i = {__VA_ARGS__};        \
-        return i;                                                       \
+        static const std::initializer_list< Counting<ty> > l{__VA_ARGS__}; \
+        return l;                                                       \
     }                                                                   \
 }
 

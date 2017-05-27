@@ -86,22 +86,22 @@ void list_test0_push_back_copy()
 {
     _C4_DEFINE_LIST_TEST_TYPES(List);
 
-    ciltype il = proto::cil();
+    auto arr = proto::carr();
     {
-        auto cpch = CT::check_copy_ctors(il.size());
-        auto dtch = CT::check_dtors(il.size());
+        auto cpch = CT::check_copy_ctors(arr.size());
+        auto dtch = CT::check_dtors(arr.size());
         {
             CList li;
-            for(auto const& elm : il)
+            for(auto const& elm : arr)
             {
                 li.push_back(elm);
             }
 
             EXPECT_FALSE(li.empty());
-            EXPECT_EQ(li.size(), il.size());
-            EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+            EXPECT_EQ(li.size(), szconv<I>(arr.size()));
+            EXPECT_GE(li.capacity(), szconv<I>(arr.size()));
             EXPECT_NE(li.begin(), li.end());
-            EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
+            EXPECT_EQ(std::distance(li.begin(), li.end()), arr.size());
 
             int pos = 0;
             for(auto const& v : li)
