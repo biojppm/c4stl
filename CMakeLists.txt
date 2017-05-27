@@ -70,13 +70,15 @@ endfunction()
 
 
 add_subdirectory(src)
+
 if(C4STL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
 endif()
+
 if(C4STL_BUILD_BENCHMARKS)
     ExternalProject_Import(gbenchmark
         PREFIX ${C4STL_EXTERN_DIR}
         INCLUDES benchmark/benchmark.h
         LIBRARIES benchmark)
-endif(C4STL_BUILD_BENCHMARKS)
+endif()
