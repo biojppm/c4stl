@@ -44,6 +44,7 @@ if(CMAKE_BUILD_TYPE)
     string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
 endif()
 if(${CMAKE_BUILD_TYPE_LOWER} MATCHES "coverage")
+    set(COVERAGE_BUILD ON)
     find_program(GCOV gcov)
     find_program(LCOV lcov)
     find_program(GENHTML genhtml)
@@ -116,7 +117,11 @@ endmacro()
 
 function(c4stl_add_test name)
     create_source_group("" "../src" "${ARGN}")
-    c4stl_add_target(${name} EXECUTABLE SANITIZE
+    set(sanitize SANITIZE)
+    if(COVERAGE_BUILD)
+        set(sanitize "")
+    endif()
+    c4stl_add_target(${name} EXECUTABLE ${sanitize}
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
         LIBS c4stl-libtest ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
         INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
@@ -137,7 +142,7 @@ function(c4stl_add_test name)
             set_target_properties(${t} PROPERTIES FOLDER c4stl-test/${name})
         endif()
     endforeach()
-    if(UNIX)
+    if(UNIX AND NOT COVERAGE_BUILD)
         # consider doing this for valgrind:
         # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
         # for now we explicitly run it:
