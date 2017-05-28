@@ -9,39 +9,47 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
-template< class T, class I=C4_SIZE_TYPE >
-using default_list_storage = stg::raw_paged_rt< T, I >;
-
-template< class T, class I=C4_SIZE_TYPE, template< class T_, class I_ > class LinearStorage=default_list_storage >
-class split_list;
-
-template< class T, class I=C4_SIZE_TYPE, template< class T_, class I_ > class LinearStorage=default_list_storage >
-class split_fwd_list;
-
-template< class T, class I=C4_SIZE_TYPE, template< class T_, class I_ > class LinearStorage=default_list_storage >
-class flat_list;
-
-template< class T, class I=C4_SIZE_TYPE, template< class T_, class I_ > class LinearStorage=default_list_storage >
-class flat_fwd_list;
-
-template< class T, class I=C4_SIZE_TYPE > struct flat_list_elm;
-template< class T, class I=C4_SIZE_TYPE > struct flat_fwd_list_elm;
-
 //-----------------------------------------------------------------------------
-template< class T, class I >
+template< class T, class I=C4_SIZE_TYPE >
 struct flat_list_elm
 {
     T elm;
     I prev;
     I next;
+
+    template< class U >
+    using rebind_type = flat_list_elm< U, I >;
+    using value_type = T;
+    using size_type = I;
 };
 
-template< class T, class I >
+template< class T, class I=C4_SIZE_TYPE >
 struct flat_fwd_list_elm
 {
     T elm;
     I next;
+
+    template< class U >
+    using rebind_type = flat_fwd_list_elm< U, I >;
+    using value_type = T;
+    using size_type = I;
 };
+
+//-----------------------------------------------------------------------------
+template< class T, class I=C4_SIZE_TYPE >
+using default_list_storage = stg::raw_paged_rt< T, I >;
+
+template< class T, class I=C4_SIZE_TYPE, class LinearStorage=default_list_storage<flat_list_elm<T,I>,I> >
+class flat_list;
+
+template< class T, class I=C4_SIZE_TYPE, class LinearStorage=default_list_storage<T,I> >
+class split_list;
+
+template< class T, class I=C4_SIZE_TYPE, class LinearStorage=default_list_storage<flat_fwd_list_elm<T,I>,I> >
+class flat_fwd_list;
+
+template< class T, class I=C4_SIZE_TYPE, class LinearStorage=default_list_storage<T,I> >
+class split_fwd_list;
 
 //-----------------------------------------------------------------------------
 
@@ -59,10 +67,10 @@ struct list_iterator : public std::iterator< std::bidirectional_iterator_tag, ty
     C4_ALWAYS_INLINE T& operator*  () { return  list->elm(i); }
 
     C4_ALWAYS_INLINE list_iterator& operator++ (   ) noexcept {                           i = list->next(i); return *this; }
-    C4_ALWAYS_INLINE list_iterator& operator++ (int) noexcept { list_iterator it = *this; i = list->next(i); return    it; }
+    C4_ALWAYS_INLINE list_iterator  operator++ (int) noexcept { list_iterator it = *this; i = list->next(i); return    it; }
 
     C4_ALWAYS_INLINE list_iterator& operator-- (   ) noexcept {                           i = list->prev(i); return *this; }
-    C4_ALWAYS_INLINE list_iterator& operator-- (int) noexcept { list_iterator it = *this; i = list->prev(i); return    it; }
+    C4_ALWAYS_INLINE list_iterator  operator-- (int) noexcept { list_iterator it = *this; i = list->prev(i); return    it; }
 
     C4_ALWAYS_INLINE bool operator== (list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i == that.i; }
     C4_ALWAYS_INLINE bool operator!= (list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i != that.i; }
@@ -82,7 +90,7 @@ struct fwd_list_iterator : public std::iterator< std::forward_iterator_tag, type
     C4_ALWAYS_INLINE T& operator*  () { return  list->elm(i); }
 
     C4_ALWAYS_INLINE fwd_list_iterator& operator++ (   ) noexcept {                               i = list->next(i); return *this; }
-    C4_ALWAYS_INLINE fwd_list_iterator& operator++ (int) noexcept { fwd_list_iterator it = *this; i = list->next(i); return    it; }
+    C4_ALWAYS_INLINE fwd_list_iterator  operator++ (int) noexcept { fwd_list_iterator it = *this; i = list->next(i); return    it; }
 
     C4_ALWAYS_INLINE bool operator== (fwd_list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i == that.i; }
     C4_ALWAYS_INLINE bool operator!= (fwd_list_iterator const& that) const C4_NOEXCEPT_X { C4_XASSERT(that.list == list); return i != that.i; }
@@ -289,12 +297,15 @@ public:
 //-----------------------------------------------------------------------------
 /** an array-based doubly-linked list where the indices are interleaved
  * with the contained elements. Using paged raw storage, insertions are O(1). */
-template< class T, class I, template< class T_, class I_ > class RawStorage >
+template< class T, class I, class RawStorage >
 class flat_list : public _dbl_list_crtp< T, I, flat_list<T, I, RawStorage> >
 {
 public:
 
-    RawStorage< flat_list_elm<T, I>, I > m_elms;
+    C4_STATIC_ASSERT(std::is_same< typename RawStorage::value_type C4_COMMA flat_list_elm<T C4_COMMA I>>::value);
+    C4_STATIC_ASSERT(std::is_same< typename RawStorage::size_type  C4_COMMA I>::value);
+
+    RawStorage m_elms;
 
     I m_head;
     I m_tail;
@@ -307,10 +318,13 @@ public:
 
     using value_type = T;
     using size_type = I;
-    using storage_type = RawStorage< flat_list_elm<T, I>, I >;
-    using storage_traits = typename RawStorage< flat_list_elm<T, I>, I >::storage_traits;
+    using storage_type = RawStorage;
+    using storage_traits = typename RawStorage::storage_traits;
+
     template< class U >
-    using container_type = flat_list< U, I, RawStorage >;
+    using storage_rebind_type = typename RawStorage::template rebind_type< flat_list_elm<U, I> >;
+    template< class U >
+    using rebind_type = flat_list< U, I, storage_rebind_type<U> >;
 
     using iterator = list_iterator< T, flat_list >;
     using const_iterator = list_iterator< const T, const flat_list >;
@@ -385,14 +399,18 @@ public:
 /** an array-based doubly-linked list where the indices are stored in separate
  * arrays from the contained elements. Using paged raw storage, insertions
  * are O(1). */
-template< class T, class I, template< class T_, class I_ > class RawStorage >
-class split_list : public _dbl_list_crtp< T, I, split_list<T, I, RawStorage> >
+template< class T, class I, class RawStorageT >
+class split_list : public _dbl_list_crtp< T, I, split_list<T, I, RawStorageT> >
 {
 public:
 
-    RawStorage< T, I > m_elm;
-    RawStorage< I, I > m_prev;
-    RawStorage< I, I > m_next;
+    C4_ASSERT_SAME_TYPE(typename RawStorageT::value_type, T);
+    C4_ASSERT_SAME_TYPE(typename RawStorageT::size_type , I);
+    using RawStorageI = typename RawStorageT::template rebind_type< I >;
+
+    RawStorageT m_elm;
+    RawStorageI m_prev;
+    RawStorageI m_next;
 
     I m_head;
     I m_tail;
@@ -405,12 +423,15 @@ public:
 
     using value_type = T;
     using size_type = I;
-    using storage_type = RawStorage< T, I >;
-    using storage_traits = typename RawStorage< T, I >::storage_traits;
-    using index_storage_type = RawStorage< I, I >;
-    using index_storage_traits = typename RawStorage< I, I >::storage_traits;
+    using storage_type = RawStorageT;
+    using storage_traits = typename RawStorageT::storage_traits;
+    using index_storage_type = RawStorageI;
+    using index_storage_traits = typename RawStorageI::storage_traits;
+
     template< class U >
-    using container_type = split_list< U, I, RawStorage >;
+    using storage_rebind_type = typename RawStorageT::template rebind_type< U >;
+    template< class U >
+    using rebind_type = split_list< U, I, storage_rebind_type< U > >;
 
     using iterator = list_iterator< T, split_list >;
     using const_iterator = list_iterator< const T, const split_list >;
@@ -488,12 +509,15 @@ public:
 //-----------------------------------------------------------------------------
 /** an array-based forward-linked list where the indices are interleaved
  * with the contained elements. Using paged raw storage, insertions are O(1). */
-template< class T, class I, template< class T_, class I_ > class RawStorage >
+template< class T, class I, class RawStorage >
 class flat_fwd_list : public _fwd_list_crtp< T, I, flat_fwd_list<T, I, RawStorage> >
 {
 public:
 
-    RawStorage< flat_fwd_list_elm<T, I>, I > m_elms;
+    C4_STATIC_ASSERT(std::is_same< typename RawStorage::value_type C4_COMMA flat_fwd_list_elm<T C4_COMMA I>>::value);
+    C4_STATIC_ASSERT(std::is_same< typename RawStorage::size_type  C4_COMMA I>::value);
+
+    RawStorage m_elms;
 
     I m_head;
     I m_tail;
@@ -506,10 +530,13 @@ public:
 
     using value_type = T;
     using size_type = I;
-    using storage_type = RawStorage< flat_fwd_list_elm<T, I>, I >;
-    using storage_traits = typename RawStorage< flat_fwd_list_elm<T, I>, I >::storage_traits;
+    using storage_type = RawStorage;
+    using storage_traits = typename RawStorage::storage_traits;
+
     template< class U >
-    using container_type = flat_fwd_list< U, I, RawStorage >;
+    using storage_rebind_type = typename RawStorage::template rebind_type< flat_fwd_list_elm<U, I> >;
+    template< class U >
+    using rebind_type = flat_fwd_list< U, I, storage_rebind_type<U> >;
 
     using iterator = list_iterator< T, flat_fwd_list >;
     using const_iterator = list_iterator< const T, const flat_fwd_list >;
@@ -582,13 +609,17 @@ public:
 /** an array-based forward-linked list where the indices are stored in a
  * separate array from the contained elements. Using paged raw storage,
  * insertions are O(1). */
-template< class T, class I, template< class T_, class I_ > class RawStorage >
-class split_fwd_list : public _fwd_list_crtp< T, I, split_fwd_list<T, I, RawStorage> >
+template< class T, class I, class RawStorageT >
+class split_fwd_list : public _fwd_list_crtp< T, I, split_fwd_list<T, I, RawStorageT> >
 {
 public:
 
-    RawStorage< T, I > m_elm;
-    RawStorage< I, I > m_next;
+    C4_ASSERT_SAME_TYPE(typename RawStorageT::value_type, T);
+    C4_ASSERT_SAME_TYPE(typename RawStorageT::size_type , I);
+    using RawStorageI = typename RawStorageT::template rebind_type< I >;
+
+    RawStorageT m_elm;
+    RawStorageI m_next;
 
     I m_head;
     I m_tail;
@@ -601,12 +632,15 @@ public:
 
     using value_type = T;
     using size_type = I;
-    using storage_type = RawStorage< T, I >;
-    using storage_traits = typename RawStorage< T, I >::storage_traits;
-    using index_storage_type = RawStorage< I, I >;
-    using index_storage_traits = typename RawStorage< I, I >::storage_traits;
+    using storage_type = RawStorageT;
+    using storage_traits = typename RawStorageT::storage_traits;
+    using index_storage_type = RawStorageI;
+    using index_storage_traits = typename RawStorageI::storage_traits;
+
     template< class U >
-    using container_type = split_fwd_list< U, I, RawStorage >;
+    using storage_rebind_type = typename RawStorageT::template rebind_type< U >;
+    template< class U >
+    using rebind_type = split_fwd_list< U, I, storage_rebind_type< U > >;
 
     using iterator = list_iterator< T, split_fwd_list >;
     using const_iterator = list_iterator< const T, const split_fwd_list >;
