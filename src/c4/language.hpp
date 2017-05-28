@@ -189,8 +189,8 @@
 /** prevent compiler warnings about a specific var being unused */
 #define C4_UNUSED(var) (void)var
 
-#define C4_STATIC_ASSERT(cond) static_assert((cond), "static assert failed")
-#define C4_STATIC_ASSERT_MSG(cond, msg) static_assert((cond), msg)
+#define C4_STATIC_ASSERT(cond) static_assert((cond), "static assert failed: " #cond)
+#define C4_STATIC_ASSERT_MSG(cond, msg) static_assert((cond), "static assert failed: " #cond ": " msg)
 
 /** @def C4_DONT_OPTIMIZE idea lifted from GoogleBenchmark.
  * @see https://github.com/google/benchmark/blob/master/include/benchmark/benchmark_api.h */
