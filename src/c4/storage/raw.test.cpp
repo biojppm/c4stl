@@ -1,3 +1,4 @@
+
 #include "c4/storage/raw.test.hpp"
 #include "c4/storage/raw.hpp"
 #include "c4/test.hpp"
@@ -354,7 +355,7 @@ TEST(raw_paged, addressing)
 
     {
         SCOPED_TRACE("page size==512");
-        using rptype = raw_paged< int, 512 >;
+        using rptype = raw_paged< int, size_t, 512 >;
         EXPECT_EQ(rptype::page_size(), 512);
         rptype rp(sz);
         test_raw_page_addressing(rp);
@@ -362,7 +363,7 @@ TEST(raw_paged, addressing)
 
     {
         SCOPED_TRACE("page size==32");
-        using rptype = raw_paged< int, 32 >;
+        using rptype = raw_paged< int, size_t, 32 >;
         EXPECT_EQ(rptype::page_size(), 32);
         rptype rp(sz);
         test_raw_page_addressing(rp);
@@ -370,7 +371,7 @@ TEST(raw_paged, addressing)
 
     {
         SCOPED_TRACE("page size==4");
-        using rptype = raw_paged< int, 4 >;
+        using rptype = raw_paged< int, size_t, 4 >;
         EXPECT_EQ(rptype::page_size(), 4);
         rptype rp(sz);
         test_raw_page_addressing(rp);
@@ -378,7 +379,7 @@ TEST(raw_paged, addressing)
 
     {
         SCOPED_TRACE("page size==2");
-        using rptype = raw_paged< int, 2 >;
+        using rptype = raw_paged< int, size_t, 2 >;
         EXPECT_EQ(rptype::page_size(), 2);
         rptype rp(sz);
         test_raw_page_addressing(rp);
