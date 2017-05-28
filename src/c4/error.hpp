@@ -32,11 +32,13 @@
 #endif
 
 //-----------------------------------------------------------------------------
+#define C4_COMMA_X C4_COMMA
+
 #define C4_ASSERT_SAME_TYPE(ty1, ty2)                       \
-    C4_STATIC_ASSERT(std::is_same< ty1 C4_COMMA ty2>::value)
+    C4_STATIC_ASSERT(std::is_same< ty1 C4_COMMA_X ty2 >::value)
 
 #define C4_ASSERT_DIFF_TYPE(ty1, ty2)                       \
-    C4_STATIC_ASSERT( ! std::is_same< ty1 C4_COMMA ty2>::value)
+    C4_STATIC_ASSERT( ! std::is_same< ty1 C4_COMMA_X ty2 >::value)
 
 //-----------------------------------------------------------------------------
 
