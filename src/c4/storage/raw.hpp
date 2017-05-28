@@ -70,15 +70,15 @@ struct raw;
 
 /** raw storage with inplace storage of up to N objects, thus saving an
  * allocation when the size is small. @ingroup raw_storage_classes */
-template< class T, size_t N=16, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
+template< class T, class I=C4_SIZE_TYPE, size_t N=16, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw_small; // = raw< T, I, Alignment, SmallAllocator<T, N, Alignment> >;
 
-template< class T, size_t PageSize=256, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
+template< class T, class I=C4_SIZE_TYPE, size_t PageSize=default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> >
 struct raw_paged;
 
 /** raw paged with page size determined at runtime. @ingroup raw_storage_classes */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
-using raw_paged_rt = raw_paged< T, 0, I, Alignment, Alloc >;
+using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 
@@ -475,7 +475,7 @@ public:
 /** raw contiguous storage with in-place storage for a small number of objects
  * @tparam N the number of objects
  * @ingroup raw_storage_classes */
-template< class T, size_t N_, class I, I Alignment, class Alloc, class GrowthPolicy >
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
 struct raw_small
 {
 
@@ -836,14 +836,14 @@ _raw_copy_assign_n(RawPaged const& src, I first, I n)
   * @tparam Alloc an allocator
   *
   * @ingroup raw_storage_classes */
-template< class T, size_t PageSize, class I, I Alignment, class Alloc >
-struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSize, I, Alignment, Alloc > >
+template< class T, class I, size_t PageSize, I Alignment, class Alloc >
+struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >
 {
-    using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, PageSize, I, Alignment, Alloc > >;
+    using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >;
 
+    static_assert(std::is_integral< I >::value, "I must be an integral type");
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
-    static_assert(std::is_integral< I >::value, "I must be an integral type");
     static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
 
     enum : I {
@@ -924,9 +924,9 @@ public:
 /** specialization of raw_paged for dynamic (set at run time) page size.
  * @ingroup raw_storage_classes */
 template< class T, class I, I Alignment, class Alloc >
-struct raw_paged< T, 0, I, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >
+struct raw_paged< T, I, 0, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >
 {
-    using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, 0, I, Alignment, Alloc > >;
+    using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >;
     static_assert(std::is_integral< I >::value, "");
 
     C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
