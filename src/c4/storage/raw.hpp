@@ -267,6 +267,9 @@ public:
     _c4_DEFINE_ARRAY_TYPES(T, I)
     using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
 
+    template< class U >
+    using rebind_type = raw_fixed<U, N, I, Alignment>;
+
 public:
 
     C4_ALWAYS_INLINE raw_fixed() {}
@@ -354,7 +357,12 @@ public:
 
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
     using growth_policy = GrowthPolicy;
+
+    template< class U >
+    using rebind_type = raw<U, I, Alignment, rebind_alloc<U>, GrowthPolicy>;
 
 public:
 
@@ -499,9 +507,15 @@ public:
 
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
     using growth_policy = GrowthPolicy;
 
+    template< class U >
+    using rebind_type = raw_small<U, I, N_, Alignment, rebind_alloc<U>, GrowthPolicy>;
+
     C4_STATIC_ASSERT(N_ < (size_t)std::numeric_limits< I >::max());
+
     enum : I { array_size = (I)N_, N = (I)N_ };
 
 public:
@@ -866,6 +880,11 @@ public:
     using storage_traits = raw_storage_traits< raw_paged, paged_t >;
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
+
+    template< class U >
+    using rebind_type = raw_paged<U, I, PageSize, Alignment, rebind_alloc<U>>;
 
 public:
 
@@ -944,6 +963,11 @@ public:
     using storage_traits = raw_storage_traits< raw_paged, paged_t >;
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
+
+    template< class U >
+    using rebind_type = raw_paged<U, I, 0, Alignment, rebind_alloc<U>>;
 
 public:
 
