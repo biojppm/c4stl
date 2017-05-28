@@ -13,20 +13,19 @@
 
 C4_BEGIN_NAMESPACE(c4)
 
-#define _C4_DEFINE_LIST_TEST_TYPES(List) \
-    using T = typename List::value_type;\
-    using I = typename List::size_type;\
-    using CT = Counting< T >;\
-    using proto = c4::archetypes::archetype_proto< T >;\
-    using C ## List = typename List::template container_type< CT >;\
-    using iltype = std::initializer_list< T >;\
+#define _C4_DEFINE_LIST_TEST_TYPES(List)                            \
+    using T = typename List::value_type;                            \
+    using I = typename List::size_type;                             \
+    using CT = Counting< T >;                                       \
+    using proto = c4::archetypes::archetype_proto< T >;             \
+    using C ## List = typename List::template rebind_type< CT >;    \
+    using iltype = std::initializer_list< T >;                      \
     using ciltype = std::initializer_list< CT >;
 
 template< class List >
 void list_test0_ctor_empty()
 {
     _C4_DEFINE_LIST_TEST_TYPES(List);
-
     auto cch = CT::check_ctors_dtors(0, 0);
     {
         CList li;
@@ -173,39 +172,108 @@ TEST(listtestname, push_back_move)                              \
 }                                                               \
 
 
-#define _C4_CALL_LIST_TESTS(list_type_name, list_type, containee_type_name, containee_type, sztype_name, sztype) \
+#define _C4_CALL_LIST_TESTS(list_type_name, list_type,                  \
+                            containee_type_name, containee_type,        \
+                            sztype_name, sztype,                        \
+                            storage_type_name, storage_type_macro)      \
 _C4_TEST_LIST_BASIC_TESTS                                               \
 (                                                                       \
-    list_type_name##__##containee_type_name##__##sztype_name,           \
-    list_type< containee_type C4_COMMA sztype >                         \
+    list_type_name##__##containee_type_name##__##sztype_name##__##storage_type_name, \
+    list_type< containee_type C4_COMMA sztype C4_COMMA storage_type_macro(containee_type, sztype) >   \
 )
 
+
+//-----------------------------------------------------------------------------
+
 #ifndef C4_QUICKTEST
-#define _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(list_tyname, list_ty, containee_type_name, containee_type) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, uint64_t, uint64_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  int64_t,  int64_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, uint32_t, uint32_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  int32_t,  int32_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, uint16_t, uint16_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  int16_t,  int16_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,  uint8_t,  uint8_t) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,   int8_t,   int8_t)
-#else
-#define _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(list_tyname, list_ty, containee_type_name, containee_type) \
-_C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, size_t, size_t)
-#endif
+
+#define _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(list_tyname, list_ty,    \
+                                               containee_type_name, containee_type, \
+                                               storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, u64, uint64_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, i64,  int64_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, u32, uint32_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, i32,  int32_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, u16, uint16_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, i16,  int16_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, u8 ,  uint8_t, storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, i8 ,   int8_t, storage_type_name, storage_type_macro)
+
+#else // C4_QUICKTEST
+
+#define _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(list_tyname, list_ty,    \
+                                               containee_type_name, containee_type, \
+                                               storage_type_name, storage_type_macro) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, size_t, size_t, storage_type_name, storage_type_macro)
+
+#endif // ! C4_QUICKTEST
+
+//-----------------------------------------------------------------------------
+
+#define _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, storage_type_name, storage_type_macro) \
+_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_list, flat_list, tyname, ty, storage_type_name, storage_type_macro)
+
+#define _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, storage_type_name, storage_type_macro) \
+_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_list, split_list, tyname, ty, storage_type_name, storage_type_macro)
+
+#define _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, storage_type_name, storage_type_macro) \
+_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_fwd_list, flat_fwd_list, tyname, ty, storage_type_name, storage_type_macro)
+
+#define _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, storage_type_name, storage_type_macro) \
+_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_fwd_list, split_fwd_list, tyname, ty, storage_type_name, storage_type_macro)
+
+//-----------------------------------------------------------------------------
+
+#define _C4_RAW_FIXED(ty, sz)    stg::raw_fixed   <ty, sz>
+#define _C4_RAW(ty, sz)          stg::raw         <ty, sz>
+#define _C4_RAW_SMALL(ty, sz)    stg::raw_small   <ty, sz>
+#define _C4_RAW_PAGED(ty, sz)    stg::raw_paged   <ty, sz>
+#define _C4_RAW_PAGED_RT(ty, sz) stg::raw_paged_rt<ty, sz>
+
+#define _C4_RAW_FIXED_FLAT_LIST(ty, sz)    stg::raw_fixed   <flat_list_elm<ty, sz>, sz>
+#define _C4_RAW_FLAT_LIST(ty, sz)          stg::raw         <flat_list_elm<ty, sz>, sz>
+#define _C4_RAW_SMALL_FLAT_LIST(ty, sz)    stg::raw_small   <flat_list_elm<ty, sz>, sz>
+#define _C4_RAW_PAGED_FLAT_LIST(ty, sz)    stg::raw_paged   <flat_list_elm<ty, sz>, sz>
+#define _C4_RAW_PAGED_RT_FLAT_LIST(ty, sz) stg::raw_paged_rt<flat_list_elm<ty, sz>, sz>
+
+#define _C4_RAW_FIXED_FLAT_FWD_LIST(ty, sz)    stg::raw_fixed   <flat_fwd_list_elm<ty, sz>, sz>
+#define _C4_RAW_FLAT_FWD_LIST(ty, sz)          stg::raw         <flat_fwd_list_elm<ty, sz>, sz>
+#define _C4_RAW_SMALL_FLAT_FWD_LIST(ty, sz)    stg::raw_small   <flat_fwd_list_elm<ty, sz>, sz>
+#define _C4_RAW_PAGED_FLAT_FWD_LIST(ty, sz)    stg::raw_paged   <flat_fwd_list_elm<ty, sz>, sz>
+#define _C4_RAW_PAGED_RT_FLAT_FWD_LIST(ty, sz) stg::raw_paged_rt<flat_fwd_list_elm<ty, sz>, sz>
+
+
+#ifndef C4_QUICKTEST
 
 #define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
-_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_list, flat_list, tyname, ty)
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST)
 
 #define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
-_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_list, split_list, tyname, ty)
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
 
 #define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(flat_fwd_list, flat_fwd_list, tyname, ty)
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST)
 
 #define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-_C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_fwd_list, split_fwd_list, tyname, ty)
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+
+#else // C4_QUICKTEST
+
+#define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST)
+
+#define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+
+#define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST)
+
+#define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+
+#endif // C4_QUICKTEST
+
+
 
 C4_END_NAMESPACE(c4)
 
