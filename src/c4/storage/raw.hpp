@@ -41,6 +41,24 @@ struct growth_default;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+template< class T, class I >
+struct default_page_size
+{
+    enum : I { value = 256 };
+};
+template< class T >
+struct default_page_size< T, uint8_t >
+{
+    enum : uint8_t { value = 128 };
+};
+template< class T >
+struct default_page_size< T, int8_t >
+{
+    enum : int8_t { value = 64 };
+};
+
+//-----------------------------------------------------------------------------
+
 // forward declarations
 template< class Storage, class TagType > struct raw_storage_traits;
 
@@ -621,25 +639,6 @@ public:
         }
     }
 
-};
-
-
-//-----------------------------------------------------------------------------
-
-template< class T, class I >
-struct default_page_size
-{
-    enum : I { value = 256 };
-};
-template< class T >
-struct default_page_size< T, uint8_t >
-{
-    enum : uint8_t { value = 128 };
-};
-template< class T >
-struct default_page_size< T, int8_t >
-{
-    enum : int8_t { value = 64 };
 };
 
 //-----------------------------------------------------------------------------
