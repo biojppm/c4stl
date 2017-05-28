@@ -37,7 +37,7 @@ template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 using fixed_capacity=contiguous< T, I, raw_fixed<T, N, I, Alignment> >;
 
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
-using small_vector=contiguous< T, I, raw_small<T, N, I, Alignment> >;
+using small_vector=contiguous< T, I, raw_small<T, I, N, Alignment> >;
 
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 using vector=contiguous< T, I, raw< T, I, Alignment > >;
