@@ -137,10 +137,6 @@ public:
         if(cap_next > cap)
         {
             _c4this->_growto(cap, cap_next);
-            if(_c4this->m_fhead == ListType::npos)
-            {
-                _c4this->_set_fhead(cap);
-            }
         }
     }
 
@@ -173,6 +169,22 @@ public:
         _c4this->_set_fhead(last);
         C4_XASSERT(pos != ListType::npos);
         return pos;
+    }
+
+    void _adjust_fhead(I curr_cap, I next_cap)
+    {
+        if(_c4this->m_fhead != ListType::npos)
+        {
+            return;
+        }
+        if(next_cap >= curr_cap)
+        {
+            _c4this->_set_fhead(curr_cap);
+        }
+        else
+        {
+            _c4this->_set_fhead(next_cap);
+        }
     }
 
 public:
@@ -370,8 +382,12 @@ public:
 
     void _growto(I cap, I next_cap)
     {
+        C4_XASSERT(cap != next_cap);
         m_elms._raw_reserve(next_cap);
-        this->_init_seq(cap, capacity());
+        C4_XASSERT(capacity() >= next_cap);
+        next_cap = capacity(); // they may be different
+        this->_init_seq(cap, next_cap);
+        this->_adjust_fhead(cap, next_cap);
     }
 
 public:
@@ -479,7 +495,10 @@ public:
         m_elm ._raw_reserve(next_cap);
         m_prev._raw_reserve(next_cap);
         m_next._raw_reserve(next_cap);
-        this->_init_seq(curr_cap, capacity());
+        C4_XASSERT(capacity() >= next_cap);
+        next_cap = capacity(); // they may be different
+        this->_init_seq(curr_cap, next_cap);
+        this->_adjust_fhead(curr_cap, next_cap);
     }
 
 public:
@@ -579,7 +598,10 @@ public:
     void _growto(I cap, I next_cap)
     {
         m_elms._raw_reserve(next_cap);
-        this->_init_seq(cap, capacity());
+        C4_XASSERT(capacity() >= next_cap);
+        next_cap = capacity(); // they may be different
+        this->_init_seq(cap, next_cap);
+        this->_adjust_fhead(cap, next_cap);
     }
 
 public:
@@ -683,7 +705,10 @@ public:
     {
         m_elm ._raw_reserve(next_cap);
         m_next._raw_reserve(next_cap);
-        this->_init_seq(curr_cap, capacity());
+        C4_XASSERT(capacity() >= next_cap);
+        next_cap = capacity(); // they may be different
+        this->_init_seq(curr_cap, next_cap);
+        this->_adjust_fhead(curr_cap, next_cap);
     }
 
 public:
