@@ -201,7 +201,7 @@ public:
     template< class U >
     bool operator!= (SmallAllocator<U> const& that) const
     {
-        return false;
+        return true;
     }
 
 public:
