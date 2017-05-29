@@ -177,6 +177,17 @@ public:
 
 public:
 
+    void reserve(I cap)
+    {
+        I curr = _c4this->capacity();
+        if(cap > curr)
+        {
+            _c4this->_growto(curr, cap);
+        }
+    }
+
+public:
+
     void push_front(T const& var)
     {
         C4_NOT_IMPLEMENTED();
