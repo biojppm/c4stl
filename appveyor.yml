@@ -139,6 +139,7 @@ build_script:
 test_script:
   - echo %configuration%
   - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" ..
+  - dir
   - cmake --build . --config %configuration% --target c4stl-test
   #- ctest -c %configuration% --timeout 300 --output-on-failure
 
@@ -157,4 +158,4 @@ skip_commits:
     - .ci/show_*
     - doc/*
     - LICENSE.txt
-    - README.md
+    - README.*
