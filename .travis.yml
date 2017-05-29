@@ -201,6 +201,7 @@ matrix:
 #  - sudo apt-get -y install cmake
 
 install:
+  - sudo apt-get install valgrind
   - $COMPILER --version
   - if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
       PATH=~/.local/bin:${PATH};
