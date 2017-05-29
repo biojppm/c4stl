@@ -55,3 +55,14 @@ artifacts:
     name: logs
   - path: '_build/Testing/**/*.xml'
     name: test_results
+
+skip_commits:
+  files:
+    - .gitignore
+    - .travis*
+    - .ci/travis*
+    - .ci/dev_*
+    - .ci/show_*
+    - doc/*
+    - LICENSE.txt
+    - README.md

@@ -136,6 +136,8 @@ install:
   - export cmkargs="-DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${COMPILER}"
   # compile and install external libraries
   - mkdir extern_build && cd extern_build
+  - echo $cmkargs
+  - pwd
   - cmake ${cmkargs} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install ../../extern
   - make
   - make install
