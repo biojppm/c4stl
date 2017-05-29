@@ -110,7 +110,7 @@ build_script:
   - echo %configuration%
   - md _extern_build -Force
   - cd _extern_build
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DCMAKE_INSTALL_PREFIX=../_extern_install" ..
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DCMAKE_INSTALL_PREFIX=../_extern_install" ../..
   - cmake --build . --config %configuration%
   - cmake --build . --config %configuration% --target ALL_INSTALL
   - cd ..
