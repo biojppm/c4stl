@@ -27,7 +27,7 @@ matrix:
                 - ubuntu-toolchain-r-test
               packages:
                 - g++-5
-                - g++-multilib
+                - g++-5-multilib
           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
 ###         #
 ###         #
@@ -37,7 +37,7 @@ matrix:
 ###           addons:
 ###             apt:
 ###               packages:
-###                 - g++-multilib
+###                 - g++-5-multilib
 ###          env: COMPILER=clang++ C_COMPILER=clang BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
 ###         #
 ###         #
@@ -56,7 +56,7 @@ matrix:
 ###               sources:
 ###                 - ubuntu-toolchain-r-test
 ###               packages:
-###                 - g++-multilib
+###                 - g++-6-multilib
 ###                 - g++-6
 ###           env:
 ###             - COMPILER=g++-6 C_COMPILER=gcc-6  BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
@@ -73,7 +73,7 @@ matrix:
 ###             apt:
 ###               packages:
 ###                 - clang-3.8
-###                 - g++-multilib
+###                 - g++-5-multilib
 ###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
 ###         ##
 ###         ##
@@ -92,7 +92,7 @@ matrix:
 ###         #        - llvm-toolchain-precise-3.9
 ###         #      packages:
 ###         #        - clang-3.9
-###         #        - g++-multilib
+###         #        - g++-5-multilib
 ###         #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
 ###         ##
 ###         ##
@@ -111,7 +111,7 @@ matrix:
 ###         #        - llvm-toolchain-precise-4.0
 ###         #      packages:
 ###         #        - clang-4.0
-###         #        - g++-multilib
+###         #        - g++-6-multilib
 ###         #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
 ###         #
 ###         # DEBUG----------------------------------------------------------------
@@ -131,7 +131,7 @@ matrix:
 ###                 - ubuntu-toolchain-r-test
 ###               packages:
 ###                 - g++-5
-###                 - g++-multilib
+###                 - g++-5-multilib
 ###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
 ###         #
 ###         #
@@ -146,7 +146,7 @@ matrix:
 ###             apt:
 ###               packages:
 ###                 - clang-3.8
-###                 - g++-multilib
+###                 - g++-5-multilib
 ###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
 ###         #
 ###         # RELEASE----------------------------------------------------------------
@@ -166,7 +166,7 @@ matrix:
 ###                 - ubuntu-toolchain-r-test
 ###               packages:
 ###                 - g++-5
-###                 - g++-multilib
+###                 - g++-5-multilib
 ###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
 ###         #
 ###         #
@@ -181,7 +181,7 @@ matrix:
 ###             apt:
 ###               packages:
 ###                 - clang-3.8
-###                 - g++-multilib
+###                 - g++-5-multilib
 ###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
 ###         #
 ###         # COVERAGE----------------------------------------------------------------
