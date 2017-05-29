@@ -140,7 +140,8 @@ test_script:
   - echo %configuration%
   - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" ..
   - dir
-  - cmake --build . --config %configuration% --target c4stl-test
+  - dir test
+  - cmake --build . --config %configuration% --target test/C4STL_TEST
   #- ctest -c %configuration% --timeout 300 --output-on-failure
 
 artifacts:
