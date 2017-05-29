@@ -137,6 +137,10 @@ public:
         if(cap_next > cap)
         {
             _c4this->_growto(cap, cap_next);
+            if(_c4this->m_fhead == ListType::npos)
+            {
+                _c4this->_set_fhead(cap);
+            }
         }
     }
 
