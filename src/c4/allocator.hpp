@@ -111,6 +111,17 @@ public:
     using difference_type = std::ptrdiff_t;
     using propagate_on_container_move_assigment = std::true_type;
 
+    template< class U >
+    bool operator== (Allocator<U> const& that) const
+    {
+        return m_resource == that.m_resource;
+    }
+    template< class U >
+    bool operator!= (Allocator<U> const& that) const
+    {
+        return m_resource != that.m_resource;
+    }
+
 public:
 
     template< class U > friend class Allocator;
@@ -170,6 +181,28 @@ class SmallAllocator : public AllocatorBase
         alignas(Alignment) char _m_arr[N * sizeof(T)];
         alignas(Alignment) T m_arr[N];
     };
+
+public:
+
+    using value_type = T;
+    using pointer = T*;
+    using const_pointer = T const*;
+    using reference = T&;
+    using const_reference = T const&;
+    using size_type = size_t;
+    using difference_type = std::ptrdiff_t;
+    using propagate_on_container_move_assigment = std::true_type;
+
+    template< class U >
+    bool operator== (SmallAllocator<U> const& that) const
+    {
+        return false;
+    }
+    template< class U >
+    bool operator!= (SmallAllocator<U> const& that) const
+    {
+        return false;
+    }
 
 public:
 
