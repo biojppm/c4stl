@@ -137,9 +137,8 @@ install:
   - mkdir -p build/extern_build && cd build/extern_build
   - pwd
   - echo $cmkargs
-  - cmake ${cmkargs} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install ../../extern
-  - make
-  - make install
+  - cmake ${cmkargs} -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install ../../extern
+  - cmake --build . --config Release
   - cd -
 
 script:
