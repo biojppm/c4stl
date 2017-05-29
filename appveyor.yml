@@ -34,12 +34,12 @@ environment:
       configuration: Quicktest
       externconfig: Debug
 
-    - compiler: gcc-5.3.0-posix
-      generator: "MinGW Makefiles"
-      cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      configuration: Quicktest
-      externconfig: Debug
+    #- compiler: gcc-5.3.0-posix
+    #  generator: "MinGW Makefiles"
+    #  cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    #  configuration: Quicktest
+    #  externconfig: Debug
 
     #------------------------------------------------------------------------------
     - compiler: msvc-15-seh
@@ -72,12 +72,12 @@ environment:
       configuration: Debug
       externconfig: Debug
 
-    - compiler: gcc-5.3.0-posix
-      generator: "MinGW Makefiles"
-      cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      configuration: Debug
-      externconfig: Debug
+    #- compiler: gcc-5.3.0-posix
+    #  generator: "MinGW Makefiles"
+    #  cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    #  configuration: Debug
+    #  externconfig: Debug
 
     #------------------------------------------------------------------------------
     - compiler: msvc-15-seh
@@ -110,12 +110,12 @@ environment:
       configuration: Release
       externconfig: Release
 
-    - compiler: gcc-5.3.0-posix
-      generator: "MinGW Makefiles"
-      cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      configuration: Release
-      externconfig: Release
+    #- compiler: gcc-5.3.0-posix
+    #  generator: "MinGW Makefiles"
+    #  cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    #  configuration: Release
+    #  externconfig: Release
 
 matrix:
   fast_finish: true
@@ -141,7 +141,7 @@ test_script:
   - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" ..
   - dir
   - dir test
-  - cmake --build . --config %configuration% --target test/C4STL_TEST
+  - cmake --build . --config %configuration% --target test/c4stl-test
   #- ctest -c %configuration% --timeout 300 --output-on-failure
 
 artifacts:
