@@ -30,7 +30,8 @@ struct growth_default;
  * offers a contiguous index range with constant-time access. Note the following:
  *
  * - The memory used by these objects is automatically freed. Allocation
- *   requires explicit calls to the function _raw_reserve(I currsz, I cap).
+ *   requires proper construction or alternatively explicit calls to the
+ *   function _raw_reserve(I currsz, I cap).
  *
  * - The elements contained in the raw storage are NOT automatically constructed
  *   or destroyed. The exception to this is in _raw_resize(), which adds empty
@@ -300,7 +301,13 @@ public:
 
 public:
 
+    /** assume the curr size is the capacity */
     void _raw_reserve(I cap) const C4_NOEXCEPT_A
+    {
+        _raw_reserve(capacity(), cap);
+    }
+
+    void _raw_reserve(I currsz, I cap) const C4_NOEXCEPT_A
     {
         C4_ASSERT(cap <= N);
     }
@@ -406,6 +413,12 @@ public:
     const_iterator _raw_iterator(I id) const noexcept { return m_ptr + id; }
 
 public:
+
+    /** assume the curr size is the capacity */
+    void _raw_reserve(I cap) C4_NOEXCEPT_A
+    {
+        _raw_reserve(capacity(), cap);
+    }
 
     void _raw_reserve(I curr, I cap) C4_NOEXCEPT_A
     {
@@ -559,6 +572,12 @@ public:
 
 public:
 
+    /** assume the curr size is the capacity */
+    void _raw_reserve(I cap) C4_NOEXCEPT_A
+    {
+        _raw_reserve(capacity(), cap);
+    }
+
     void _raw_reserve(I curr, I cap) C4_NOEXCEPT_A
     {
         C4_ASSERT(curr <= cap);
@@ -680,7 +699,7 @@ struct _raw_paged_crtp
 
 public:
 
-    void _raw_resize(I cap);
+    void _raw_reserve(I cap);
 
 public:
 
