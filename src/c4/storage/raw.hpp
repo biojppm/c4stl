@@ -934,8 +934,8 @@ public:
     C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i >> _raw_pglsb;
-        I id = i & _raw_idmask;
+        const I pg = i >> _raw_pglsb;
+        const I id = i & _raw_idmask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < PageSize);
         return m_pages[pg][id];
@@ -943,8 +943,8 @@ public:
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i >> _raw_pglsb;
-        I id = i & _raw_idmask;
+        const I pg = i >> _raw_pglsb;
+        const I id = i & _raw_idmask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < PageSize);
         return m_pages[pg][id];
@@ -1024,8 +1024,8 @@ public:
     C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i >> m_page_lsb;
-        I id = i & m_id_mask;
+        const I pg = i >> m_page_lsb;
+        const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < m_id_mask + 1);
         return m_pages[pg][id];
@@ -1033,8 +1033,8 @@ public:
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        I pg = i >> m_page_lsb;
-        I id = i & m_id_mask;
+        const I pg = i >> m_page_lsb;
+        const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < m_id_mask + 1);
         return m_pages[pg][id];
