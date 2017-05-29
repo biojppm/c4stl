@@ -49,13 +49,7 @@ void set_error_callback(error_callback_type cb)
 
 //-----------------------------------------------------------------------------
 
-#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-void handle_error(const char *file, int line, const char *func, const char *fmt, ...)
-#elif defined(C4_ERROR_SHOWS_FILELINE)
-void handle_error(const char *file, int line, const char *fmt, ...)
-#elif ! defined(C4_ERROR_SHOWS_FUNC)
-void handle_error(const char *fmt, ...)
-#endif
+void handle_error(srcloc where, const char *fmt, ...)
 {
     va_list args;
     sstream< c4::string > ss;
@@ -69,10 +63,10 @@ void handle_error(const char *fmt, ...)
     {
         C4_LOGF_ERR("\n");
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_strp());
-        C4_LOGF_ERR("ERROR: %s:%d: here: %s\n", file, line, func);
+        C4_LOGF_ERR("ERROR: %s:%d: %s\n", where.file, where.line, ss.c_strp());
+        C4_LOGF_ERR("ERROR: %s:%d: here: %s\n", where.file, where.line, where.func);
 #elif defined(C4_ERROR_SHOWS_FILELINE)
-        C4_LOGF_ERR("ERROR: %s:%d: %s\n", file, line, ss.c_strp());
+        C4_LOGF_ERR("ERROR: %s:%d: %s\n", where.file, where.line, ss.c_strp());
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
         C4_LOGF_ERR("ERROR: %s\n", ss.c_strp());
 #endif
@@ -99,13 +93,7 @@ void handle_error(const char *fmt, ...)
 
 //-----------------------------------------------------------------------------
 
-#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-void handle_warning(const char *file, int line, const char *func, const char *fmt, ...)
-#elif defined(C4_ERROR_SHOWS_FILELINE)
-void handle_warning(const char *file, int line, const char *fmt, ...)
-#elif ! defined(C4_ERROR_SHOWS_FUNC)
-void handle_warning(const char *fmt, ...)
-#endif
+void handle_warning(srcloc where, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -114,10 +102,10 @@ void handle_warning(const char *fmt, ...)
     va_end(args);
     C4_LOGF_WARN("\n");
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
-    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_strp());
-    C4_LOGF_WARN("WARNING: %s:%d: here: %s\n", file, line, func);
+    C4_LOGF_WARN("WARNING: %s:%d: %s\n", where.file, where.line, ss.c_strp());
+    C4_LOGF_WARN("WARNING: %s:%d: here: %s\n", where.file, where.line, where.func);
 #elif defined(C4_ERROR_SHOWS_FILELINE)
-    C4_LOGF_WARN("WARNING: %s:%d: %s\n", file, line, ss.c_strp());
+    C4_LOGF_WARN("WARNING: %s:%d: %s\n", where.file, where.line, ss.c_strp());
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
     C4_LOGF_WARN("WARNING: %s\n", ss.c_strp());
 #endif

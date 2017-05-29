@@ -143,43 +143,53 @@ struct ScopedErrorSettings
     }
 };
 
+
 //-----------------------------------------------------------------------------
 
-#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+/** source location */
+struct srcloc;
 
-void handle_error(const char *file, int line, const char *func, const char *fmt, ...);
-void handle_warning(const char *file, int line, const char *func, const char *fmt, ...);
+void handle_error(srcloc s, const char *fmt, ...);
+void handle_warning(srcloc s, const char *fmt, ...);
 
 #   define C4_ERROR(msg, ...)                             \
     if(c4::get_error_flags() & c4::ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
-    c4::handle_error(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
+    c4::handle_error(C4_SRCLOC(), msg, ## __VA_ARGS__)
 
 #   define C4_WARNING(msg, ...)                                         \
-    c4::handle_warning(__FILE__, __LINE__, C4_PRETTY_FUNC, msg, ## __VA_ARGS__)
+    c4::handle_warning(C4_SRCLOC(), msg, ## __VA_ARGS__)
+
+
+#if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
+
+struct srcloc
+{
+    const char *file;
+    const char *func;
+    int line;
+
+    srcloc() : file(""), func(""), line() {}
+    srcloc(const char *f, const char *fn, int l) : file(f), func(fn), line(l) {}
+};
+#define C4_SRCLOC() c4::srcloc(__FILE__, C4_PRETTY_FUNC, __LINE__)
 
 #elif defined(C4_ERROR_SHOWS_FILELINE)
 
-void handle_error(const char *file, int line, const char *fmt, ...);
-void handle_warning(const char *file, int line, const char *fmt, ...);
-
-#   define C4_ERROR(msg, ...)                             \
-    if(c4::get_error_flags() & ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
-    c4::handle_error(__FILE__, __LINE__, msg, ## __VA_ARGS__)
-
-#   define C4_WARNING(msg, ...)                                 \
-    c4::handle_warning(__FILE__, __LINE__, msg, ## __VA_ARGS__)
+struct srcloc
+{
+    const char *file;
+    int line;
+    srcloc() : file(""), line() {}
+    srcloc(const char *f, int l) : file(f), line(l) {}
+};
+#define C4_SRCLOC() c4::srcloc(__FILE__, __LINE__)
 
 #elif ! defined(C4_ERROR_SHOWS_FUNC)
 
-void handle_error(const char *fmt, ...);
-void handle_warning(const char *fmt, ...);
-
-#   define C4_ERROR(msg, ...)                             \
-    if(c4::get_error_flags() & ON_ERROR_DEBUGBREAK) { C4_DEBUG_BREAK() } \
-    c4::handle_error(msg, ## __VA_ARGS__)
-
-#   define C4_WARNING(msg, ...)                 \
-    c4::handle_warning(msg, ## __VA_ARGS__)
+struct srcloc
+{
+};
+#define C4_SRCLOC() c4::srcloc()
 
 #else
 #   error not implemented
