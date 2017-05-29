@@ -95,7 +95,9 @@ matrix:
               packages:
                 clang-4.0
           env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
+        #
         # DEBUG----------------------------------------------------------------
+        # debug builds are slower, so there's less testing.
         - compiler: gcc5
           env: COMPILER=g++ C_COMPILER=gcc BUILD_TYPE=Debug
         - compiler: gcc5-32
