@@ -7,94 +7,115 @@ environment:
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017"
       configuration: Quicktest
+      externconfig: Debug
 
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017 Win64"
       configuration: Quicktest
+      externconfig: Debug
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015"
       configuration: Quicktest
+      externconfig: Debug
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015 Win64"
       configuration: Quicktest
+      externconfig: Debug
 
     - compiler: msvc-12-seh
       generator: "Visual Studio 12 2013"
       configuration: Quicktest
+      externconfig: Debug
 
     - compiler: msvc-12-seh
       generator: "Visual Studio 12 2013 Win64"
       configuration: Quicktest
+      externconfig: Debug
 
     - compiler: gcc-5.3.0-posix
       generator: "MinGW Makefiles"
       cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       configuration: Quicktest
+      externconfig: Debug
 
     #------------------------------------------------------------------------------
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017"
       configuration: Debug
+      externconfig: Debug
 
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017 Win64"
       configuration: Debug
+      externconfig: Debug
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015"
       configuration: Debug
+      externconfig: Debug
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015 Win64"
       configuration: Debug
+      externconfig: Debug
 
     - compiler: msvc-12-seh
       generator: "Visual Studio 12 2013"
       configuration: Debug
+      externconfig: Debug
 
     - compiler: msvc-12-seh
       generator: "Visual Studio 12 2013 Win64"
       configuration: Debug
+      externconfig: Debug
 
     - compiler: gcc-5.3.0-posix
       generator: "MinGW Makefiles"
       cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       configuration: Debug
+      externconfig: Debug
 
     #------------------------------------------------------------------------------
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017"
       configuration: Release
+      externconfig: Release
 
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017 Win64"
       configuration: Release
+      externconfig: Release
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015"
       configuration: Release
+      externconfig: Release
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015 Win64"
       configuration: Release
+      externconfig: Release
 
     - compiler: msvc-12-seh
       generator: "Visual Studio 12 2013"
       configuration: Release
+      externconfig: Release
 
     - compiler: msvc-12-seh
       generator: "Visual Studio 12 2013 Win64"
       configuration: Release
+      externconfig: Release
 
     - compiler: gcc-5.3.0-posix
       generator: "MinGW Makefiles"
       cxx_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       configuration: Release
+      externconfig: Release
 
 matrix:
   fast_finish: true
@@ -108,18 +129,18 @@ install:
 build_script:
   - md _build -Force
   - cd _build
-  - echo %configuration%
   - md _extern_build -Force
   - cd _extern_build
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DCMAKE_INSTALL_PREFIX=../_extern_install" ../../extern
-  - cmake --build . --config %configuration%
-  - cmake --build . --config %configuration% --target ALL_INSTALL
+  - echo %externconfig
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%externconfig" "-DCMAKE_INSTALL_PREFIX=../_extern_install" ../../extern
+  - cmake --build . --config %externconfig%
   - cd ..
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" ..
 
 test_script:
-  #- ctest -c %configuration% --timeout 300 --output-on-failure
+  - echo %configuration%
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" ..
   - cmake --build . --config %configuration% --target c4stl-test
+  #- ctest -c %configuration% --timeout 300 --output-on-failure
 
 artifacts:
   - path: '_build/CMakeFiles/*.log'
