@@ -750,7 +750,7 @@ public:
 };
 
 template< class T, class I, I Alignment, class RawPaged >
-void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_resize(I cap)
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I cap)
 {
     auto at = _c4this->m_allocator.template rebound< T* >();
     const I ps = _c4this->page_size();
@@ -912,16 +912,16 @@ public:
 
     raw_paged(I cap) : m_pages(nullptr), m_num_pages(0), m_allocator()
     {
-        crtp_base::_raw_resize(cap);
+        crtp_base::_raw_reserve(cap);
     }
     raw_paged(I cap, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_allocator(a)
     {
-        crtp_base::_raw_resize(cap);
+        crtp_base::_raw_reserve(cap);
     }
 
     ~raw_paged()
     {
-        crtp_base::_raw_resize(0);
+        crtp_base::_raw_reserve(0);
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
@@ -1000,18 +1000,18 @@ public:
     {
         C4_ASSERT(page_sz > 1);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
-        crtp_base::_raw_resize(cap);
+        crtp_base::_raw_reserve(cap);
     }
     raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
     {
         C4_ASSERT(page_sz > 1);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
-        crtp_base::_raw_resize(cap);
+        crtp_base::_raw_reserve(cap);
     }
 
     ~raw_paged()
     {
-        crtp_base::_raw_resize(0);
+        crtp_base::_raw_reserve(0);
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
@@ -1044,7 +1044,6 @@ public:
 
     template< class RawPagedContainer >
     friend void test_raw_page_addressing(RawPagedContainer const& rp);
-
 
 };
 
