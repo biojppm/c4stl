@@ -10,27 +10,27 @@ env:
 # travis-ci.org more readable.
 matrix:
     include:
-        # QUICKTEST----------------------------------------------------------------
-        # default version for gcc in trusty is 4.8; c4stl won't work with it.
-        - compiler: gcc5
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Quicktest
-        - compiler: gcc5-32
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-                - g++-5-multilib
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
-        #
-        #
+        ## QUICKTEST----------------------------------------------------------------
+        ## default version for gcc in trusty is 4.8; c4stl won't work with it.
+        #- compiler: gcc5
+        #  addons:
+        #    apt:
+        #      sources:
+        #        - ubuntu-toolchain-r-test
+        #      packages:
+        #        - g++-5
+        #  env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Quicktest
+        #- compiler: gcc5-32
+        #  addons:
+        #    apt:
+        #      sources:
+        #        - ubuntu-toolchain-r-test
+        #      packages:
+        #        - g++-5
+        #        - g++-5-multilib
+        #  env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
+        ##
+        ##
         - compiler: clang3.5
           env: COMPILER=clang++ C_COMPILER=clang BUILD_TYPE=Quicktest
         - compiler: clang3.5-32
@@ -56,8 +56,8 @@ matrix:
               sources:
                 - ubuntu-toolchain-r-test
               packages:
-                - g++-6-multilib
                 - g++-6
+                - g++-6-multilib
           env:
             - COMPILER=g++-6 C_COMPILER=gcc-6  BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
 ###         #
