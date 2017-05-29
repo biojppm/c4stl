@@ -17,8 +17,17 @@ add_custom_target(c4stl-test ${CMAKE_CTEST_COMMAND} -V)
 set_target_properties(c4stl-test PROPERTIES FOLDER c4stl-test)
 
 add_custom_target(c4stl-test-build)
-add_dependencies(c4stl-test c4stl-test-build)
 set_target_properties(c4stl-test-build PROPERTIES FOLDER c4stl-test)
+
+add_custom_target(c4stl-test
+    ${CMAKE_COMMAND} -E echo CWD=${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo CMD=${CMAKE_CTEST_COMMAND} -C $<CONFIG>
+    COMMAND ${CMAKE_COMMAND} -E echo ----------------------------------
+    COMMAND ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1 ${CMAKE_CTEST_COMMAND} -C $<CONFIG>
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS c4stl-test-build
+    )
+set_target_properties(c4stl-test PROPERTIES FOLDER c4stl-test)
 
 #------------------------------------------------------------------------------
 
@@ -79,7 +88,7 @@ function(c4stl_add_test name)
         endif()
     endforeach()
     if(UNIX AND NOT COVERAGE_BUILD)
-        # consider doing this for valgrind:
+        # @todo: consider doing this for valgrind:
         # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
         # for now we explicitly run it:
         add_test(NAME ${name}-valgrind
