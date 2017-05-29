@@ -131,8 +131,8 @@ build_script:
   - cd _build
   - md _extern_build -Force
   - cd _extern_build
-  - echo %externconfig
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%externconfig" "-DCMAKE_INSTALL_PREFIX=../_extern_install" ../../extern
+  - echo %externconfig%
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%externconfig%" "-DCMAKE_INSTALL_PREFIX=../_extern_install" ../../extern
   - cmake --build . --config %externconfig%
   - cd ..
 
