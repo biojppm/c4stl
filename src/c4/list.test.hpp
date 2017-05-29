@@ -123,10 +123,12 @@ void list_test0_push_back_move()
         auto dtch = CT::check_dtors(2 * il.size()); // 1 movedfrom + 1 movedto
         {
             CList li;
+            li.reserve(szconv<I>(il.size())); // reserve the list to prevent moves
+                                              // when it would be resized
             for(auto const& elm : il)
             {
-                auto tmp = elm;
-                li.push_back(std::move(tmp));
+                auto tmp = elm; // this will be copied here
+                li.push_back(std::move(tmp)); // ... and moved here
             }
 
             EXPECT_FALSE(li.empty());
@@ -171,6 +173,7 @@ TEST(listtestname, push_back_move)                              \
     list_test0_push_back_move< listtype >();                    \
 }                                                               \
 
+//-----------------------------------------------------------------------------
 
 #define _C4_CALL_LIST_TESTS(list_type_name, list_type,                  \
                             containee_type_name, containee_type,        \
@@ -246,30 +249,46 @@ _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_fwd_list, split_fwd_list, tyname, t
 #ifndef C4_QUICKTEST
 
 #define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST)
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST) \
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_FLAT_LIST) \
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_LIST)
 
 #define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
 
 #define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST)
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_FWD_LIST)
 
 #define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
 
 #else // C4_QUICKTEST
 
 #define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST)
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST) \
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_FLAT_LIST) \
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_LIST)
 
 #define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
+    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
 
 #define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST)
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
+    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_FWD_LIST)
 
 #define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT)
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
+    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
 
 #endif // C4_QUICKTEST
 
