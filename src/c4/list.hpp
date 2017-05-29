@@ -149,12 +149,10 @@ public:
     {
         this->_make_room_for(I(1));
         C4_XASSERT(_c4cthis->m_fhead != ListType::npos);
-        C4_XASSERT(_c4cthis->m_size + 1 < _c4cthis->capacity());
+        C4_XASSERT(_c4cthis->m_size + 1 <= _c4cthis->capacity());
         I pos = _c4cthis->m_fhead;
-        C4_XASSERT(pos != ListType::npos);
         I last = _c4cthis->next(pos);
         _c4this->_set_fhead(last);
-        C4_XASSERT(pos != ListType::npos);
         return pos;
     }
 
@@ -163,7 +161,7 @@ public:
     {
         this->_make_foom_for(n);
         C4_XASSERT(_c4cthis->m_fhead != ListType::npos);
-        C4_XASSERT(_c4cthis->m_size + n < _c4cthis->capacity());
+        C4_XASSERT(_c4cthis->m_size + n <= _c4cthis->capacity());
         I pos = _c4cthis->m_fhead;
         I count = 0, last = pos;
         for(count = 0; count < n; ++count)
@@ -374,11 +372,11 @@ public:
     C4_ALWAYS_INLINE I  prev(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_elms[i].prev; }
     C4_ALWAYS_INLINE I  next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_elms[i].next; }
 
-    C4_ALWAYS_INLINE void _set_prev(I i, I val) C4_NOEXCEPT_X { m_elms[i].prev = val; }
-    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_elms[i].next = val; }
+    C4_ALWAYS_INLINE void _set_prev(I i, I val) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_elms[i].prev = val; }
+    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_elms[i].next = val; }
 
-    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; m_elms[i].prev = npos; }
-    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_elms[i].next = npos; }
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; m_elms[i].prev = npos; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_elms[i].next = npos; }
 
     C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_elms[i].prev = npos; }
 
@@ -485,11 +483,11 @@ public:
     C4_ALWAYS_INLINE I prev(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_prev[i]; }
     C4_ALWAYS_INLINE I next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_next[i]; }
 
-    C4_ALWAYS_INLINE void _set_prev(I i, I val) C4_NOEXCEPT_X { m_prev[i] = val; }
-    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_next[i] = val; }
+    C4_ALWAYS_INLINE void _set_prev(I i, I val) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_prev[i] = val; }
+    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_next[i] = val; }
 
-    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; m_prev[i] = npos; }
-    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_next[i] = npos; }
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; m_prev[i] = npos; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_next[i] = npos; }
 
     C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_prev[i] = npos; }
 
@@ -585,10 +583,10 @@ public:
 
     C4_ALWAYS_INLINE I  next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_elms[i].next; }
 
-    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_elms[i].next = val; }
+    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_elms[i].next = val; }
 
-    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; }
-    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_elms[i].next = npos; }
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_elms[i].next = npos; }
 
     C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
 
@@ -691,10 +689,10 @@ public:
 
     C4_ALWAYS_INLINE I next(I i) const C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); return m_next[i]; }
 
-    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { m_next[i] = val; }
+    C4_ALWAYS_INLINE void _set_next(I i, I val) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_next[i] = val; }
 
-    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { m_head = i; }
-    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { m_tail = i; m_next[i] = npos; }
+    C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; }
+    C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_next[i] = npos; }
 
     C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
 
