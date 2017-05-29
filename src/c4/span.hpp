@@ -208,9 +208,9 @@ public:
         return size() == that.size() && data() == that.data();
     }
     template< class I2, class Impl2 >
-    C4_ALWAYS_INLINE bool same_span(_span_crtp< T, I2, Impl2 > const& that) const noexcept
+    C4_ALWAYS_INLINE bool same_span(_span_crtp< T, I2, Impl2 > const& that) const C4_NOEXCEPT_X
     {
-        I tsz = szconv< I >(that.size()); // asserts that the size does not overflow
+        I tsz = szconv< I >(that.size()); // x-asserts that the size does not overflow
         return size() == tsz && data() == that.data();
     }
 
