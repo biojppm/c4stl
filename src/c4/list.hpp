@@ -377,7 +377,7 @@ public:
     C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; m_elms[i].prev = npos; }
     C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_elms[i].next = npos; }
 
-    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_elms[i].prev = npos; }
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; if(i < capacity() && i != npos) { m_elms[i].prev = npos; } }
 
 public:
 
@@ -485,7 +485,7 @@ public:
     C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; m_prev[i] = npos; }
     C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_next[i] = npos; }
 
-    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; m_prev[i] = npos; }
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; if(i < capacity() && i != npos) { m_prev[i] = npos; } }
 
 public:
 
@@ -583,7 +583,7 @@ public:
     C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; }
     C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_elms[i].next = npos; }
 
-    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; /* there's no prev to set. */}
 
 public:
 
@@ -687,7 +687,7 @@ public:
     C4_ALWAYS_INLINE void _set_head(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_head = i; }
     C4_ALWAYS_INLINE void _set_tail(I i) C4_NOEXCEPT_X { C4_XASSERT(i < capacity()); m_tail = i; m_next[i] = npos; }
 
-    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; }
+    C4_ALWAYS_INLINE void _set_fhead(I i) C4_NOEXCEPT_X { m_fhead = i; /* there's no prev to set. */}
 
 public:
 
