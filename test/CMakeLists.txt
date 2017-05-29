@@ -5,7 +5,7 @@ include(GetFlags)
 include(ConfigurationTypes)
 
 get_define(dquicktest C4_QUICKTEST)
-add_configuration_type(quicktest
+add_configuration_type(Quicktest
     DEFAULT_FROM DEBUG
     C_FLAGS ${dquicktest}
     CXX_FLAGS ${dquicktest}

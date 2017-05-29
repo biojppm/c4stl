@@ -121,10 +121,10 @@ matrix:
           env: COMPILER=g++ C_COMPILER=gcc BUILD_TYPE=Coverage
 
 before_script:
-    #- sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-    #- sudo apt-get update
-    #- sudo apt-get -y install cmake
-    - mkdir build && cd build
+  #- sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+  #- sudo apt-get update
+  #- sudo apt-get -y install cmake
+  - mkdir build && cd build
 
 install:
   - $COMPILER --version
@@ -133,10 +133,18 @@ install:
       pip install --user --upgrade pip;
       pip install --user cpp-coveralls;
     fi
+  - export cmkargs="-DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${COMPILER}"
+  # compile and install external libraries
+  - mkdir extern_build && cd extern_build
+  - cmake ${cmkargs} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install ../../extern
+  - make
+  - make install
+  - cd -
 
 script:
-    - cmake -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" ..
-    - make CTEST_OUTPUT_ON_FAILURE=1 c4stl-test
+  - echo $cmkargs
+  - cmake $cmkargs -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DC4STL_EXTERN_DIR=`pwd`/extern_install ..
+  - make CTEST_OUTPUT_ON_FAILURE=1 c4stl-test
 
 after_success:
   - echo "Success!"
