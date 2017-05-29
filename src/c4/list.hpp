@@ -359,8 +359,7 @@ public:
 
     void _growto(I cap, I next_cap)
     {
-        //m_elms._raw_reserve(next_cap);
-        m_elms._raw_resize(next_cap);
+        m_elms._raw_reserve(next_cap);
         this->_init_seq(cap, capacity());
     }
 
@@ -466,12 +465,9 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        //m_elm ._raw_reserve(next_cap);
-        //m_prev._raw_reserve(next_cap);
-        //m_next._raw_reserve(next_cap);
-        m_elm ._raw_resize(next_cap);
-        m_prev._raw_resize(next_cap);
-        m_next._raw_resize(next_cap);
+        m_elm ._raw_reserve(next_cap);
+        m_prev._raw_reserve(next_cap);
+        m_next._raw_reserve(next_cap);
         this->_init_seq(curr_cap, capacity());
     }
 
@@ -571,8 +567,7 @@ public:
 
     void _growto(I cap, I next_cap)
     {
-        //m_elms._raw_reserve(next_cap);
-        m_elms._raw_resize(next_cap);
+        m_elms._raw_reserve(next_cap);
         this->_init_seq(cap, capacity());
     }
 
@@ -675,10 +670,8 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        //m_elm ._raw_reserve(next_cap);
-        //m_next._raw_reserve(next_cap);
-        m_elm ._raw_resize(next_cap);
-        m_next._raw_resize(next_cap);
+        m_elm ._raw_reserve(next_cap);
+        m_next._raw_reserve(next_cap);
         this->_init_seq(curr_cap, capacity());
     }
 
