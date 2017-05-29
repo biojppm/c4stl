@@ -29,175 +29,176 @@ matrix:
                 - g++-5
                 - g++-multilib
           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: clang3.5
-          env: COMPILER=clang++ C_COMPILER=clang BUILD_TYPE=Quicktest
-        - compiler: clang3.5-32
-          addons:
-            apt:
-              packages:
-                - g++-multilib
-         env: COMPILER=clang++ C_COMPILER=clang BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: gcc6
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-6
-          env:
-            - COMPILER=g++-6 C_COMPILER=gcc-6  BUILD_TYPE=Quicktest
-        - compiler: gcc6-32
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-multilib
-                - g++-6
-          env:
-            - COMPILER=g++-6 C_COMPILER=gcc-6  BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: clang3.8
-          addons:
-            apt:
-              packages:
-                - clang-3.8
-          env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=QuickTest
-        - compiler: clang3.8-32
-          addons:
-            apt:
-              packages:
-                - clang-3.8
-                - g++-multilib
-          env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
-        ##
-        ##
-        #- compiler: clang3.9
-        #  addons:
-        #    apt:
-        #      sources:
-        #        - llvm-toolchain-precise-3.9
-        #      packages:
-        #        - clang-3.9
-        #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest
-        #- compiler: clang3.9-32
-        #  addons:
-        #    apt:
-        #      sources:
-        #        - llvm-toolchain-precise-3.9
-        #      packages:
-        #        - clang-3.9
-        #        - g++-multilib
-        #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
-        ##
-        ##
-        #- compiler: clang4.0
-        #  addons:
-        #    apt:
-        #      sources:
-        #        - llvm-toolchain-precise-4.0
-        #      packages:
-        #        - clang-4.0
-        #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest
-        #- compiler: clang4.0-32
-        #  addons:
-        #    apt:
-        #      sources:
-        #        - llvm-toolchain-precise-4.0
-        #      packages:
-        #        - clang-4.0
-        #        - g++-multilib
-        #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
-        #
-        # DEBUG----------------------------------------------------------------
-        # debug builds of the tests are slow to build, so there's less testing.
-        - compiler: gcc5
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug
-        - compiler: gcc5-32
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-                - g++-multilib
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: clang3.8
-          addons:
-            apt:
-              packages:
-                - clang-3.8
-          env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug
-        - compiler: clang3.8-32
-          addons:
-            apt:
-              packages:
-                - clang-3.8
-                - g++-multilib
-          env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
-        #
-        # RELEASE----------------------------------------------------------------
-        # debug builds of the tests are slow to build, so there's less testing.
-        - compiler: gcc5
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug
-        - compiler: gcc5-32
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-                - g++-multilib
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: clang3.8
-          addons:
-            apt:
-              packages:
-                - clang-3.8
-          env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug
-        - compiler: clang3.8-32
-          addons:
-            apt:
-              packages:
-                - clang-3.8
-                - g++-multilib
-          env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
-        #
-        # COVERAGE----------------------------------------------------------------
-        - compiler: gcc5
-          addons:
-            apt:
-              sources:
-                - ubuntu-toolchain-r-test
-              packages:
-                - g++-5
-          env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Coverage
+###         #
+###         #
+###         - compiler: clang3.5
+###           env: COMPILER=clang++ C_COMPILER=clang BUILD_TYPE=Quicktest
+###         - compiler: clang3.5-32
+###           addons:
+###             apt:
+###               packages:
+###                 - g++-multilib
+###          env: COMPILER=clang++ C_COMPILER=clang BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
+###         #
+###         #
+###         - compiler: gcc6
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-6
+###           env:
+###             - COMPILER=g++-6 C_COMPILER=gcc-6  BUILD_TYPE=Quicktest
+###         - compiler: gcc6-32
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-multilib
+###                 - g++-6
+###           env:
+###             - COMPILER=g++-6 C_COMPILER=gcc-6  BUILD_TYPE=Quicktest EXTRA_FLAGS="-m32"
+###         #
+###         #
+###         - compiler: clang3.8
+###           addons:
+###             apt:
+###               packages:
+###                 - clang-3.8
+###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=QuickTest
+###         - compiler: clang3.8-32
+###           addons:
+###             apt:
+###               packages:
+###                 - clang-3.8
+###                 - g++-multilib
+###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
+###         ##
+###         ##
+###         #- compiler: clang3.9
+###         #  addons:
+###         #    apt:
+###         #      sources:
+###         #        - llvm-toolchain-precise-3.9
+###         #      packages:
+###         #        - clang-3.9
+###         #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest
+###         #- compiler: clang3.9-32
+###         #  addons:
+###         #    apt:
+###         #      sources:
+###         #        - llvm-toolchain-precise-3.9
+###         #      packages:
+###         #        - clang-3.9
+###         #        - g++-multilib
+###         #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
+###         ##
+###         ##
+###         #- compiler: clang4.0
+###         #  addons:
+###         #    apt:
+###         #      sources:
+###         #        - llvm-toolchain-precise-4.0
+###         #      packages:
+###         #        - clang-4.0
+###         #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest
+###         #- compiler: clang4.0-32
+###         #  addons:
+###         #    apt:
+###         #      sources:
+###         #        - llvm-toolchain-precise-4.0
+###         #      packages:
+###         #        - clang-4.0
+###         #        - g++-multilib
+###         #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
+###         #
+###         # DEBUG----------------------------------------------------------------
+###         # debug builds of the tests are slow to build, so there's less testing.
+###         - compiler: gcc5
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-5
+###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug
+###         - compiler: gcc5-32
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-5
+###                 - g++-multilib
+###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
+###         #
+###         #
+###         - compiler: clang3.8
+###           addons:
+###             apt:
+###               packages:
+###                 - clang-3.8
+###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug
+###         - compiler: clang3.8-32
+###           addons:
+###             apt:
+###               packages:
+###                 - clang-3.8
+###                 - g++-multilib
+###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
+###         #
+###         # RELEASE----------------------------------------------------------------
+###         # debug builds of the tests are slow to build, so there's less testing.
+###         - compiler: gcc5
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-5
+###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug
+###         - compiler: gcc5-32
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-5
+###                 - g++-multilib
+###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
+###         #
+###         #
+###         - compiler: clang3.8
+###           addons:
+###             apt:
+###               packages:
+###                 - clang-3.8
+###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug
+###         - compiler: clang3.8-32
+###           addons:
+###             apt:
+###               packages:
+###                 - clang-3.8
+###                 - g++-multilib
+###           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=Debug EXTRA_FLAGS="-m32"
+###         #
+###         # COVERAGE----------------------------------------------------------------
+###         - compiler: gcc5
+###           addons:
+###             apt:
+###               sources:
+###                 - ubuntu-toolchain-r-test
+###               packages:
+###                 - g++-5
+###           env: COMPILER=g++-5 C_COMPILER=gcc-5 BUILD_TYPE=Coverage
+### 
 
-before_script:
-  #- sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-  #- sudo apt-get update
-  #- sudo apt-get -y install cmake
+#before_script:
+#  - sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+#  - sudo apt-get update
+#  - sudo apt-get -y install cmake
 
 install:
   - $COMPILER --version
@@ -227,5 +228,3 @@ after_success:
   #- if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
   #    coveralls --include src --include include --gcov-options '\-lp' --root .. --build-root .;
   #  fi
-
-sudo: required
