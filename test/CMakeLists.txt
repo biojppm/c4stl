@@ -21,70 +21,6 @@ add_dependencies(c4stl-test c4stl-test-build)
 set_target_properties(c4stl-test-build PROPERTIES FOLDER c4stl-test)
 
 #------------------------------------------------------------------------------
-# Add the coverage command(s)
-
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "(Apple)?[Cc]lang")
-    if("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS 3)
-	message(STATUS "Coverage: clang version must be 3.0.0 or greater. No coverage available.")
-        return()
-    endif()
-elseif(NOT CMAKE_COMPILER_IS_GNUCXX)
-    message(STATUS "Coverage: compiler is not GNUCXX. No coverage available.")
-    return()
-endif()
-
-set(covflags "-g -O0 --coverage -fprofile-arcs -ftest-coverage")
-add_configuration_type(Coverage
-    DEFAULT_FROM DEBUG
-    C_FLAGS ${covflags}
-    CXX_FLAGS ${covflags}
-    )
-
-if(CMAKE_BUILD_TYPE)
-    string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
-endif()
-if(${CMAKE_BUILD_TYPE_LOWER} MATCHES "coverage")
-    set(COVERAGE_BUILD ON)
-    find_program(GCOV gcov)
-    find_program(LCOV lcov)
-    find_program(GENHTML genhtml)
-    find_program(CTEST ctest)
-    if (GCOV AND LCOV AND GENHTML AND CTEST)
-        add_custom_command(
-            OUTPUT ${CMAKE_BINARY_DIR}/lcov/index.html
-            COMMAND ${LCOV} -q -z -d .
-            COMMAND ${LCOV} -q --no-external -c -b "${CMAKE_SOURCE_DIR}" -d . -o before.lcov -i
-            COMMAND ${CTEST} --force-new-ctest-process
-            COMMAND ${LCOV} -q --no-external -c -b "${CMAKE_SOURCE_DIR}" -d . -o after.lcov
-            COMMAND ${LCOV} -q -a before.lcov -a after.lcov --output-file final.lcov
-            COMMAND ${LCOV} -q -r final.lcov "'${CMAKE_SOURCE_DIR}/test/*'" -o final.lcov
-            COMMAND ${GENHTML} final.lcov -o lcov --demangle-cpp --sort -p "${CMAKE_BINARY_DIR}" -t benchmark
-            DEPENDS c4stl-test
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMENT "Running LCOV"
-            )
-        add_custom_target(c4stl-coverage
-            DEPENDS ${CMAKE_BINARY_DIR}/lcov/index.html
-            COMMENT "LCOV report at ${CMAKE_BINARY_DIR}/lcov/index.html"
-            )
-        message(STATUS "Coverage command added")
-    else()
-        if (HAVE_CXX_FLAG_COVERAGE)
-            set(CXX_FLAG_COVERAGE_MESSAGE supported)
-        else()
-            set(CXX_FLAG_COVERAGE_MESSAGE unavailable)
-        endif()
-        message(WARNING
-            "Coverage not available:\n"
-            "  gcov: ${GCOV}\n"
-            "  lcov: ${LCOV}\n"
-            "  genhtml: ${GENHTML}\n"
-            "  ctest: ${CTEST}\n"
-            "  --coverage flag: ${CXX_FLAG_COVERAGE_MESSAGE}")
-    endif()
-endif()
-
-#------------------------------------------------------------------------------
 
 ExternalProject_Import(gtest
     PREFIX ${C4STL_EXTERN_DIR}
@@ -204,5 +140,69 @@ if(WIN32)
         foreach(_bf ${bigfiles})
             set_property(SOURCE ${_bf} APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")
         endforeach()
+    endif()
+endif()
+
+#------------------------------------------------------------------------------
+# Add the coverage command(s)
+
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "(Apple)?[Cc]lang")
+    if("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS 3)
+	message(STATUS "Coverage: clang version must be 3.0.0 or greater. No coverage available.")
+        return()
+    endif()
+elseif(NOT CMAKE_COMPILER_IS_GNUCXX)
+    message(STATUS "Coverage: compiler is not GNUCXX. No coverage available.")
+    return()
+endif()
+
+set(covflags "-g -O0 --coverage -fprofile-arcs -ftest-coverage")
+add_configuration_type(Coverage
+    DEFAULT_FROM DEBUG
+    C_FLAGS ${covflags}
+    CXX_FLAGS ${covflags}
+    )
+
+if(CMAKE_BUILD_TYPE)
+    string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
+endif()
+if(${CMAKE_BUILD_TYPE_LOWER} MATCHES "coverage")
+    set(COVERAGE_BUILD ON)
+    find_program(GCOV gcov)
+    find_program(LCOV lcov)
+    find_program(GENHTML genhtml)
+    find_program(CTEST ctest)
+    if (GCOV AND LCOV AND GENHTML AND CTEST)
+        add_custom_command(
+            OUTPUT ${CMAKE_BINARY_DIR}/lcov/index.html
+            COMMAND ${LCOV} -q -z -d .
+            COMMAND ${LCOV} -q --no-external -c -b "${CMAKE_SOURCE_DIR}" -d . -o before.lcov -i
+            COMMAND ${CTEST} --force-new-ctest-process
+            COMMAND ${LCOV} -q --no-external -c -b "${CMAKE_SOURCE_DIR}" -d . -o after.lcov
+            COMMAND ${LCOV} -q -a before.lcov -a after.lcov --output-file final.lcov
+            COMMAND ${LCOV} -q -r final.lcov "'${CMAKE_SOURCE_DIR}/test/*'" -o final.lcov
+            COMMAND ${GENHTML} final.lcov -o lcov --demangle-cpp --sort -p "${CMAKE_BINARY_DIR}" -t benchmark
+            DEPENDS c4stl-test
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running LCOV"
+            )
+        add_custom_target(c4stl-coverage
+            DEPENDS ${CMAKE_BINARY_DIR}/lcov/index.html
+            COMMENT "LCOV report at ${CMAKE_BINARY_DIR}/lcov/index.html"
+            )
+        message(STATUS "Coverage command added")
+    else()
+        if (HAVE_CXX_FLAG_COVERAGE)
+            set(CXX_FLAG_COVERAGE_MESSAGE supported)
+        else()
+            set(CXX_FLAG_COVERAGE_MESSAGE unavailable)
+        endif()
+        message(WARNING
+            "Coverage not available:\n"
+            "  gcov: ${GCOV}\n"
+            "  lcov: ${LCOV}\n"
+            "  genhtml: ${GENHTML}\n"
+            "  ctest: ${CTEST}\n"
+            "  --coverage flag: ${CXX_FLAG_COVERAGE_MESSAGE}")
     endif()
 endif()
