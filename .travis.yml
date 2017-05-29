@@ -59,42 +59,42 @@ matrix:
               packages:
                 clang-3.8
           env: COMPILER=clang++-3.8 C_COMPILER=clang-3.8 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: clang3.9
-          addons:
-            apt:
-              sources:
-                - llvm-toolchain-precise-3.9
-              packages:
-                clang-3.9
-          env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest
-        - compiler: clang3.9-32
-          addons:
-            apt:
-              sources:
-                - llvm-toolchain-precise-3.9
-              packages:
-                clang-3.9
-          env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
-        #
-        #
-        - compiler: clang4.0
-          addons:
-            apt:
-              sources:
-                - llvm-toolchain-precise-4.0
-              packages:
-                clang-4.0
-          env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest
-        - compiler: clang4.0-32
-          addons:
-            apt:
-              sources:
-                - llvm-toolchain-precise-4.0
-              packages:
-                clang-4.0
-          env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
+        ##
+        ##
+        #- compiler: clang3.9
+        #  addons:
+        #    apt:
+        #      sources:
+        #        - llvm-toolchain-precise-3.9
+        #      packages:
+        #        clang-3.9
+        #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest
+        #- compiler: clang3.9-32
+        #  addons:
+        #    apt:
+        #      sources:
+        #        - llvm-toolchain-precise-3.9
+        #      packages:
+        #        clang-3.9
+        #  env: COMPILER=clang++-3.9 C_COMPILER=clang-3.9 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
+        ##
+        ##
+        #- compiler: clang4.0
+        #  addons:
+        #    apt:
+        #      sources:
+        #        - llvm-toolchain-precise-4.0
+        #      packages:
+        #        clang-4.0
+        #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest
+        #- compiler: clang4.0-32
+        #  addons:
+        #    apt:
+        #      sources:
+        #        - llvm-toolchain-precise-4.0
+        #      packages:
+        #        clang-4.0
+        #  env: COMPILER=clang++-4.0 C_COMPILER=clang-4.0 BUILD_TYPE=QuickTest EXTRA_FLAGS="-m32"
         #
         # DEBUG----------------------------------------------------------------
         # debug builds are slower, so there's less testing.
@@ -121,6 +121,9 @@ matrix:
           env: COMPILER=g++ C_COMPILER=gcc BUILD_TYPE=Coverage
 
 before_script:
+    - sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+    - sudo apt-get update
+    - sudo apt-get -y install cmake
     - mkdir build && cd build
 
 install:
