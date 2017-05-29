@@ -100,6 +100,7 @@ matrix:
   fast_finish: true
 
 install:
+  - git submodule update --init --recursive
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
   - if not "%cxx_path%"=="" (set "PATH=%PATH%;%cxx_path%")
