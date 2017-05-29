@@ -27,7 +27,7 @@ construct(U* ptr) noexcept
 template< class U > _C4REQUIRE( ! std::is_trivially_default_constructible< U >::value)
 construct(U* ptr) noexcept
 {
-    new (ptr) U();
+    new ((void*)ptr) U();
 }
 
 /** default-construct n objects, trivial version */
@@ -42,7 +42,7 @@ construct_n(U* ptr, I n) noexcept
 {
     for(I i = 0; i < n; ++i)
     {
-        new (ptr+i) U();
+        new ((void*)(ptr + i)) U();
     }
 }
 
@@ -71,7 +71,7 @@ copy_construct(U* dst, U const* src) noexcept
 template< class U > _C4REQUIRE( ! std::is_trivially_copy_constructible< U >::value)
 copy_construct(U* dst, U const* src)
 {
-    new (dst) U(*src);
+    new ((void*)dst) U(*src);
 }
 template< class U, class I > _C4REQUIRE(std::is_trivially_copy_constructible< U >::value)
 copy_construct_n(U* dst, U const* src, I n) noexcept
@@ -83,7 +83,7 @@ copy_construct_n(U* dst, U const* src, I n)
 {
     for(I i = 0; i < n; ++i)
     {
-        new (dst + i) U(*(src + i));
+        new ((void*)(dst + i)) U(*(src + i));
     }
 }
 
@@ -95,7 +95,7 @@ copy_construct(U* dst, U src) noexcept // pass by value for scalar types
 template< class U > _C4REQUIRE( ! std::is_scalar< U >::value)
 copy_construct(U* dst, U const& src) // pass by reference for non-scalar types
 {
-    new (dst) U(src);
+    new ((void*)dst) U(src);
 }
 template< class U, class I > _C4REQUIRE(std::is_scalar< U >::value)
 copy_construct_n(U* dst, U src, I n) noexcept // pass by value for scalar types
@@ -110,7 +110,7 @@ copy_construct_n(U* dst, U const& src, I n) // pass by reference for non-scalar 
 {
     for(I i = 0; i < n; ++i)
     {
-        new (dst + i) U(src);
+        new ((void*)(dst + i)) U(src);
     }
 }
 
@@ -191,7 +191,7 @@ move_construct(U* dst, U* src) noexcept
 template< class U > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
 move_construct(U* dst, U* src) noexcept
 {
-    new (dst) U(std::move(*src));
+    new ((void*)dst) U(std::move(*src));
 }
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
 move_construct_n(U* dst, U* src, I n) noexcept
@@ -203,7 +203,7 @@ move_construct_n(U* dst, U* src, I n) noexcept
 {
     for(I i = 0; i < n; ++i)
     {
-        new (dst + i) U(std::move(src[i]));
+        new ((void*)(dst + i)) U(std::move(src[i]));
     }
 }
 
@@ -286,7 +286,7 @@ make_room(U *buf, I n, I room) C4_NOEXCEPT_A
     {
         for(I i = 0; i < n; ++i)
         {
-            new (buf + (i + room)) U(std::move(buf[i]));
+            new ((void*)(buf + (i + room))) U(std::move(buf[i]));
         }
     }
     else
@@ -294,7 +294,7 @@ make_room(U *buf, I n, I room) C4_NOEXCEPT_A
         for(I i = 0; i < n; ++i)
         {
             I w = n-1 - i; // do a backwards loop
-            new (buf + (w + room)) U(std::move(buf[w]));
+            new ((void*)(buf + (w + room))) U(std::move(buf[w]));
         }
     }
 }
@@ -316,13 +316,13 @@ make_room(U *dst, U const* src, I n, I room, I pos)
     C4_ASSERT(pos < n);
     for(I i = 0; i < pos; ++i)
     {
-        new (dst + i) U(std::move(src[i]));
+        new ((void*)(dst + i)) U(std::move(src[i]));
     }
     src += pos;
     dst += room + pos;
     for(I i = 0, e = n - pos; i < e; ++i)
     {
-        new (dst + i) U(std::move(src[i]));
+        new ((void*)(dst + i)) U(std::move(src[i]));
     }
 }
 
@@ -379,13 +379,13 @@ destroy_room(U *dst, U const* src, I n, I room, I pos)
     C4_ASSERT(pos < n);
     for(I i = 0; i < pos; ++i)
     {
-        new (dst + i) U(std::move(src[i]));
+        new ((void*)(dst + i)) U(std::move(src[i]));
     }
     src += room + pos;
     dst += pos;
     for(I i = 0, e = n - pos - room; i < e; ++i)
     {
-        new (dst + i) U(std::move(src[i]));
+        new ((void*)(dst + i)) U(std::move(src[i]));
     }
 }
 
