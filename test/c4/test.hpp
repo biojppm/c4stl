@@ -72,6 +72,36 @@ protected:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** RAII class that tests whether an error occurs inside a scope. */
+struct TestErrorOccurs
+{
+    TestErrorOccurs(size_t num_expected_errors = 1)
+      :
+      expected_errors(num_expected_errors),
+      tmp_settings(c4::ON_ERROR_CALLBACK, &TestErrorOccurs::error_callback)
+    {
+        num_errors = 0;
+    }
+    ~TestErrorOccurs()
+    {
+        EXPECT_EQ(num_errors, expected_errors);
+        num_errors = 0;;
+    }
+
+    size_t expected_errors;
+    static size_t num_errors;
+    ScopedErrorSettings tmp_settings;
+    static void error_callback(const char* msg, size_t msg_size)
+    {
+        ++num_errors;
+    }
+};
+#define C4_EXPECT_ERROR_OCCURS(...) \
+  auto _testerroroccurs##__LINE__ = TestErrorOccurs(__VA_ARGS__)
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 /** count constructors, destructors and assigns */
 template< class T >
