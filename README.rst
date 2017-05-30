@@ -210,12 +210,6 @@ Features
     platform. This is a ``50%`` saving in memory, and can really matter in
     some cases.
 
-  * Basic unit tests are already in place. Although extensive unit tests for
-    size type interoperation are yet to be implemented, things should mostly
-    work here (assertions for overflow are generously spliced throughout the
-    code where this might occur). Of course, there will be some places where
-    this was overlooked -- so your contributions or bug reports are welcome.
-
 * alignment (defaulting to ``alignof(T)``) is also a template parameter for
   all containers to facilitate SIMD operations on containers (strings are an
   exception, but this is easy to bypass if the string buffer is kept on an
@@ -229,9 +223,16 @@ Features
 * customizeable behaviour on error, including callbacks and macros for
   turning on/off assertions irrespective of ``NDEBUG`` status
 
+* Basic unit tests are already in place. Although extensive unit tests for
+  size type interoperation are yet to be implemented, things should mostly
+  work here (assertions for overflow are generously spliced throughout the
+  code where this might occur). Of course, there still may be some places
+  where this was overlooked -- so your contributions or bug reports are
+  welcome.
+
 * Tested in Windows and Linux.
 
-* Compilers: >= MSVC 2015, >= g++5, >= clang++ 3.8, >= icc 2016.
+* Compilers: ``MSVC>=2015``, ``g++>=5``, ``clang++>3.6``, ``icc>=2016``.
 
 * Tested with valgrind and the clang sanitizers.
 
