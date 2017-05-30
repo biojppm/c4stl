@@ -194,18 +194,50 @@ c4stl_add_test(c4stl-test-raw          ${s}/c4/storage/raw.test.cpp ${s}/c4/stor
 c4stl_add_test(c4stl-test-contiguous   ${s}/c4/storage/contiguous.test.cpp)
 
 # the list tests are separated to save compile time
-c4stl_add_test(c4stl-test-list-flat      ${s}/c4/list.flat.test.cpp      ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split     ${s}/c4/list.split.test.cpp     ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat_fwd  ${s}/c4/list.flat_fwd.test.cpp  ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split_fwd ${s}/c4/list.split_fwd.test.cpp ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat-paged    ${s}/c4/list.test.flat.paged.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat-paged_rt ${s}/c4/list.test.flat.paged_rt.cpp ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat-raw      ${s}/c4/list.test.flat.raw.cpp      ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat-fixed    ${s}/c4/list.test.flat.fixed.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat-small    ${s}/c4/list.test.flat.small.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split-paged    ${s}/c4/list.test.split.paged.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split-paged_rt ${s}/c4/list.test.split.paged_rt.cpp ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split-raw      ${s}/c4/list.test.split.raw.cpp      ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split-fixed    ${s}/c4/list.test.split.fixed.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split-small    ${s}/c4/list.test.split.small.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-paged    ${s}/c4/list.test.flat_fwd.paged.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-paged_rt ${s}/c4/list.test.flat_fwd.paged_rt.cpp ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-raw      ${s}/c4/list.test.flat_fwd.raw.cpp      ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-fixed    ${s}/c4/list.test.flat_fwd.fixed.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-small    ${s}/c4/list.test.flat_fwd.small.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-paged    ${s}/c4/list.test.split_fwd.paged.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-paged_rt ${s}/c4/list.test.split_fwd.paged_rt.cpp ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-raw      ${s}/c4/list.test.split_fwd.raw.cpp      ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-fixed    ${s}/c4/list.test.split_fwd.fixed.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-small    ${s}/c4/list.test.split_fwd.small.cpp    ${s}/c4/list.test.hpp)
 
 if(WIN32)
     if(MSVC AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC") # it may be clang as well
         set(bigfiles
-            ${s}/c4/list.flat.test.cpp
-            ${s}/c4/list.split.test.cpp
-            ${s}/c4/list.flat_fwd.test.cpp
-            ${s}/c4/list.split_fwd.test.cpp
+            ${s}/c4/list.test.flat.paged.cpp
+            ${s}/c4/list.test.flat.paged_rt.cpp
+            ${s}/c4/list.test.flat.raw.cpp
+            ${s}/c4/list.test.flat.fixed.cpp
+            ${s}/c4/list.test.flat.small.cpp
+            ${s}/c4/list.test.split.paged.cpp
+            ${s}/c4/list.test.split.paged_rt.cpp
+            ${s}/c4/list.test.split.raw.cpp
+            ${s}/c4/list.test.split.fixed.cpp
+            ${s}/c4/list.test.split.small.cpp
+            ${s}/c4/list.test.flat_fwd.paged.cpp
+            ${s}/c4/list.test.flat_fwd.paged_rt.cpp
+            ${s}/c4/list.test.flat_fwd.raw.cpp
+            ${s}/c4/list.test.flat_fwd.fixed.cpp
+            ${s}/c4/list.test.flat_fwd.small.cpp
+            ${s}/c4/list.test.split_fwd.paged.cpp
+            ${s}/c4/list.test.split_fwd.paged_rt.cpp
+            ${s}/c4/list.test.split_fwd.raw.cpp
+            ${s}/c4/list.test.split_fwd.fixed.cpp
+            ${s}/c4/list.test.split_fwd.small.cpp
             ${s}/c4/sstream.test.cpp
             ${s}/c4/string.test.string.cpp
             ${s}/c4/string.test.substring.cpp
