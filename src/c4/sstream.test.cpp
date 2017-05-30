@@ -3,6 +3,7 @@
 
 #include "c4/test.hpp"
 #include "c4/archetypes.hpp"
+#include "c4/type_name.hpp"
 #include <iostream>
 
 C4_BEGIN_NAMESPACE(c4)
@@ -73,14 +74,20 @@ TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
 template< class String, class T >
 void do_round_trip_chevron(sstream<String> &ss, T const& val1, T const& val2, T const& val3)
 {
+    csubstring sn = c4::type_name< String >();
+    csubstring tn = c4::type_name< T >();
+    C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 1\n", (int)sn.size(), sn.data(), (int)tn.size(), tn.data());
     using char_type = typename sstream< String >::char_type;
     T v1, v2, v3;
     ss << val1 << char_type(' ') << val2 << char_type(' ') << val3;
+    C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 2\n", (int)sn.size(), sn.data(), (int)tn.size(), tn.data());
     char_type c;
     ss >> v1 >> c >> v2 >> c >> v3;
+    C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 3\n", (int)sn.size(), sn.data(), (int)tn.size(), tn.data());
     EXPECT_EQ(v1, val1) << C4_PRETTY_FUNC;
     EXPECT_EQ(v2, val2) << C4_PRETTY_FUNC;
     EXPECT_EQ(v3, val3) << C4_PRETTY_FUNC;
+    C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 4\n", (int)sn.size(), sn.data(), (int)tn.size(), tn.data());
 }
 TYPED_TEST_P(RoundTripTest_c4string, chevron)
 {
