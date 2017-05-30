@@ -91,6 +91,7 @@ using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
 
 struct contiguous_t {};
 struct fixed_t {};
+struct small_t {};
 struct paged_t {};
 
 template< class Storage, class TagType >
@@ -110,6 +111,7 @@ struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
     enum {
         contiguous = std::is_same< TagType, contiguous_t >::value,
         fixed = std::is_same< TagType, fixed_t >::value,
+        small = std::is_same< TagType, small_t >::value,
         paged = std::is_same< TagType, paged_t >::value,
         has_allocator = ! fixed
     };
@@ -167,10 +169,8 @@ struct _raw_storage_traits< Storage, fixed_t >
     }
 };
 
-/** specialization of _raw_storage_traits for non-fixed contiguous containers.
- * @ingroup raw_storage_classes */
 template< class Storage >
-struct _raw_storage_traits< Storage, contiguous_t >
+struct _common_contiguous_traits
 {
     using storage_type = Storage;
 
@@ -208,6 +208,21 @@ struct _raw_storage_traits< Storage, contiguous_t >
     {
         c4::copy_assign_n(dest.data() + first, src.data() + first, n);
     }
+
+};
+
+/** specialization of _raw_storage_traits for non-fixed contiguous containers.
+ * @ingroup raw_storage_classes */
+template< class Storage >
+struct _raw_storage_traits< Storage, contiguous_t > : public _common_contiguous_traits< Storage >
+{
+};
+/** specialization of _raw_storage_traits for small contiguous containers.
+ * @ingroup raw_storage_classes */
+template< class Storage >
+struct _raw_storage_traits< Storage, small_t > : public _common_contiguous_traits< Storage >
+{
+    using storage_type = Storage;
 };
 
 
@@ -522,7 +537,7 @@ struct raw_small
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I)
-    using storage_traits = raw_storage_traits< raw_small, contiguous_t >;
+    using storage_traits = raw_storage_traits< raw_small, small_t >;
 
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
