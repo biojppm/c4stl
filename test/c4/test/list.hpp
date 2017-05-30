@@ -4,7 +4,7 @@
 #include "c4/list.hpp"
 
 #include "c4/test.hpp"
-#include "c4/archetypes.hpp"
+#include "c4/libtest/archetypes.hpp"
 
 #ifdef __clang__
 #   pragma clang diagnostic push

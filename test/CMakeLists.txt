@@ -103,10 +103,10 @@ find_package(Threads REQUIRED)
 
 #------------------------------------------------------------------------------
 set(testsrc
-    c4/archetypes.cpp
-    c4/archetypes.hpp
     c4/test.hpp
-    c4/test.cpp
+    c4/libtest/test.cpp
+    c4/libtest/archetypes.cpp
+    c4/libtest/archetypes.hpp
     )
 c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
     SOURCES ${testsrc}
@@ -126,7 +126,7 @@ macro(c4stl_get_exe bin_dir exe_name)
 endmacro()
 
 function(c4stl_add_test name)
-    create_source_group("" "../src" "${ARGN}")
+    create_source_group("" "c4/test" "${ARGN}")
     set(sanitize SANITIZE)
     if(COVERAGE_BUILD)
         set(sanitize "")
