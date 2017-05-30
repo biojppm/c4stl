@@ -290,12 +290,14 @@ public:
     using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
 
     template< class U >
-    using rebind_type = raw_fixed<U, N, I, Alignment>;
+    using rebind_type = raw_fixed<U, N, I, alignof(U)>;
 
 public:
 
     C4_ALWAYS_INLINE raw_fixed() {}
     C4_ALWAYS_INLINE ~raw_fixed() {}
+
+    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_XASSERT(cap <= N); }
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
@@ -390,7 +392,7 @@ public:
     using growth_policy = GrowthPolicy;
 
     template< class U >
-    using rebind_type = raw<U, I, Alignment, rebind_alloc<U>, GrowthPolicy>;
+    using rebind_type = raw<U, I, alignof(U), rebind_alloc<U>, GrowthPolicy>;
 
 public:
 
@@ -546,7 +548,7 @@ public:
     using growth_policy = GrowthPolicy;
 
     template< class U >
-    using rebind_type = raw_small<U, I, N_, Alignment, rebind_alloc<U>, GrowthPolicy>;
+    using rebind_type = raw_small<U, I, N_, alignof(U), rebind_alloc<U>, GrowthPolicy>;
 
     C4_STATIC_ASSERT(N_ < (size_t)std::numeric_limits< I >::max());
 
@@ -924,7 +926,7 @@ public:
     using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
 
     template< class U >
-    using rebind_type = raw_paged<U, I, PageSize, Alignment, rebind_alloc<U>>;
+    using rebind_type = raw_paged<U, I, PageSize, alignof(U), rebind_alloc<U>>;
 
 public:
 
