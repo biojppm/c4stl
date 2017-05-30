@@ -2714,6 +2714,11 @@ public:
     template< class OtherSize >
     C4_ALWAYS_INLINE basic_substring& operator= (basic_substring< C, OtherSize > const& that) { m_str = (that.m_str); m_size = (szconv< size_type >(that.m_size)); return *this; }
 
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_substring(span< C, OtherSize > const& that) : m_str(that.data()), m_size(szconv< size_type >(that.size())) {}
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_substring(spanrs< C, OtherSize > const& that) : m_str(that.data()), m_size(szconv< size_type >(that.size())) {}
+
     C4_ALWAYS_INLINE void clear() { m_str = nullptr; m_size = 0; }
 
     C4_ALWAYS_INLINE const C* data () const noexcept { return m_str; }
@@ -2819,6 +2824,11 @@ public:
     C4_ALWAYS_INLINE void assign(basic_substringrs< C, OtherSize > const& that) { m_str = (that.m_str); m_size = (szconv< size_type >(that.m_size)); m_capacity = (szconv< size_type >(that.m_capacity)); }
     template< class OtherSize >
     C4_ALWAYS_INLINE basic_substringrs& operator= (basic_substringrs< C, OtherSize > const& that) { m_str = (that.m_str); m_size = (szconv< size_type >(that.m_size)); m_capacity = (szconv< size_type >(that.m_capacity)); return *this; }
+
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_substringrs(span< C, OtherSize > const& that) : m_str(that.data()), m_size(szconv< size_type >(that.size())) {}
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_substringrs(spanrs< C, OtherSize > const& that) : m_str(that.data()), m_size(szconv< size_type >(that.size())) {}
 
     C4_ALWAYS_INLINE void clear() { m_size = 0; }
 
@@ -2964,6 +2974,11 @@ public:
     template< int N > C4_ALWAYS_INLINE basic_text& operator= (const C (&s)[N]) { assign(&s[0], N-1); return *this; }
     template< int N > C4_ALWAYS_INLINE void assign(const C (&s)[N]) { assign(&s[0], N-1); }
     template< int N > C4_ALWAYS_INLINE void assign(const C (&s)[N], SizeType n) { assign(&s[0], n); }
+
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_text(span< C, OtherSize > const& that) : basic_text() { assign(that.data(), that.size()); }
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_text(spanrs< C, OtherSize > const& that) : basic_text() { assign(that.data(), that.size()); }
 
     C4_ALWAYS_INLINE basic_text(const C *s, SizeType n, SizeType cap)                 : basic_text()  { assign(s, n, cap); }
     C4_ALWAYS_INLINE basic_text(const C *s, SizeType n, SizeType cap, Alloc const& a) : basic_text(a) { assign(s, n, cap); }
@@ -3323,6 +3338,11 @@ public:
     template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_string(basic_string< C, Sz_, Al_ > const& that) { assign(that); }
     template< class Sz_, class Al_ > C4_ALWAYS_INLINE basic_string& operator= (basic_string< C, Sz_, Al_ > const& that) { assign(that); return *this; }
     template< class Sz_, class Al_ > C4_ALWAYS_INLINE void assign(basic_string< C, Sz_, Al_ > const& that) { assign(that.data(), szconv< size_type >(that.size())); }
+
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_string(span< C, OtherSize > const& that) : basic_string() { assign(that.data(), that.size()); }
+    template< class OtherSize >
+    C4_ALWAYS_INLINE basic_string(spanrs< C, OtherSize > const& that) : basic_string() { assign(that.data(), that.size()); }
 
 public:
 
