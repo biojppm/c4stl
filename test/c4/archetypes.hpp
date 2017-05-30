@@ -55,7 +55,7 @@ struct archetype_proto_base
     static T const& get(int which)
     {
         auto const& a = Proto::arr();
-        C4_ASSERT(which < a.size());
+        C4_ASSERT(which < (int)a.size());
         return a[which];
     }
     static std::array< T, 8 > dup()
