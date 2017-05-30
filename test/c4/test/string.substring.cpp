@@ -1,4 +1,4 @@
-#include "c4/string.test.hpp"
+#include "c4/test/string.hpp"
 #include "c4/hash.hpp"
 
 C4_BEGIN_NAMESPACE(c4)

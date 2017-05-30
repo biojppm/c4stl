@@ -1,4 +1,4 @@
-#include "c4/list.test.hpp"
+#include "c4/test/list.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -14,10 +14,6 @@ TEST(flat_list, ilist)
     EXPECT_EQ(li.elm(3), 3);
     EXPECT_EQ(li.elm(4), 4);
 }
-
-#define _c4adaptor(tyname, ty) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST)
-
-CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
+CALL_FOR_CONTAINEE_ARCHETYPES(_C4_CALL_FLAT_LIST_TESTS_ADAPTOR)
 
 C4_END_NAMESPACE(c4)

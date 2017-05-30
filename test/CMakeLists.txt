@@ -163,86 +163,86 @@ endfunction(c4stl_add_test)
 
 #------------------------------------------------------------------------------
 
-set(s ../src)
+set(t c4/test)
 
-c4stl_add_test(c4stl-test-preprocessor ${s}/c4/preprocessor.test.cpp)
-c4stl_add_test(c4stl-test-typename     ${s}/c4/type_name.test.cpp)
-c4stl_add_test(c4stl-test-types        ${s}/c4/types.test.cpp)
-c4stl_add_test(c4stl-test-szconv       ${s}/c4/szconv.test.cpp)
-c4stl_add_test(c4stl-test-log          ${s}/c4/log.test.cpp)
-c4stl_add_test(c4stl-test-error        ${s}/c4/error.test.cpp)
-c4stl_add_test(c4stl-test-memutil      ${s}/c4/memory_util.test.cpp)
-c4stl_add_test(c4stl-test-memresource  ${s}/c4/memory_resource.test.cpp)
-c4stl_add_test(c4stl-test-allocator    ${s}/c4/allocator.test.cpp)
-c4stl_add_test(c4stl-test-ctordtor     ${s}/c4/ctor_dtor.test.cpp)
+c4stl_add_test(c4stl-test-preprocessor ${t}/preprocessor.cpp)
+c4stl_add_test(c4stl-test-typename     ${t}/type_name.cpp)
+c4stl_add_test(c4stl-test-types        ${t}/types.cpp)
+c4stl_add_test(c4stl-test-szconv       ${t}/szconv.cpp)
+c4stl_add_test(c4stl-test-log          ${t}/log.cpp)
+c4stl_add_test(c4stl-test-error        ${t}/error.cpp)
+c4stl_add_test(c4stl-test-memutil      ${t}/memory_util.cpp)
+c4stl_add_test(c4stl-test-memresource  ${t}/memory_resource.cpp)
+c4stl_add_test(c4stl-test-allocator    ${t}/allocator.cpp)
+c4stl_add_test(c4stl-test-ctordtor     ${t}/ctor_dtor.cpp)
 
-c4stl_add_test(c4stl-test-span         ${s}/c4/span.test.cpp)
+c4stl_add_test(c4stl-test-span         ${t}/span.cpp)
 
-c4stl_add_test(c4stl-test-chartraits   ${s}/c4/char_traits.test.cpp)
-c4stl_add_test(c4stl-test-sstream      ${s}/c4/sstream.test.cpp)
+c4stl_add_test(c4stl-test-chartraits   ${t}/char_traits.cpp)
+c4stl_add_test(c4stl-test-sstream      ${t}/sstream.cpp)
 
 # the string tests are separated to save compile time
-c4stl_add_test(c4stl-test-string-substring   ${s}/c4/string.test.substring.cpp ${s}/c4/string.test.hpp)
-c4stl_add_test(c4stl-test-string-substringrs ${s}/c4/string.test.substringrs.cpp ${s}/c4/string.test.hpp)
-c4stl_add_test(c4stl-test-string-string      ${s}/c4/string.test.string.cpp ${s}/c4/string.test.hpp)
-c4stl_add_test(c4stl-test-string-text        ${s}/c4/string.test.text.cpp ${s}/c4/string.test.hpp)
-c4stl_add_test(c4stl-test-string-interop     ${s}/c4/string.test.interop.cpp ${s}/c4/string.test.hpp)
+c4stl_add_test(c4stl-test-string-substring   ${t}/string.substring.cpp ${t}/string.hpp)
+c4stl_add_test(c4stl-test-string-substringrs ${t}/string.substringrs.cpp ${t}/string.hpp)
+c4stl_add_test(c4stl-test-string-string      ${t}/string.string.cpp ${t}/string.hpp)
+c4stl_add_test(c4stl-test-string-text        ${t}/string.text.cpp ${t}/string.hpp)
+c4stl_add_test(c4stl-test-string-interop     ${t}/string.interop.cpp ${t}/string.hpp)
 
-c4stl_add_test(c4stl-test-growth       ${s}/c4/storage/growth.test.cpp)
+c4stl_add_test(c4stl-test-growth       ${t}/storage/growth.cpp)
 
-c4stl_add_test(c4stl-test-raw          ${s}/c4/storage/raw.test.cpp ${s}/c4/storage/raw.test.hpp)
-c4stl_add_test(c4stl-test-contiguous   ${s}/c4/storage/contiguous.test.cpp)
+c4stl_add_test(c4stl-test-raw          ${t}/storage/raw.cpp ${t}/storage/raw.hpp)
+c4stl_add_test(c4stl-test-contiguous   ${t}/storage/contiguous.cpp)
 
 # the list tests are separated to save compile time
-c4stl_add_test(c4stl-test-list-flat-paged    ${s}/c4/list.test.flat.paged.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat-paged_rt ${s}/c4/list.test.flat.paged_rt.cpp ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat-raw      ${s}/c4/list.test.flat.raw.cpp      ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat-fixed    ${s}/c4/list.test.flat.fixed.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat-small    ${s}/c4/list.test.flat.small.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split-paged    ${s}/c4/list.test.split.paged.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split-paged_rt ${s}/c4/list.test.split.paged_rt.cpp ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split-raw      ${s}/c4/list.test.split.raw.cpp      ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split-fixed    ${s}/c4/list.test.split.fixed.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split-small    ${s}/c4/list.test.split.small.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat_fwd-paged    ${s}/c4/list.test.flat_fwd.paged.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat_fwd-paged_rt ${s}/c4/list.test.flat_fwd.paged_rt.cpp ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat_fwd-raw      ${s}/c4/list.test.flat_fwd.raw.cpp      ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat_fwd-fixed    ${s}/c4/list.test.flat_fwd.fixed.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-flat_fwd-small    ${s}/c4/list.test.flat_fwd.small.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split_fwd-paged    ${s}/c4/list.test.split_fwd.paged.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split_fwd-paged_rt ${s}/c4/list.test.split_fwd.paged_rt.cpp ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split_fwd-raw      ${s}/c4/list.test.split_fwd.raw.cpp      ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split_fwd-fixed    ${s}/c4/list.test.split_fwd.fixed.cpp    ${s}/c4/list.test.hpp)
-c4stl_add_test(c4stl-test-list-split_fwd-small    ${s}/c4/list.test.split_fwd.small.cpp    ${s}/c4/list.test.hpp)
+c4stl_add_test(c4stl-test-list-flat-paged    ${t}/list.flat.paged.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat-paged_rt ${t}/list.flat.paged_rt.cpp ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat-raw      ${t}/list.flat.raw.cpp      ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat-fixed    ${t}/list.flat.fixed.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat-small    ${t}/list.flat.small.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split-paged    ${t}/list.split.paged.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split-paged_rt ${t}/list.split.paged_rt.cpp ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split-raw      ${t}/list.split.raw.cpp      ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split-fixed    ${t}/list.split.fixed.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split-small    ${t}/list.split.small.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-paged    ${t}/list.flat_fwd.paged.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-paged_rt ${t}/list.flat_fwd.paged_rt.cpp ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-raw      ${t}/list.flat_fwd.raw.cpp      ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-fixed    ${t}/list.flat_fwd.fixed.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-flat_fwd-small    ${t}/list.flat_fwd.small.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-paged    ${t}/list.split_fwd.paged.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-paged_rt ${t}/list.split_fwd.paged_rt.cpp ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-raw      ${t}/list.split_fwd.raw.cpp      ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-fixed    ${t}/list.split_fwd.fixed.cpp    ${t}/list.hpp)
+c4stl_add_test(c4stl-test-list-split_fwd-small    ${t}/list.split_fwd.small.cpp    ${t}/list.hpp)
 
 if(WIN32)
     if(MSVC AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC") # it may be clang as well
         set(bigfiles
-            ${s}/c4/list.test.flat.paged.cpp
-            ${s}/c4/list.test.flat.paged_rt.cpp
-            ${s}/c4/list.test.flat.raw.cpp
-            ${s}/c4/list.test.flat.fixed.cpp
-            ${s}/c4/list.test.flat.small.cpp
-            ${s}/c4/list.test.split.paged.cpp
-            ${s}/c4/list.test.split.paged_rt.cpp
-            ${s}/c4/list.test.split.raw.cpp
-            ${s}/c4/list.test.split.fixed.cpp
-            ${s}/c4/list.test.split.small.cpp
-            ${s}/c4/list.test.flat_fwd.paged.cpp
-            ${s}/c4/list.test.flat_fwd.paged_rt.cpp
-            ${s}/c4/list.test.flat_fwd.raw.cpp
-            ${s}/c4/list.test.flat_fwd.fixed.cpp
-            ${s}/c4/list.test.flat_fwd.small.cpp
-            ${s}/c4/list.test.split_fwd.paged.cpp
-            ${s}/c4/list.test.split_fwd.paged_rt.cpp
-            ${s}/c4/list.test.split_fwd.raw.cpp
-            ${s}/c4/list.test.split_fwd.fixed.cpp
-            ${s}/c4/list.test.split_fwd.small.cpp
-            ${s}/c4/sstream.test.cpp
-            ${s}/c4/string.test.string.cpp
-            ${s}/c4/string.test.substring.cpp
-            ${s}/c4/string.test.substringrs.cpp
-            ${s}/c4/string.test.text.cpp
+            ${t}/list.flat.paged.cpp
+            ${t}/list.flat.paged_rt.cpp
+            ${t}/list.flat.raw.cpp
+            ${t}/list.flat.fixed.cpp
+            ${t}/list.flat.small.cpp
+            ${t}/list.split.paged.cpp
+            ${t}/list.split.paged_rt.cpp
+            ${t}/list.split.raw.cpp
+            ${t}/list.split.fixed.cpp
+            ${t}/list.split.small.cpp
+            ${t}/list.flat_fwd.paged.cpp
+            ${t}/list.flat_fwd.paged_rt.cpp
+            ${t}/list.flat_fwd.raw.cpp
+            ${t}/list.flat_fwd.fixed.cpp
+            ${t}/list.flat_fwd.small.cpp
+            ${t}/list.split_fwd.paged.cpp
+            ${t}/list.split_fwd.paged_rt.cpp
+            ${t}/list.split_fwd.raw.cpp
+            ${t}/list.split_fwd.fixed.cpp
+            ${t}/list.split_fwd.small.cpp
+            ${t}/sstream.cpp
+            ${t}/string.string.cpp
+            ${t}/string.substring.cpp
+            ${t}/string.substringrs.cpp
+            ${t}/string.text.cpp
             )
         foreach(_bf ${bigfiles})
             set_property(SOURCE ${_bf} APPEND_STRING PROPERTY COMPILE_FLAGS " /bigobj ")

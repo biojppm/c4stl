@@ -1,10 +1,10 @@
-#include "c4/list.test.hpp"
+#include "c4/test/list.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 
-TEST(flat_fwd_list, ilist)
+TEST(flat_list, ilist)
 {
-    flat_fwd_list<int> li(c4::aggregate, {0, 1, 2, 3, 4});
+    flat_list<int> li(c4::aggregate, {0, 1, 2, 3, 4});
     EXPECT_FALSE(li.empty());
     EXPECT_EQ(li.size(), 5);
     EXPECT_EQ(li.capacity(), li.m_elms.page_size());
@@ -16,7 +16,7 @@ TEST(flat_fwd_list, ilist)
 }
 
 #define _c4adaptor(tyname, ty) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST)
+    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST)
 
 CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
 
