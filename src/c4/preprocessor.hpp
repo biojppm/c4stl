@@ -26,7 +26,12 @@
 #define C4_COUNTOF(arr) sizeof(arr)/sizeof((arr)[0])
 
 #define C4_EXPAND(arg) arg
+
+/** useful in some macro calls with template arguments */
 #define C4_COMMA ,
+/** useful in some macro calls with template arguments
+ * @see C4_COMMA */
+#define C4_COMMA_X C4_COMMA
 
 /** expand and quote */
 #define C4_XQUOTE(arg) _C4_XQUOTE(arg)
