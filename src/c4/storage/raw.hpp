@@ -58,6 +58,12 @@ struct default_page_size< T, int8_t >
     enum : int8_t { value = 64 };
 };
 
+template< class T, class I >
+struct default_small_size
+{
+    enum : I { value = 16 };
+};
+
 //-----------------------------------------------------------------------------
 
 // forward declarations
@@ -71,8 +77,8 @@ struct raw;
 
 /** raw storage with inplace storage of up to N objects, thus saving an
  * allocation when the size is small. @ingroup raw_storage_classes */
-template< class T, class I=C4_SIZE_TYPE, size_t N=16, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
-struct raw_small; // = raw< T, I, Alignment, SmallAllocator<T, N, Alignment> >;
+template< class T, class I=C4_SIZE_TYPE, size_t N=default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
+struct raw_small;
 
 template< class T, class I=C4_SIZE_TYPE, size_t PageSize=default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> >
 struct raw_paged;
