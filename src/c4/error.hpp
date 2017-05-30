@@ -8,20 +8,18 @@
 #include "c4/config.hpp"
 
 #ifdef _DOXYGEN_
-/** if this is defined and exceptions are enabled, then calls to C4_ERROR()
- * will throw an exception
- * @ingroup error_checking */
+    /** if this is defined and exceptions are enabled, then calls to C4_ERROR()
+     * will throw an exception
+     * @ingroup error_checking */
 #   define C4_EXCEPTIONS_ENABLED
-
-/** if this is defined and exceptions are enabled, then calls to C4_ERROR()
- *  will throw an exception
- * @see C4_EXCEPTIONS_ENABLED
- * @ingroup error_checking */
+    /** if this is defined and exceptions are enabled, then calls to C4_ERROR()
+     *  will throw an exception
+     * @see C4_EXCEPTIONS_ENABLED
+     * @ingroup error_checking */
 #   define C4_ERROR_THROWS_EXCEPTION
-
-/** evaluates to noexcept when C4_ERROR might be called and
- * exceptions are disabled. Otherwise, defaults to nothing.
- * @ingroup error_checking */
+    /** evaluates to noexcept when C4_ERROR might be called and
+     * exceptions are disabled. Otherwise, defaults to nothing.
+     * @ingroup error_checking */
 #   define C4_NOEXCEPT
 #endif // _DOXYGEN_
 
@@ -199,24 +197,21 @@ struct srcloc
 // assertions
 
 #ifdef _DOXYGEN_
-/** Explicitly enables assertions, independently of NDEBUG status.
- * This is meant to allow enabling assertions even when NDEBUG is defined.
- * Defaults to undefined.
- * @ingroup error_checking */
+    /** Explicitly enables assertions, independently of NDEBUG status.
+     * This is meant to allow enabling assertions even when NDEBUG is defined.
+     * Defaults to undefined.
+     * @ingroup error_checking */
 #   define C4_USE_ASSERT
-
-/** assert that a condition is true; this is turned off when NDEBUG
- * is defined and C4_USE_ASSERT is not defined.
- * @ingroup error_checking  */
+    /** assert that a condition is true; this is turned off when NDEBUG
+     * is defined and C4_USE_ASSERT is not defined.
+     * @ingroup error_checking  */
 #   define C4_ASSERT
-
-/** same as C4_ASSERT(), additionally prints a printf-formatted message
- * @ingroup error_checking */
+    /** same as C4_ASSERT(), additionally prints a printf-formatted message
+     * @ingroup error_checking */
 #   define C4_ASSERT_MSG
-
-/** evaluates to C4_NOEXCEPT when C4_XASSERT is disabled; otherwise, defaults
- * to noexcept
- * @ingroup error_checking */
+    /** evaluates to C4_NOEXCEPT when C4_XASSERT is disabled; otherwise, defaults
+     * to noexcept
+     * @ingroup error_checking */
 #   define C4_NOEXCEPT_A
 #endif // _DOXYGEN_
 
