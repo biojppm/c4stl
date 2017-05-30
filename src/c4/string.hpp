@@ -3367,7 +3367,7 @@ public:
     }
     void reserve(SizeType cap)
     {
-        SizeType next = szconv< SizeType >(1.618f * float(size()));
+        SizeType next = szconv< SizeType >((size_t)(1.618f * float(size())));
         cap = cap > next ? cap : next;
         _reserve(cap);
     }
