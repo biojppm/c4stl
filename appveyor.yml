@@ -24,15 +24,15 @@ environment:
       configuration: Quicktest
       externconfig: Debug
 
-    - compiler: msvc-12-seh
-      generator: "Visual Studio 12 2013"
-      configuration: Quicktest
-      externconfig: Debug
-
-    - compiler: msvc-12-seh
-      generator: "Visual Studio 12 2013 Win64"
-      configuration: Quicktest
-      externconfig: Debug
+    #- compiler: msvc-12-seh
+    #  generator: "Visual Studio 12 2013"
+    #  configuration: Quicktest
+    #  externconfig: Debug
+    #
+    #- compiler: msvc-12-seh
+    #  generator: "Visual Studio 12 2013 Win64"
+    #  configuration: Quicktest
+    #  externconfig: Debug
 
     #- compiler: gcc-5.3.0-posix
     #  generator: "MinGW Makefiles"
@@ -62,15 +62,15 @@ environment:
       configuration: Debug
       externconfig: Debug
 
-    - compiler: msvc-12-seh
-      generator: "Visual Studio 12 2013"
-      configuration: Debug
-      externconfig: Debug
-
-    - compiler: msvc-12-seh
-      generator: "Visual Studio 12 2013 Win64"
-      configuration: Debug
-      externconfig: Debug
+    #- compiler: msvc-12-seh
+    #  generator: "Visual Studio 12 2013"
+    #  configuration: Debug
+    #  externconfig: Debug
+    #
+    #- compiler: msvc-12-seh
+    #  generator: "Visual Studio 12 2013 Win64"
+    #  configuration: Debug
+    #  externconfig: Debug
 
     #- compiler: gcc-5.3.0-posix
     #  generator: "MinGW Makefiles"
@@ -100,15 +100,15 @@ environment:
       configuration: Release
       externconfig: Release
 
-    - compiler: msvc-12-seh
-      generator: "Visual Studio 12 2013"
-      configuration: Release
-      externconfig: Release
-
-    - compiler: msvc-12-seh
-      generator: "Visual Studio 12 2013 Win64"
-      configuration: Release
-      externconfig: Release
+    #- compiler: msvc-12-seh
+    #  generator: "Visual Studio 12 2013"
+    #  configuration: Release
+    #  externconfig: Release
+    #
+    #- compiler: msvc-12-seh
+    #  generator: "Visual Studio 12 2013 Win64"
+    #  configuration: Release
+    #  externconfig: Release
 
     #- compiler: gcc-5.3.0-posix
     #  generator: "MinGW Makefiles"
