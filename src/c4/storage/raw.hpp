@@ -523,7 +523,8 @@ template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPol
 struct raw_small
 {
 
-    C4_STATIC_ASSERT(sizeof(T) == alignof(T));
+    // not sure if this is needed
+    //C4_STATIC_ASSERT(sizeof(T) == alignof(T));
 
     union {
         union {
