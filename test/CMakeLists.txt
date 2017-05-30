@@ -106,6 +106,7 @@ set(testsrc
     c4/archetypes.cpp
     c4/archetypes.hpp
     c4/test.hpp
+    c4/test.cpp
     )
 c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
     SOURCES ${testsrc}
@@ -167,6 +168,7 @@ set(s ../src)
 c4stl_add_test(c4stl-test-preprocessor ${s}/c4/preprocessor.test.cpp)
 c4stl_add_test(c4stl-test-typename     ${s}/c4/type_name.test.cpp)
 c4stl_add_test(c4stl-test-types        ${s}/c4/types.test.cpp)
+c4stl_add_test(c4stl-test-szconv       ${s}/c4/szconv.test.cpp)
 c4stl_add_test(c4stl-test-log          ${s}/c4/log.test.cpp)
 c4stl_add_test(c4stl-test-error        ${s}/c4/error.test.cpp)
 c4stl_add_test(c4stl-test-memutil      ${s}/c4/memory_util.test.cpp)
