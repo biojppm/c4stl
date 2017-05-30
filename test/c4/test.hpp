@@ -85,7 +85,7 @@ struct TestErrorOccurs
     ~TestErrorOccurs()
     {
         EXPECT_EQ(num_errors, expected_errors);
-        num_errors = 0;;
+        num_errors = 0;
     }
 
     size_t expected_errors;
