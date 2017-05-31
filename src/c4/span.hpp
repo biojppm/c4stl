@@ -75,7 +75,7 @@ class _span_crtp
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
 public:
 
@@ -309,7 +309,7 @@ class span : public _span_crtp<T, I, span<T, I>>
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
 public:
 
@@ -369,7 +369,7 @@ class spanrs : public _span_crtp<T, I, spanrs<T, I>>
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
     C4_ALWAYS_INLINE operator span< T, I > () const noexcept { return span< T, I >(m_ptr, m_size); }
 
@@ -435,7 +435,7 @@ class etched_span : public _span_crtp<T, I, etched_span<T, I>>
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
     C4_ALWAYS_INLINE operator span< T, I > () const noexcept { return span< T, I >(m_ptr, m_size); }
     C4_ALWAYS_INLINE operator spanrs< T, I > () const noexcept { return spanrs< T, I >(m_ptr, m_size, m_capacity); }

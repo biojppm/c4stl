@@ -257,7 +257,7 @@ public:                                                                 \
     using const_iterator = T const*;                                    \
                                                                         \
     using reverse_iterator = std::reverse_iterator< T* >;               \
-    using const_reverse_iterator = std::reverse_iterator< T const* >;
+    using const_reverse_iterator = std::reverse_iterator< T const* >
 
 
 //-----------------------------------------------------------------------------

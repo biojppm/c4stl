@@ -101,8 +101,8 @@ void list_test0_push_back_copy()
             }
 
             EXPECT_FALSE(li.empty());
-            EXPECT_EQ(li.size(), arr.size()));
-            EXPECT_GE(li.capacity(), arr.size()));
+            EXPECT_EQ(li.size(), arr.size());
+            EXPECT_GE(li.capacity(), arr.size());
             EXPECT_NE(li.begin(), li.end());
             EXPECT_EQ(std::distance(li.begin(), li.end()), arr.size());
 
