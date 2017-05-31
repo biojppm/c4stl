@@ -58,7 +58,7 @@ template< class T, class I, class Storage >
 struct _ctg_crtp
 {
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
     C4_ALWAYS_INLINE constexpr I type_size() const { return sizeof(T); }
     C4_ALWAYS_INLINE           I byte_size() const { return _c4this->size() * sizeof(T); }
@@ -143,7 +143,7 @@ struct _ctgrs_crtp : public _ctg_crtp< T, I, Storage >
 {
     using _ctg_crtp< T, I, Storage >::is_valid_iterator;
     using _base_crtp = _ctg_crtp< T, I, Storage >;
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
 public:
 
@@ -399,7 +399,7 @@ public:
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
     enum : I { alignment = Alignment, arr_size = (I)N_ };
 
@@ -506,7 +506,7 @@ public:
     using base_crtp = _ctgrs_crtp< T, I, contiguous< T, I, RawStorage > >;
     using raw_storage_type = RawStorage;
 
-    _c4_DEFINE_ARRAY_TYPES(T, I)
+    _c4_DEFINE_ARRAY_TYPES(T, I);
 
 public:
 
