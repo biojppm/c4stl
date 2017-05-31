@@ -2,7 +2,6 @@
 # to make a quick test covering less combinations
 
 include(GetFlags)
-include(ConfigurationTypes)
 
 get_define(dquicktest C4_QUICKTEST)
 add_configuration_type(Quicktest

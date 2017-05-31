@@ -4,11 +4,24 @@ project(c4stl)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+include(ConfigurationTypes)
 include(CreateSourceGroup)
 include(SanitizeTarget)
+
 setup_sanitize(C4STL)
 
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
+
+if(MSVC)
+    set(_c4pedflags "/W4")
+else()
+    set(_c4pedflags "-Wall -Wextra -Wshadow -Werror -pedantic -pedantic-errors -Wfloat-equal -fstrict-aliasing")
+endif()
+add_configuration_type(Pedantic
+    DEFAULT_FROM DEBUG
+    C_FLAGS ${_c4pedflags}
+    CXX_FLAGS ${_c4pedflags}
+    )
 
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
