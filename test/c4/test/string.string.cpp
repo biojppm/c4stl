@@ -1,8 +1,9 @@
-#include "c4/test/string.hpp"
 #include "c4/sstream.hpp"
 #include "c4/string.hpp"
 #include "c4/hash.hpp"
 
+#include "c4/libtest/supprwarn_push.hpp"
+#include "c4/test/string.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -70,3 +71,5 @@ TEST(string, appendzz)
 
 C4_END_HIDDEN_NAMESPACE
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

@@ -1,16 +1,9 @@
 #include "c4/string.hpp"
 #include "c4/config.hpp"
+
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
-#ifdef __clang__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wwritable-strings" // ISO C++11 does not allow conversion from string literal to char*
-#   pragma clang diagnostic ignored "-Wunused-variable"
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wwrite-strings" // ISO C++ forbids converting a string constant to ‘C* {aka char*}’
-#   pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -3078,10 +3071,6 @@ void test_string_vs_wstring()
 #undef MTEST
 #undef NTEST
 
-#ifdef __clang__
-#   pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic pop
-#endif
-
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

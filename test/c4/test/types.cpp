@@ -1,6 +1,7 @@
 #include "c4/config.hpp"
-
 #include <string>
+
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
@@ -74,3 +75,5 @@ TEST(TestSizeStructs, UbufSized)
 }
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

@@ -91,7 +91,7 @@ struct TestErrorOccurs
     size_t expected_errors;
     static size_t num_errors;
     ScopedErrorSettings tmp_settings;
-    static void error_callback(const char* msg, size_t msg_size)
+    static void error_callback(const char* /*msg*/, size_t /*msg_size*/)
     {
         ++num_errors;
     }

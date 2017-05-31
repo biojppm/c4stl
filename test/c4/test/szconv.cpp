@@ -1,4 +1,6 @@
 #include "c4/szconv.hpp"
+
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
 #define C4_EXPECT_NARROWER(yes_or_no, ty_out, ty_in) \
@@ -158,3 +160,5 @@ DO_TEST_SZCONV(int64)
 DO_TEST_SZCONV(uint64)
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_push.hpp"

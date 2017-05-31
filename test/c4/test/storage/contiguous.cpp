@@ -1,11 +1,8 @@
 #include "c4/storage/contiguous.hpp"
+
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 #include "c4/libtest/archetypes.hpp"
-
-#ifdef __clang__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wunused-local-typedef"
-#endif
 
 C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
@@ -325,3 +322,5 @@ INSTANTIATE_TYPED_TEST_CASE_P(containers, test_fixed_size, c4::archetypes::conta
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

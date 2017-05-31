@@ -1,10 +1,11 @@
 #include "c4/sstream.hpp"
 #include "c4/string.hpp"
-
-#include "c4/test.hpp"
-#include "c4/libtest/archetypes.hpp"
 #include "c4/type_name.hpp"
 #include <iostream>
+
+#include "c4/libtest/supprwarn_push.hpp"
+#include "c4/test.hpp"
+#include "c4/libtest/archetypes.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -257,3 +258,5 @@ INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdstring,    c4::archetype
 INSTANTIATE_TYPED_TEST_CASE_P(sstream, RoundTripTest_stdwstring,   c4::archetypes::scalars);
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

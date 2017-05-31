@@ -3,19 +3,16 @@
 
 #include "c4/list.hpp"
 
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 #include "c4/libtest/archetypes.hpp"
-
-#ifdef __clang__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wunused-local-typedef"
-#endif
 
 C4_BEGIN_NAMESPACE(c4)
 
 #define _C4_DEFINE_LIST_TEST_TYPES(List)                            \
     using T = typename List::value_type;                            \
     using I = typename List::size_type;                             \
+    using UI = typename List::difference_type;                      \
     using CT = Counting< T >;                                       \
     using proto = c4::archetypes::archetype_proto< T >;             \
     using C ## List = typename List::template rebind_type< CT >;    \
@@ -54,7 +51,7 @@ void list_test0_ctor_with_capacity()
         CList li(c4::with_capacity, 5);
         EXPECT_TRUE(li.empty());
         EXPECT_EQ(li.size(), 0);
-        EXPECT_GE(li.capacity(), (typename List::size_type)5);
+        EXPECT_GE(li.capacity(), 5);
         EXPECT_EQ(li.begin(), li.end());
         EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
     }
@@ -73,7 +70,7 @@ void list_test0_ctor_with_initlist()
             CList li(c4::aggregate, il);
             EXPECT_FALSE(li.empty());
             EXPECT_EQ(li.size(), il.size());
-            EXPECT_GE(li.capacity(), (typename List::size_type)il.size());
+            EXPECT_GE(li.capacity(), il.size());
             EXPECT_NE(li.begin(), li.end());
             EXPECT_EQ(std::distance(li.begin(), li.end()), il.size());
 
@@ -104,8 +101,8 @@ void list_test0_push_back_copy()
             }
 
             EXPECT_FALSE(li.empty());
-            EXPECT_EQ(li.size(), szconv<I>(arr.size()));
-            EXPECT_GE(li.capacity(), szconv<I>(arr.size()));
+            EXPECT_EQ(li.size(), arr.size()));
+            EXPECT_GE(li.capacity(), arr.size()));
             EXPECT_NE(li.begin(), li.end());
             EXPECT_EQ(std::distance(li.begin(), li.end()), arr.size());
 
@@ -237,81 +234,33 @@ _C4_CALL_LIST_TESTS_FOR_ALL_SIZE_TYPES(split_fwd_list, split_fwd_list, tyname, t
 
 //-----------------------------------------------------------------------------
 
-#define _C4_RAW_FIXED(ty, sz, N) stg::raw_fixed<ty, N, sz>
+template< class I > struct raw_fixed_max_size             { enum { value = 1024, value_pot = 1024 }; };
+template<         > struct raw_fixed_max_size< uint8_t >  { enum { value =  255, value_pot =  128 }; };
+template<         > struct raw_fixed_max_size<  int8_t >  { enum { value =  127, value_pot =   64 }; };
+template<         > struct raw_fixed_max_size<    char >  { enum { value =  127, value_pot =   64 }; };
+
+//-----------------------------------------------------------------------------
+
+#define _C4_RAW_FIXED(ty, sz, N) stg::raw_fixed<ty, (N < raw_fixed_max_size<sz>::value ? N : raw_fixed_max_size<sz>::value), sz>
 #define _C4_RAW_SMALL(ty, sz, N) stg::raw_small<ty, sz, N>
 #define _C4_RAW(ty, sz)          stg::raw         <ty, sz>
 #define _C4_RAW_PAGED(ty, sz)    stg::raw_paged   <ty, sz>
 #define _C4_RAW_PAGED_RT(ty, sz) stg::raw_paged_rt<ty, sz>
 
-#define _C4_RAW_FIXED_FLAT_LIST(ty, sz, N) stg::raw_fixed   <flat_list_elm<ty, sz>, N, sz>
+#define _C4_RAW_FIXED_FLAT_LIST(ty, sz, N) stg::raw_fixed   <flat_list_elm<ty, sz>, (N < raw_fixed_max_size<sz>::value ? N : raw_fixed_max_size<sz>::value), sz>
 #define _C4_RAW_SMALL_FLAT_LIST(ty, sz, N) stg::raw_small   <flat_list_elm<ty, sz>, sz, N>
 #define _C4_RAW_FLAT_LIST(ty, sz)          stg::raw         <flat_list_elm<ty, sz>, sz>
 #define _C4_RAW_PAGED_FLAT_LIST(ty, sz)    stg::raw_paged   <flat_list_elm<ty, sz>, sz>
 #define _C4_RAW_PAGED_RT_FLAT_LIST(ty, sz) stg::raw_paged_rt<flat_list_elm<ty, sz>, sz>
 
-#define _C4_RAW_FIXED_FLAT_FWD_LIST(ty, sz, N) stg::raw_fixed   <flat_fwd_list_elm<ty, sz>, N, sz>
+#define _C4_RAW_FIXED_FLAT_FWD_LIST(ty, sz, N) stg::raw_fixed   <flat_fwd_list_elm<ty, sz>, (N < raw_fixed_max_size<sz>::value ? N : raw_fixed_max_size<sz>::value), sz>
 #define _C4_RAW_SMALL_FLAT_FWD_LIST(ty, sz, N) stg::raw_small   <flat_fwd_list_elm<ty, sz>, sz, N>
 #define _C4_RAW_FLAT_FWD_LIST(ty, sz)          stg::raw         <flat_fwd_list_elm<ty, sz>, sz>
 #define _C4_RAW_PAGED_FLAT_FWD_LIST(ty, sz)    stg::raw_paged   <flat_fwd_list_elm<ty, sz>, sz>
 #define _C4_RAW_PAGED_RT_FLAT_FWD_LIST(ty, sz) stg::raw_paged_rt<flat_fwd_list_elm<ty, sz>, sz>
 
-
-#ifndef C4_QUICKTEST
-
-#define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_FLAT_LIST) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_LIST) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_fixed, _C4_RAW_FIXED_FLAT_LIST, 1024) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_small, _C4_RAW_SMALL_FLAT_LIST, 1024)
-
-#define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
-
-#define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_FWD_LIST)
-
-#define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
-
-#else // C4_QUICKTEST
-
-#define _C4_CALL_FLAT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_LIST) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_FLAT_LIST) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_LIST) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_fixed, _C4_RAW_FIXED_FLAT_LIST, 1024) \
-    _C4_CALL_FLAT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_small, _C4_RAW_SMALL_FLAT_LIST, 1024)
-
-#define _C4_CALL_SPLIT_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
-    _C4_CALL_SPLIT_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
-
-#define _C4_CALL_FLAT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED_RT_FLAT_FWD_LIST) \
-    _C4_CALL_FLAT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW_FLAT_FWD_LIST)
-
-#define _C4_CALL_SPLIT_FWD_LIST_TESTS_ADAPTOR(tyname, ty) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged_rt, _C4_RAW_PAGED_RT) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw_paged, _C4_RAW_PAGED) \
-    _C4_CALL_SPLIT_FWD_LIST_TESTS_FOR_STORAGE(tyname, ty, raw, _C4_RAW)
-
-#endif // C4_QUICKTEST
-
-
-
 C4_END_NAMESPACE(c4)
 
-#ifdef __clang__
-#   pragma clang diagnostic pop
-#endif
-
 #endif // _C4_LIST_TEST_HPP
+
+#include "c4/libtest/supprwarn_pop.hpp"

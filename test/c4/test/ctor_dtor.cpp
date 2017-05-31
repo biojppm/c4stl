@@ -1,4 +1,6 @@
 #include "c4/ctor_dtor.hpp"
+
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
@@ -326,3 +328,5 @@ TEST(ctor_dtor, destroy_room_srcdst)
 }
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

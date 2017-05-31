@@ -1,4 +1,5 @@
 #include "c4/test/list.hpp"
+#include "c4/libtest/supprwarn_push.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -21,3 +22,5 @@ TEST(split_fwd_list, ilist)
 CALL_FOR_CONTAINEE_ARCHETYPES(_c4adaptor)
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

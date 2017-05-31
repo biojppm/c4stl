@@ -1,4 +1,6 @@
 #include "c4/storage/growth.hpp"
+
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
@@ -27,3 +29,4 @@ TEST(growth, least)
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
+#include "c4/libtest/supprwarn_pop.hpp"

@@ -106,6 +106,8 @@ set(testsrc
     c4/libtest/test.cpp
     c4/libtest/archetypes.cpp
     c4/libtest/archetypes.hpp
+    c4/libtest/supprwarn_push.hpp
+    c4/libtest/supprwarn_pop.hpp
     )
 c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
     SOURCES ${testsrc}

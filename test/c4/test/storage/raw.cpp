@@ -1,8 +1,9 @@
-
-#include "c4/test/storage/raw.hpp"
 #include "c4/storage/raw.hpp"
-#include "c4/test.hpp"
 #include "c4/allocator.hpp"
+
+#include "c4/libtest/supprwarn_push.hpp"
+#include "c4/test/storage/raw.hpp"
+#include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
@@ -556,3 +557,5 @@ TEST(raw_paged_rt, construction)
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

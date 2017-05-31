@@ -1,5 +1,6 @@
 #include "c4/span.hpp"
 
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
@@ -145,16 +146,17 @@ TEST(span, subspan)
     span< int > s(arr);
     C4_STATIC_ASSERT((std::is_same< decltype(s.subspan(0)), decltype(s) >::value));
 
-    auto ss = s.subspan(0, 5);
-    EXPECT_EQ(ss.size(), 5);
-    EXPECT_EQ(ss.capacity(), 5);
-    EXPECT_EQ(ss.data(), arr);
+    {
+        auto ss = s.subspan(0, 5);
+        EXPECT_EQ(ss.size(), 5);
+        EXPECT_EQ(ss.capacity(), 5);
+        EXPECT_EQ(ss.data(), arr);
 
-    ss = s.subspan(5);
-    EXPECT_EQ(ss.size(), 5);
-    EXPECT_EQ(ss.capacity(), 5);
-    EXPECT_EQ(ss.data(), &arr[5]);
-
+        ss = s.subspan(5);
+        EXPECT_EQ(ss.size(), 5);
+        EXPECT_EQ(ss.capacity(), 5);
+        EXPECT_EQ(ss.data(), &arr[5]);
+    }
     {
         int buf10[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         int buf_5[]  = {-1, 0, 1, 2, 3, 4};
@@ -758,3 +760,5 @@ TEST(span_impl, le)
 }
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"

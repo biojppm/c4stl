@@ -1,5 +1,6 @@
 #include "c4/log.hpp"
 
+#include "c4/libtest/supprwarn_push.hpp"
 #include "c4/test.hpp"
 
 C4_BEGIN_NAMESPACE(c4)
@@ -57,3 +58,5 @@ TEST(LogBuffer, basic)
 }
 
 C4_END_NAMESPACE(c4)
+
+#include "c4/libtest/supprwarn_pop.hpp"
