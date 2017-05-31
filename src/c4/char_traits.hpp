@@ -77,7 +77,7 @@ struct literal_as;
 template<>
 struct literal_as< char >
 {
-    C4_ALWAYS_INLINE static constexpr const char* get(const char* str, const wchar_t *wstr)
+    C4_ALWAYS_INLINE static constexpr const char* get(const char* str, const wchar_t *)
     {
         return str;
     }
@@ -85,7 +85,7 @@ struct literal_as< char >
 template<>
 struct literal_as< wchar_t >
 {
-    C4_ALWAYS_INLINE static constexpr const wchar_t* get(const char* str, const wchar_t *wstr)
+    C4_ALWAYS_INLINE static constexpr const wchar_t* get(const char*, const wchar_t *wstr)
     {
         return wstr;
     }

@@ -202,6 +202,7 @@ public:
 
     void push_front(T const& var)
     {
+        C4_UNUSED(var);
         C4_NOT_IMPLEMENTED();
     }
 
@@ -286,6 +287,7 @@ public:
 
     void _init_seq(I first, I last, I prev_ = ListType::npos, I next_ = ListType::npos)
     {
+        C4_UNUSED(prev_);
         C4_XASSERT(last >= first);
         if(last == first) return;
         C4_XASSERT(last > 0);
@@ -343,6 +345,7 @@ public:
 
     using value_type = T;
     using size_type = I;
+    using difference_type = typename std::make_signed< I >::type;
     using storage_type = RawStorage;
     using storage_traits = typename RawStorage::storage_traits;
 
@@ -451,6 +454,7 @@ public:
 
     using value_type = T;
     using size_type = I;
+    using difference_type = typename std::make_signed< I >::type;
     using storage_type = RawStorageT;
     using storage_traits = typename RawStorageT::storage_traits;
     using index_storage_type = RawStorageI;
@@ -558,6 +562,7 @@ public:
 
     using value_type = T;
     using size_type = I;
+    using difference_type = typename std::make_signed< I >::type;
     using storage_type = RawStorage;
     using storage_traits = typename RawStorage::storage_traits;
 
@@ -662,6 +667,7 @@ public:
 
     using value_type = T;
     using size_type = I;
+    using difference_type = typename std::make_signed< I >::type;
     using storage_type = RawStorageT;
     using storage_traits = typename RawStorageT::storage_traits;
     using index_storage_type = RawStorageI;

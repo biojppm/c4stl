@@ -188,7 +188,7 @@ public:
 
     /// read the given arguments from the stream, without any separation character
     template <class... Args>
-    C4_ALWAYS_INLINE void uncatsep(char_type sep, Args&& ...args)
+    C4_ALWAYS_INLINE void uncatsep(char_type, Args&& ...args)
     {
         uncatsep_(std::forward<Args>(args)...);
     }
@@ -265,7 +265,7 @@ private:
         catsep_(sep, std::forward<MoreArgs>(more)...);
     }
     template <class T >
-    void catsep_(char_type sep, T const& arg)
+    void catsep_(char_type, T const& arg)
     {
         *this << arg;
     }

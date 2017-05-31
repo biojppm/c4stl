@@ -519,31 +519,35 @@ public:
     contiguous(contiguous const& that)
     {
         C4_NOT_IMPLEMENTED();
+        C4_UNUSED(that);
     }
     contiguous(contiguous && that)
     {
         C4_NOT_IMPLEMENTED();
+        C4_UNUSED(that);
     }
     contiguous& operator=(contiguous const& that)
     {
         C4_NOT_IMPLEMENTED();
+        C4_UNUSED(that);
     }
     contiguous& operator=(contiguous && that)
     {
         C4_NOT_IMPLEMENTED();
+        C4_UNUSED(that);
     }
 
-    contiguous (cspan< T, I > const& v) { C4_NOT_IMPLEMENTED(); }
-    void assign(cspan< T, I > const& v) { C4_NOT_IMPLEMENTED(); }
+    contiguous (cspan< T, I > const& v) { C4_NOT_IMPLEMENTED(); C4_UNUSED(v); }
+    void assign(cspan< T, I > const& v) { C4_NOT_IMPLEMENTED(); C4_UNUSED(v); }
 
-    contiguous (aggregate_t, std::initializer_list< T > il) { C4_NOT_IMPLEMENTED(); }
-    void assign(aggregate_t, std::initializer_list< T > il) { C4_NOT_IMPLEMENTED(); }
+    contiguous (aggregate_t, std::initializer_list< T > il) { C4_NOT_IMPLEMENTED(); C4_UNUSED(il); }
+    void assign(aggregate_t, std::initializer_list< T > il) { C4_NOT_IMPLEMENTED(); C4_UNUSED(il); }
 
-    template< I N > contiguous (T const (&v)[N]) { C4_NOT_IMPLEMENTED(); }
-    template< I N > void assign(T const (&v)[N]) { C4_NOT_IMPLEMENTED(); }
+    template< I N > contiguous (T const (&v)[N]) { C4_NOT_IMPLEMENTED(); C4_UNUSED(v); }
+    template< I N > void assign(T const (&v)[N]) { C4_NOT_IMPLEMENTED(); C4_UNUSED(v); }
 
-    contiguous (T const* v, I sz) { C4_NOT_IMPLEMENTED(); }
-    void assign(T const* v, I sz) { C4_NOT_IMPLEMENTED(); }
+    contiguous (T const* v, I sz) { C4_NOT_IMPLEMENTED(); C4_UNUSED(v); C4_UNUSED(sz); }
+    void assign(T const* v, I sz) { C4_NOT_IMPLEMENTED(); C4_UNUSED(v); C4_UNUSED(sz); }
 
 public:
 
@@ -597,6 +601,7 @@ public:
     C4_ALWAYS_INLINE void _growto(I sz)
     {
         C4_NOT_IMPLEMENTED();
+        C4_UNUSED(sz);
     }
 };
 

@@ -118,6 +118,7 @@ struct LogBuffer
     template <class T>
     void catsep(char sep, T const& arg)
     {
+        C4_UNUSED(sep);
         *this << arg;
     }
 
@@ -337,8 +338,8 @@ public:
 
     // R-like cat() interface, with separator
 
-    template <class... Args> void catsep  (                                  Args&&... a, char sep) { catsepcl(main_channel(), INFO, std::forward< Args >(a)...); }
-    template <class... Args> void catsepl (                   Level_e level, Args&&... a, char sep) { catsepcl(main_channel(), level, std::forward< Args >(a)...); }
+    template <class... Args> void catsep  (                                  Args&&... a, char sep) { catsepcl(main_channel(), INFO, std::forward< Args >(a)..., sep); }
+    template <class... Args> void catsepl (                   Level_e level, Args&&... a, char sep) { catsepcl(main_channel(), level, std::forward< Args >(a)..., sep); }
     template <class... Args> void catsepcl(Channel const* ch, Level_e level, Args&&... a, char sep)
     {
         if(ch->skip(level)) return;

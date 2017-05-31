@@ -3184,8 +3184,8 @@ private:
     };
     Alloc m_alloc;
 
-    void     _set_short_sz(SizeType sz) { C4_XASSERT_MSG((((char)sz << 1) >> 1) == sz, "size overflow"); m_short.flag_n_sz = (char)sz << 1; }
-    void     _set_long_sz(SizeType sz) { C4_XASSERT_MSG(((sz << 1) >> 1) == sz, "size overflow"); m_long.flag_n_sz = (sz << 1) | 1; }
+    void     _set_short_sz(SizeType sz) { C4_XASSERT_MSG((((char)sz << 1) >> 1) == (char)sz, "size overflow"); m_short.flag_n_sz = (char)sz << 1; }
+    void     _set_long_sz(SizeType sz) { C4_XASSERT_MSG((((char)sz << 1) >> 1) == (char)sz, "size overflow"); m_long.flag_n_sz = (sz << 1) | 1; }
     SizeType _get_short_sz() const { return m_short.flag_n_sz >> 1; }
     SizeType _get_long_sz() const { return m_long.flag_n_sz >> 1; }
 

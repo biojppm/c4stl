@@ -17,7 +17,7 @@ C4_BEGIN_NAMESPACE(stg)
  * @ingroup storage_growth_policies */
 struct growth_least
 {
-    C4_ALWAYS_INLINE static size_t next_size(size_t /*elm_size*/, size_t curr, size_t at_least) noexcept
+    C4_ALWAYS_INLINE static size_t next_size(size_t /*elm_size*/, size_t /*curr*/, size_t at_least) noexcept
     {
         return at_least;
     }

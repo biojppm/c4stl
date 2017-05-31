@@ -33,7 +33,7 @@ Log::Proxy Log::operator() (Channel* ch, Level_e lev)
 }
 Log::Proxy Log::operator() (Level_e lev)
 {
-    return Proxy(*main_channel(), INFO);
+    return Proxy(*main_channel(), lev);
 }
 
 LogBuffer& Log::buf()
@@ -167,7 +167,7 @@ void Log::writel(Level_e level, const char *s, size_t sz)
     b.clear();
 }
 /** directly print a string to the given channel at the given level */
-void Log::writecl(Channel const* ch, Level_e level, const char *s) { writel(level, s, strlen(s)); }
+void Log::writecl(Channel const* ch, Level_e level, const char *s) { writecl(ch, level, s, strlen(s)); }
 /** directly print a string with specified size to the given channel at the given level */
 void Log::writecl(Channel const* ch, Level_e level, const char *s, size_t sz)
 {

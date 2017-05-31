@@ -246,7 +246,7 @@ public:                                                                 \
     using reference = T&;                                   \
     using const_reference = T const&;                       \
                                                             \
-    using difference_type = ptrdiff_t;
+    using difference_type = typename std::make_signed<I>::type
 
 
 #define _c4_DEFINE_ARRAY_TYPES(T, I)                                    \

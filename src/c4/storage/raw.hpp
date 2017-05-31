@@ -279,6 +279,8 @@ template< class T, size_t N, class I, I Alignment >
 struct raw_fixed
 {
 
+    C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
+
     union {
         alignas(Alignment) char _m_buf[N * sizeof(T)];
         alignas(Alignment) T m_arr[N];
@@ -297,7 +299,7 @@ public:
     C4_ALWAYS_INLINE raw_fixed() {}
     C4_ALWAYS_INLINE ~raw_fixed() {}
 
-    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_XASSERT(cap <= N); }
+    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_ASSERT(cap <= (I)N); }
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
@@ -306,15 +308,15 @@ public:
     raw_fixed& operator=(raw_fixed const& that) = delete;
     raw_fixed& operator=(raw_fixed     && that) = delete;
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < N); return m_arr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < N); return m_arr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return m_arr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return m_arr[i]; }
 
     C4_ALWAYS_INLINE T      * data()       noexcept { return m_arr; }
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_arr; }
 
-    C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return N; }
+    C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
 
-    C4_ALWAYS_INLINE constexpr static I next_capacity(I cap) noexcept { return N; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 static I next_capacity(I cap) noexcept { C4_UNUSED(cap); C4_XASSERT(cap <= (I)N); return N; }
     C4_ALWAYS_INLINE constexpr static I  max_capacity()      noexcept { return N; }
 
 public:
@@ -332,7 +334,9 @@ public:
 
     void _raw_reserve(I currsz, I cap) const C4_NOEXCEPT_A
     {
-        C4_ASSERT(cap <= N);
+        C4_UNUSED(currsz);
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (I)N);
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
@@ -523,8 +527,14 @@ template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPol
 struct raw_small
 {
 
+    C4_STATIC_ASSERT(N_ <= (size_t)std::numeric_limits< I >::max());
     // not sure if this is needed
     //C4_STATIC_ASSERT(sizeof(T) == alignof(T));
+
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
+#endif
 
     union {
         union {
@@ -536,6 +546,10 @@ struct raw_small
 
     I     m_capacity;
     Alloc m_allocator;
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#endif
 
 public:
 
@@ -843,6 +857,8 @@ _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_destroy_n(I first, I n)
 {
     C4_NOT_IMPLEMENTED();
+    C4_UNUSED(first);
+    C4_UNUSED(n);
 }
 
 template< class T, class I, I Alignment, class RawPaged >
@@ -851,6 +867,9 @@ _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_move_construct_n(RawPaged const& src, I first, I n)
 {
     C4_NOT_IMPLEMENTED();
+    C4_UNUSED(src);
+    C4_UNUSED(first);
+    C4_UNUSED(n);
 }
 
 template< class T, class I, I Alignment, class RawPaged >
@@ -859,6 +878,9 @@ _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_copy_construct_n(RawPaged const& src, I first, I n)
 {
     C4_NOT_IMPLEMENTED();
+    C4_UNUSED(src);
+    C4_UNUSED(first);
+    C4_UNUSED(n);
 }
 
 template< class T, class I, I Alignment, class RawPaged >
@@ -867,6 +889,9 @@ _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_move_assign_n(RawPaged const& src, I first, I n)
 {
     C4_NOT_IMPLEMENTED();
+    C4_UNUSED(src);
+    C4_UNUSED(first);
+    C4_UNUSED(n);
 }
 
 template< class T, class I, I Alignment, class RawPaged >
@@ -875,6 +900,9 @@ _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_copy_assign_n(RawPaged const& src, I first, I n)
 {
     C4_NOT_IMPLEMENTED();
+    C4_UNUSED(src);
+    C4_UNUSED(first);
+    C4_UNUSED(n);
 }
 
 #undef _c4this
@@ -919,7 +947,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I)
+    _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I);
     using storage_traits = raw_storage_traits< raw_paged, paged_t >;
     using allocator_type = Alloc;
     using allocator_traits = std::allocator_traits< Alloc >;
@@ -961,7 +989,7 @@ public:
         const I pg = i >> _raw_pglsb;
         const I id = i & _raw_idmask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
-        C4_XASSERT(id >= 0 && id < PageSize);
+        C4_XASSERT(id >= 0 && id < (I)PageSize);
         return m_pages[pg][id];
     }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
@@ -970,7 +998,7 @@ public:
         const I pg = i >> _raw_pglsb;
         const I id = i & _raw_idmask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
-        C4_XASSERT(id >= 0 && id < PageSize);
+        C4_XASSERT(id >= 0 && id < (I)PageSize);
         return m_pages[pg][id];
     }
 

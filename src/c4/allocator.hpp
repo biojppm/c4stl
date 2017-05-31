@@ -194,12 +194,12 @@ public:
     using propagate_on_container_move_assigment = std::true_type;
 
     template< class U >
-    bool operator== (SmallAllocator<U> const& that) const
+    bool operator== (SmallAllocator<U> const&) const
     {
         return false;
     }
     template< class U >
-    bool operator!= (SmallAllocator<U> const& that) const
+    bool operator!= (SmallAllocator<U> const&) const
     {
         return true;
     }

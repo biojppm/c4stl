@@ -75,7 +75,7 @@ class _span_crtp
 
 public:
 
-    _c4_DEFINE_ARRAY_TYPES(T, I);
+    _c4_DEFINE_ARRAY_TYPES(T, I)
 
 public:
 
