@@ -998,6 +998,8 @@ public:
     template< class U >
     using rebind_type = raw_paged<U, I, PageSize, alignof(U), rebind_alloc<U>>;
 
+    enum : I { fixed_page_size = PageSize };
+
 public:
 
     raw_paged() : raw_paged(0) {}
@@ -1080,6 +1082,8 @@ public:
 
     template< class U >
     using rebind_type = raw_paged<U, I, 0, Alignment, rebind_alloc<U>>;
+
+    enum : I { fixed_page_size = 0 };
 
 public:
 
