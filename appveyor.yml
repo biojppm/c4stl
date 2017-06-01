@@ -8,31 +8,37 @@ environment:
       generator: "Visual Studio 15 2017"
       configuration: Quicktest
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017 Win64"
       configuration: Quicktest
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015"
       configuration: Quicktest
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015 Win64"
       configuration: Quicktest
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     #- compiler: msvc-12-seh
     #  generator: "Visual Studio 12 2013"
     #  configuration: Quicktest
     #  externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
     #
     #- compiler: msvc-12-seh
     #  generator: "Visual Studio 12 2013 Win64"
     #  configuration: Quicktest
     #  externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     #- compiler: gcc-5.3.0-posix
     #  generator: "MinGW Makefiles"
@@ -40,27 +46,32 @@ environment:
     #  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     #  configuration: Quicktest
     #  externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     #------------------------------------------------------------------------------
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017"
       configuration: Debug
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     - compiler: msvc-15-seh
       generator: "Visual Studio 15 2017 Win64"
       configuration: Debug
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015"
       configuration: Debug
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     - compiler: msvc-14-seh
       generator: "Visual Studio 14 2015 Win64"
       configuration: Debug
       externconfig: Debug
+    #  cmkargs: "-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
 
     #- compiler: msvc-12-seh
     #  generator: "Visual Studio 12 2013"

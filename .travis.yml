@@ -19,7 +19,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env: COMPILER=g++-5 BUILD_TYPE=Quicktest
+      env: COMPILER=g++-5 BUILD_TYPE=Quicktest CMK_ARGS="-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
     - compiler: gcc
       addons:
         apt:
@@ -28,7 +28,7 @@ matrix:
           packages:
             - g++-5
             - g++-5-multilib
-      env: COMPILER=g++-5 EXTRA_FLAGS="-m32" BUILD_TYPE=Quicktest
+      env: COMPILER=g++-5 EXTRA_FLAGS="-m32" BUILD_TYPE=Quicktest CMK_ARGS="-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
     #
     #
     - compiler: clang
@@ -36,14 +36,14 @@ matrix:
         apt:
           packages:
             - clang-3.6
-      env: COMPILER=clang++-3.6 BUILD_TYPE=Quicktest
+      env: COMPILER=clang++-3.6 BUILD_TYPE=Quicktest CMK_ARGS="-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
     - compiler: clang-3
       addons:
         apt:
           packages:
             - clang-3.6
             - g++-5-multilib
-      env: COMPILER=clang++-3.6 EXTRA_FLAGS="-m32" BUILD_TYPE=Quicktest
+      env: COMPILER=clang++-3.6 EXTRA_FLAGS="-m32" BUILD_TYPE=Quicktest CMK_ARGS="-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
     #
     #
     - compiler: gcc
@@ -227,7 +227,7 @@ script:
   - echo $cmkargs
   - cd build
   - pwd
-  - cmake $cmkargs -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DC4STL_EXTERN_DIR=`pwd`/extern_install -DC4STL_CTEST_OPTIONS="-V" ..
+  - cmake $cmkargs -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" -DC4STL_EXTERN_DIR=`pwd`/extern_install -DC4STL_CTEST_OPTIONS="-V" ${CMK_ARGS} ..
   - make CTEST_OUTPUT_ON_FAILURE=1 c4stl-test
 
 after_success:
