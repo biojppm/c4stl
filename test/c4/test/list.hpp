@@ -175,7 +175,6 @@ void list_test0_grow_to_reallocate()
         if(List::storage_traits::paged)
         {
             target_size = 3 * stg::default_page_size< T, I >::value;
-            target_size = std::min(target_size, li.max_size());
         }
         else
         {
@@ -185,10 +184,11 @@ void list_test0_grow_to_reallocate()
             }
             else
             {
-                target_size = 128;
+                target_size = std::is_same< I, int8_t >::value ? 64 : 128;
             }
         }
         C4_ASSERT(target_size > 0);
+        target_size = std::min(target_size, li.max_size());
 
         // fill the list
         I pos = 1; // there's one already
