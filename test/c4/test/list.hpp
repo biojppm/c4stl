@@ -19,6 +19,7 @@ C4_BEGIN_NAMESPACE(c4)
     using iltype = std::initializer_list< T >;                      \
     using ciltype = std::initializer_list< CT >;
 
+
 template< class List >
 void list_test0_ctor_empty()
 {
@@ -41,6 +42,7 @@ void list_test0_ctor_empty()
     }
 }
 
+
 template< class List >
 void list_test0_ctor_with_capacity()
 {
@@ -56,6 +58,7 @@ void list_test0_ctor_with_capacity()
         EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
     }
 }
+
 
 template< class List >
 void list_test0_ctor_with_initlist()
@@ -83,6 +86,7 @@ void list_test0_ctor_with_initlist()
         }
     }
 }
+
 
 template< class List >
 void list_test0_push_back_copy()
@@ -115,6 +119,7 @@ void list_test0_push_back_copy()
         }
     }
 }
+
 
 template< class List >
 void list_test0_push_back_move()
@@ -151,7 +156,65 @@ void list_test0_push_back_move()
     }
 }
 
-#define _C4_TEST_LIST_BASIC_TESTS(listtestname, listtype)       \
+
+template< class List >
+void list_test0_grow_to_reallocate()
+{
+    _C4_DEFINE_LIST_TEST_TYPES(List);
+
+    if(List::storage_traits::fixed) return;
+
+    auto arr = proto::arr();
+    {
+        I target_size = 0;
+        List li;
+        li.push_back(arr[0]); // make it have at least some initial capacity
+        I cap = li.capacity();
+
+        // find a target size which will trigger allocations/deallocations
+        if(List::storage_traits::paged)
+        {
+            target_size = 3 * stg::default_page_size< T, I >::value;
+            target_size = std::min(target_size, li.max_size());
+        }
+        else
+        {
+            if(cap >= 32)
+            {
+                target_size = 4 * cap;
+            }
+            else
+            {
+                target_size = 128;
+            }
+        }
+        C4_ASSERT(target_size > 0);
+
+        // fill the list
+        I pos = 1; // there's one already
+        while(pos < target_size)
+        {
+            I ielm = pos++ % (I)arr.size();
+            li.push_back(arr[ielm]);
+        }
+        C4_ASSERT(li.size() == target_size);
+        C4_ASSERT(li.size() > cap);
+
+        pos = 0;
+        for(auto const& v : li)
+        {
+            I ielm = pos++ % (I)arr.size();
+            auto const& ref = proto::get(ielm);
+            EXPECT_EQ(v, ref);
+        }
+
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+#define _C4_LIST_BASIC_TESTS(listtestname, listtype)            \
 TEST(listtestname, ctor_empty)                                  \
 {                                                               \
     list_test0_ctor_empty< listtype >();                        \
@@ -176,6 +239,11 @@ TEST(listtestname, push_back_move)                              \
 {                                                               \
     list_test0_push_back_move< listtype >();                    \
 }                                                               \
+TEST(listtestname, grow_to_reallocate)                          \
+{                                                               \
+    list_test0_grow_to_reallocate< listtype >();                \
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -184,7 +252,7 @@ TEST(listtestname, push_back_move)                              \
                             sztype_name, sztype,                        \
                             storage_type_name, storage_type_macro,      \
                             ...)                                        \
-_C4_TEST_LIST_BASIC_TESTS                                               \
+_C4_LIST_BASIC_TESTS                                                    \
 (                                                                       \
     list_type_name##__##containee_type_name##__##sztype_name##__##storage_type_name, \
     list_type< containee_type C4_COMMA sztype C4_COMMA storage_type_macro(containee_type, sztype, ## __VA_ARGS__) >   \

@@ -45,24 +45,48 @@ struct growth_default;
 template< class T, class I >
 struct default_page_size
 {
-    enum : I { value = 256 };
+    enum : I {
+        value = 256,
+        max = ((std::numeric_limits< I >::max() >> 1) + 1),
+    };
 };
 template< class T >
 struct default_page_size< T, uint8_t >
 {
-    enum : uint8_t { value = 128 };
+    enum : uint8_t {
+        value = 64,
+        max = 128,
+    };
 };
 template< class T >
 struct default_page_size< T, int8_t >
 {
-    enum : int8_t { value = 64 };
+    enum : int8_t {
+        value = 32,
+        max = 64,
+    };
 };
 
+//-----------------------------------------------------------------------------
 template< class T, class I >
 struct default_small_size
 {
     enum : I { value = 16 };
 };
+
+//-----------------------------------------------------------------------------
+/** since the page size is a power of two, the max capacity is simply the
+ * maximum of the size type */
+template< class I >
+C4_ALWAYS_INLINE constexpr size_t raw_max_capacity() noexcept
+{
+    return size_t(std::numeric_limits< I >::max()) + size_t(1);
+}
+template<>
+C4_ALWAYS_INLINE constexpr size_t raw_max_capacity< size_t >() noexcept
+{
+    return std::numeric_limits< size_t >::max();
+}
 
 //-----------------------------------------------------------------------------
 
@@ -124,6 +148,21 @@ struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
     using util_type::copy_assign_n;
 };
 
+
+/** returns the maximum size that a container can have when there is a npos
+ * marker.
+ * @warning assumes npos==-1 */
+template< class Storage >
+C4_CONSTEXPR14 C4_ALWAYS_INLINE size_t raw_max_size_with_npos()
+{
+    using I = typename Storage::size_type;
+    size_t mc = Storage::max_capacity();
+    if(mc == std::numeric_limits< I >::max() && std::is_unsigned< I >::value)
+    {
+        mc -= 1;
+    }
+    return mc;
+}
 
 //-----------------------------------------------------------------------------
 
@@ -317,7 +356,7 @@ public:
     C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
 
     C4_ALWAYS_INLINE C4_CONSTEXPR14 static I next_capacity(I cap) noexcept { C4_UNUSED(cap); C4_XASSERT(cap <= (I)N); return N; }
-    C4_ALWAYS_INLINE constexpr static I  max_capacity()      noexcept { return N; }
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return N; }
 
 public:
 
@@ -428,7 +467,7 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
-    C4_ALWAYS_INLINE static I max_capacity() noexcept { return std::numeric_limits< I >::max() - 1; }
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
     {
         return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
@@ -565,8 +604,6 @@ public:
     template< class U >
     using rebind_type = raw_small<U, I, N_, alignof(U), rebind_alloc<U>, GrowthPolicy>;
 
-    C4_STATIC_ASSERT(N_ < (size_t)std::numeric_limits< I >::max());
-
     enum : I { array_size = (I)N_, N = (I)N_ };
 
 public:
@@ -597,10 +634,11 @@ public:
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
-    C4_ALWAYS_INLINE static I max_capacity() noexcept { return std::numeric_limits< I >::max() - 1; }
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
     {
-        return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        auto ns = GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        return szconv<I>(ns);
     }
 
 public:
@@ -723,7 +761,10 @@ template< class T, class I, I Alignment, class RawPaged >
 struct _raw_paged_crtp
 {
 
-    C4_ALWAYS_INLINE static constexpr I max_capacity() noexcept { return std::numeric_limits< I >::max() - 1; }
+    /** since the page size is a power of two, the max capacity is simply the
+     * maximum of the size type */
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
+
     C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_num_pages; }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_num_pages * _c4cthis->page_size(); }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 I next_capacity(I desired) const C4_NOEXCEPT_A

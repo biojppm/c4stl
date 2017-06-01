@@ -189,6 +189,11 @@ public:
 
 public:
 
+    C4_ALWAYS_INLINE static constexpr I max_size() noexcept
+    {
+        return stg::raw_max_size_with_npos< typename ListType::storage_type >();
+    }
+
     void reserve(I cap)
     {
         I curr = _c4this->capacity();
