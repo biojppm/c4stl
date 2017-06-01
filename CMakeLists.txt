@@ -12,17 +12,6 @@ setup_sanitize(C4STL)
 
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
 
-if(MSVC)
-    set(_c4pedflags "/W4")
-else()
-    set(_c4pedflags "-Wall -Wextra -Wshadow -Werror -pedantic -pedantic-errors -Wfloat-equal -fstrict-aliasing")
-endif()
-add_configuration_type(Pedantic
-    DEFAULT_FROM DEBUG
-    C_FLAGS ${_c4pedflags}
-    CXX_FLAGS ${_c4pedflags}
-    )
-
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()

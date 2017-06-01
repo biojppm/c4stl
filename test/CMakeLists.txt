@@ -10,6 +10,25 @@ add_configuration_type(Quicktest
     CXX_FLAGS ${dquicktest}
     )
 
+option(C4STL_PEDANTIC "Compile in pedantic mode" OFF)
+if(C4STL_PEDANTIC)
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wfloat-equal -fstrict-aliasing")
+    endif()
+endif()
+
+option(C4STL_WERROR "Compile with compiler warnings as errors" OFF)
+if(C4STL_WERROR)
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
+        #set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /WX")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -pedantic-errors")
+    endif()
+endif()
+
 #------------------------------------------------------------------------------
 # Add the coverage command(s)
 
