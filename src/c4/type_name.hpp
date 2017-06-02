@@ -3,18 +3,17 @@
 
 #include "c4/span.hpp"
 
-#include <stdio.h>
-
 /// @cond dev
 struct _c4t
 {
+    const char *str;
+    size_t sz;
     template< size_t N > _c4t(const char (&s)[N]) : str(s), sz(N-1) {} // take off the \0
-    const char *str; size_t sz;
 };
 // this is a more abbreviated way of getting the type name
-// (if we used span in the return type the name would involve
+// (if we used span in the return type, the name would involve
 // templates and would create longer type name strings,
-// as well as more differences between compilers)
+// as well as larger differences between compilers)
 template< class T >
 C4_CONSTEXPR14 C4_ALWAYS_INLINE
 _c4t _c4tn()
@@ -26,8 +25,19 @@ _c4t _c4tn()
 
 
 C4_BEGIN_NAMESPACE(c4)
+
+template< class T >
+C4_CONSTEXPR14 cspan<char> type_name();
+
+template< class T >
+C4_CONSTEXPR14 C4_ALWAYS_INLINE cspan<char> type_name(T const& var)
+{
+    return type_name< T >();
+}
+
 /** adapted from this answer: http://stackoverflow.com/a/20170989/5875572 */
-template< class T > C4_CONSTEXPR14 cspan<char> type_name()
+template< class T >
+C4_CONSTEXPR14 cspan<char> type_name()
 {
     const _c4t p = _c4tn< T >();
 
@@ -92,7 +102,7 @@ template< class T > C4_CONSTEXPR14 cspan<char> type_name()
     // "_c4t _c4tn() [with T = int]"
     enum { tstart = 23, tend = 1 };
 #else
-    C4_NOT IMPLEMENTED();
+    C4_NOT_IMPLEMENTED();
 #endif
 
     cspan<char> o(p.str + tstart, p.sz - tstart - tend);
