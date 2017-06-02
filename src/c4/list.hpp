@@ -205,6 +205,11 @@ public:
 
 public:
 
+    T      & front()       C4_NOEXCEPT_X { C4_XASSERT(!_c4this ->empty()); return _c4this ->elm(_c4this ->m_head); }
+    T const& front() const C4_NOEXCEPT_X { C4_XASSERT(!_c4cthis->empty()); return _c4cthis->elm(_c4cthis->m_head); }
+    T      & back ()       C4_NOEXCEPT_X { C4_XASSERT(!_c4this ->empty()); return _c4this ->elm(_c4this ->m_tail); }
+    T const& back () const C4_NOEXCEPT_X { C4_XASSERT(!_c4cthis->empty()); return _c4cthis->elm(_c4cthis->m_tail); }
+
     void push_front(T const& var)
     {
         C4_UNUSED(var);

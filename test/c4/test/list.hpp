@@ -66,6 +66,7 @@ void list_test0_ctor_with_initlist()
     _C4_DEFINE_LIST_TEST_TYPES(List);
 
     ciltype il = proto::cil();
+    C4_ASSERT(il.size() > 0);
     {
         auto cpch = CT::check_copy_ctors(il.size());
         auto dtch = CT::check_dtors(il.size());
@@ -82,6 +83,16 @@ void list_test0_ctor_with_initlist()
             {
                 auto const& ref = proto::get(pos++);
                 EXPECT_EQ(v, ref);
+            }
+
+            {
+                EXPECT_EQ(li.front(), proto::get(0));
+                EXPECT_EQ(li.back(), proto::get(il.size() - 1));
+            }
+            {
+                auto const& crli = li;
+                EXPECT_EQ(crli.front(), proto::get(0));
+                EXPECT_EQ(crli.back(), proto::get(il.size() - 1));
             }
         }
     }
@@ -115,6 +126,16 @@ void list_test0_push_back_copy()
             {
                 auto const& ref = proto::get(pos++);
                 EXPECT_EQ(v, ref);
+            }
+
+            {
+                EXPECT_EQ(li.front(), proto::get(0));
+                EXPECT_EQ(li.back(), proto::get(arr.size() - 1));
+            }
+            {
+                auto const& crli = li;
+                EXPECT_EQ(crli.front(), proto::get(0));
+                EXPECT_EQ(crli.back(), proto::get(arr.size() - 1));
             }
         }
     }
