@@ -321,8 +321,8 @@ public:
 
 };
 
-#define _c4this  (static_cast<ListType      *>(this))
-#define _c4cthis (static_cast<ListType const*>(this))
+#undef _c4this
+#undef _c4cthis
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
