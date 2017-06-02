@@ -29,6 +29,9 @@
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wwrite-strings" // ISO C++ forbids converting a string constant to ‘C* {aka char*}’
 #   pragma GCC diagnostic ignored "-Wunused-variable"
+#elif defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable:4018)   // '>=': signed/unsigned mismatch
 #endif
 
 #endif /* _C4_LIBTEST_SUPPRWARN_PUSH_HPP_ */
