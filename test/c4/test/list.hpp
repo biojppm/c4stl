@@ -85,14 +85,15 @@ void list_test0_ctor_with_initlist()
                 EXPECT_EQ(v, ref);
             }
 
+            size_t iback = il.size() - 1;
             {
                 EXPECT_EQ(li.front(), proto::get(0));
-                EXPECT_EQ(li.back(), proto::get(il.size() - 1));
+                EXPECT_EQ(li.back(), proto::get(iback));
             }
             {
                 auto const& crli = li;
                 EXPECT_EQ(crli.front(), proto::get(0));
-                EXPECT_EQ(crli.back(), proto::get(il.size() - 1));
+                EXPECT_EQ(crli.back(), proto::get(iback));
             }
         }
     }
@@ -128,14 +129,15 @@ void list_test0_push_back_copy()
                 EXPECT_EQ(v, ref);
             }
 
+            size_t iback = arr.size() - 1;
             {
                 EXPECT_EQ(li.front(), proto::get(0));
-                EXPECT_EQ(li.back(), proto::get(arr.size() - 1));
+                EXPECT_EQ(li.back(), proto::get(iback));
             }
             {
                 auto const& crli = li;
                 EXPECT_EQ(crli.front(), proto::get(0));
-                EXPECT_EQ(crli.back(), proto::get(arr.size() - 1));
+                EXPECT_EQ(crli.back(), proto::get(iback));
             }
         }
     }
