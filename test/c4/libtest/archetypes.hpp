@@ -52,7 +52,7 @@ inline void check_archetype(double   a, double   ref) { EXPECT_FLOAT_EQ(a, ref);
 template< class T, class Proto >
 struct archetype_proto_base
 {
-    static T const& get(int which)
+    static T const& get(size_t which)
     {
         auto const& a = Proto::arr();
         C4_ASSERT(which < (int)a.size());
@@ -109,7 +109,7 @@ struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
     }
     static std::array<Counting<T>, 8> const& carr()
     {
-        static const std::array<Counting<T>, 8> arr_{0, 1, 2, 3, 4, 5, 6, 7};
+        static const std::array<Counting<T>, 8> arr_ = {0, 1, 2, 3, 4, 5, 6, 7};
         return arr_;
     }
     static std::initializer_list< T > il()
@@ -119,7 +119,8 @@ struct archetype_proto : public archetype_proto_base< T, archetype_proto<T> >
     }
     static std::initializer_list< Counting<T> > cil()
     {
-        static const std::initializer_list< Counting<T> > l{0, 1, 2, 3, 4, 5, 6, 7};
+        static const std::initializer_list< Counting<T> > l = {0, 1, 2, 3, 4, 5, 6, 7};
+        C4_ASSERT(l.size() == 8);
         return l;
     }
 };
@@ -260,6 +261,8 @@ template< class T >
 struct MemOwner
 {
     T *mem;
+    // prevent initialization order problems by using a memory resource here
+    MemoryResourceMalloc mr;
 
     void check() const
     {
@@ -275,24 +278,24 @@ struct MemOwner
     {
         if(!mem) return;
         mem->~T();
-        c4::get_memory_resource()->deallocate(mem, sizeof(T), alignof(T));
+        mr.deallocate(mem, sizeof(T), alignof(T));
         mem = nullptr;
     }
 
     MemOwner()
     {
-        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+        mem = (T*)mr.allocate(sizeof(T), alignof(T));
         new (mem) T();
     }
     template< class ...Args >
     MemOwner(varargs_t, Args && ...args)
     {
-        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+        mem = (T*)mr.allocate(sizeof(T), alignof(T));
         new (mem) T(std::forward< Args >(args)...);
     }
     MemOwner(MemOwner const& that)
     {
-        mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+        mem = (T*)mr.allocate(sizeof(T), alignof(T));
         new (mem) T(*that.mem);
     }
     MemOwner(MemOwner && that)
@@ -304,7 +307,7 @@ struct MemOwner
     {
         if(!mem)
         {
-            mem = (T*)c4::get_memory_resource()->allocate(sizeof(T), alignof(T));
+            mem = (T*)mr.allocate(sizeof(T), alignof(T));
         }
         else
         {
@@ -318,7 +321,7 @@ struct MemOwner
         if(mem)
         {
             mem->~T();
-            c4::get_memory_resource()->deallocate(mem, sizeof(T), alignof(T));
+            mr.deallocate(mem, sizeof(T), alignof(T));
         }
         mem = that.mem;
         that.mem = nullptr;
@@ -344,12 +347,14 @@ _C4_DECLARE_ARCHETYPE_PROTO_TPL1(class T, MemOwner<T>,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** Memory-owning archetype, with allocator */
-template< class T, class Alloc = c4::Allocator< T > >
+template< class T >
 struct MemOwnerAlloc
 {
     T *mem;
-    Alloc m_alloc;
-    using alloc_traits = std::allocator_traits< Alloc >;
+    // prevent initialization order problems by using a memory resource here
+    MemoryResourceMalloc mr;
+    c4::Allocator< T > m_alloc;
+    using alloc_traits = std::allocator_traits< c4::Allocator< T > >;
 
     void check() const
     {
@@ -374,24 +379,25 @@ struct MemOwnerAlloc
         free();
     }
 
-    MemOwnerAlloc()
+    MemOwnerAlloc() : m_alloc(&mr)
     {
+        C4_ASSERT(m_alloc.resource() == &mr);
         mem = alloc_traits::allocate(m_alloc, 1);
         alloc_traits::construct(m_alloc, mem);
     }
     template< class ...Args >
-    MemOwnerAlloc(varargs_t, Args && ...args)
+    MemOwnerAlloc(varargs_t, Args && ...args) : m_alloc(&mr)
     {
         mem = alloc_traits::allocate(m_alloc, 1);
         alloc_traits::construct(m_alloc, mem, std::forward< Args >(args)...);
     }
 
-    MemOwnerAlloc(MemOwnerAlloc const& that)
+    MemOwnerAlloc(MemOwnerAlloc const& that) : m_alloc(&mr)
     {
         mem = alloc_traits::allocate(m_alloc, 1);
         alloc_traits::construct(m_alloc, mem, *that.mem);
     }
-    MemOwnerAlloc(MemOwnerAlloc && that)
+    MemOwnerAlloc(MemOwnerAlloc && that) : m_alloc(&mr)
     {
         mem = that.mem;
         that.mem = nullptr;
