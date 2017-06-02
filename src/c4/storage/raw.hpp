@@ -132,7 +132,7 @@ struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
         fixed = std::is_same< TagType, fixed_t >::value,
         small = std::is_same< TagType, small_t >::value,
         paged = std::is_same< TagType, paged_t >::value,
-        has_allocator = ! fixed
+        uses_allocator = ! fixed
     };
 
     using util_type::destroy_n;
@@ -323,6 +323,8 @@ struct raw_fixed
 public:
 
     _c4_DEFINE_ARRAY_TYPES(T, I);
+    using allocator_type = void;
+
     using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
 
     template< class U >

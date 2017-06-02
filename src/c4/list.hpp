@@ -351,16 +351,23 @@ public:
     using value_type = T;
     using size_type = I;
     using difference_type = typename std::make_signed< I >::type;
+    using reference = value_type&;
+    using const_reference = value_type const&;
+    using pointer = T*;
+    using const_pointer = T const*;
+    using allocator_type = typename RawStorage::allocator_type;
     using storage_type = RawStorage;
     using storage_traits = typename RawStorage::storage_traits;
+
+    using iterator = list_iterator< T, flat_list >;
+    using const_iterator = list_iterator< const T, const flat_list >;
+    using reverse_iterator = std::reverse_iterator< iterator >;
+    using const_reverse_iterator = std::reverse_iterator< const_iterator >;
 
     template< class U >
     using storage_rebind_type = typename RawStorage::template rebind_type< flat_list_elm<U, I> >;
     template< class U >
     using rebind_type = flat_list< U, I, storage_rebind_type<U> >;
-
-    using iterator = list_iterator< T, flat_list >;
-    using const_iterator = list_iterator< const T, const flat_list >;
 
 public:
 
@@ -460,18 +467,26 @@ public:
     using value_type = T;
     using size_type = I;
     using difference_type = typename std::make_signed< I >::type;
+    using reference = value_type&;
+    using const_reference = value_type const&;
+    using pointer = T*;
+    using const_pointer = T const*;
+    using allocator_type = typename RawStorageT::allocator_type;
+    using index_allocator_type = typename RawStorageI::allocator_type;
     using storage_type = RawStorageT;
     using storage_traits = typename RawStorageT::storage_traits;
     using index_storage_type = RawStorageI;
     using index_storage_traits = typename RawStorageI::storage_traits;
 
+    using iterator = list_iterator< T, split_list >;
+    using const_iterator = list_iterator< const T, const split_list >;
+    using reverse_iterator = std::reverse_iterator< iterator >;
+    using const_reverse_iterator = std::reverse_iterator< const_iterator >;
+
     template< class U >
     using storage_rebind_type = typename RawStorageT::template rebind_type< U >;
     template< class U >
     using rebind_type = split_list< U, I, storage_rebind_type< U > >;
-
-    using iterator = list_iterator< T, split_list >;
-    using const_iterator = list_iterator< const T, const split_list >;
 
 public:
 
@@ -568,16 +583,23 @@ public:
     using value_type = T;
     using size_type = I;
     using difference_type = typename std::make_signed< I >::type;
+    using reference = value_type&;
+    using const_reference = value_type const&;
+    using pointer = T*;
+    using const_pointer = T const*;
+    using allocator_type = typename RawStorage::allocator_type;
     using storage_type = RawStorage;
     using storage_traits = typename RawStorage::storage_traits;
+
+    using iterator = list_iterator< T, flat_fwd_list >;
+    using const_iterator = list_iterator< const T, const flat_fwd_list >;
+    using reverse_iterator = std::reverse_iterator< iterator >;
+    using const_reverse_iterator = std::reverse_iterator< const_iterator >;
 
     template< class U >
     using storage_rebind_type = typename RawStorage::template rebind_type< flat_fwd_list_elm<U, I> >;
     template< class U >
     using rebind_type = flat_fwd_list< U, I, storage_rebind_type<U> >;
-
-    using iterator = list_iterator< T, flat_fwd_list >;
-    using const_iterator = list_iterator< const T, const flat_fwd_list >;
 
 public:
 
@@ -673,18 +695,26 @@ public:
     using value_type = T;
     using size_type = I;
     using difference_type = typename std::make_signed< I >::type;
+    using reference = value_type&;
+    using const_reference = value_type const&;
+    using pointer = T*;
+    using const_pointer = T const*;
+    using allocator_type = typename RawStorageT::allocator_type;
+    using index_allocator_type = typename RawStorageI::allocator_type;
     using storage_type = RawStorageT;
     using storage_traits = typename RawStorageT::storage_traits;
     using index_storage_type = RawStorageI;
     using index_storage_traits = typename RawStorageI::storage_traits;
 
+    using iterator = list_iterator< T, split_fwd_list >;
+    using const_iterator = list_iterator< const T, const split_fwd_list >;
+    using reverse_iterator = std::reverse_iterator< iterator >;
+    using const_reverse_iterator = std::reverse_iterator< const_iterator >;
+
     template< class U >
     using storage_rebind_type = typename RawStorageT::template rebind_type< U >;
     template< class U >
-    using rebind_type = split_fwd_list< U, I, storage_rebind_type< U > >;
-
-    using iterator = list_iterator< T, split_fwd_list >;
-    using const_iterator = list_iterator< const T, const split_fwd_list >;
+    using rebind_type = split_fwd_list< U, I, storage_rebind_type<U> >;
 
 public:
 
