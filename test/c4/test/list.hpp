@@ -180,7 +180,9 @@ void list_test0_grow_to_reallocate()
         {
             if(cap >= 32)
             {
-                target_size = 4 * cap;
+                size_t tgt = 4 * cap; // use size_t to prevent overflow of I
+                size_t mx = (size_t)std::numeric_limits< I >::max();
+                target_size = (I)(tgt > mx ? mx : tgt);
             }
             else
             {
