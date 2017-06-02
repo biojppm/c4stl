@@ -197,7 +197,7 @@ void list_test0_grow_to_reallocate()
             I ielm = pos++ % (I)arr.size();
             li.push_back(arr[ielm]);
         }
-        C4_ASSERT(li.size() == target_size);
+        C4_ASSERT_MSG(li.size() == target_size, "target=%zu sz=%zu max=%zu", (size_t)target_size, (size_t)li.size(), (size_t)li.max_size());
         C4_ASSERT(li.size() > cap);
 
         pos = 0;
