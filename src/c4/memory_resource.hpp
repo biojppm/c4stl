@@ -21,7 +21,7 @@ C4_BEGIN_NAMESPACE(c4)
 struct MemoryResource;
 struct MemoryResourceMalloc;
 MemoryResourceMalloc* get_memory_resource_malloc();
-namespace detail { MemoryResource*& get_memory_resource(); };
+namespace detail { MemoryResource*& get_memory_resource(); }
 
 
 // c-style allocation ---------------------------------------------------------
