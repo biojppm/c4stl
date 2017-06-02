@@ -80,12 +80,7 @@ struct default_small_size
 template< class I >
 C4_ALWAYS_INLINE constexpr size_t raw_max_capacity() noexcept
 {
-    return size_t(std::numeric_limits< I >::max()) + size_t(1);
-}
-template<>
-C4_ALWAYS_INLINE constexpr size_t raw_max_capacity< size_t >() noexcept
-{
-    return std::numeric_limits< size_t >::max();
+    return size_t(std::numeric_limits< I >::max());
 }
 
 //-----------------------------------------------------------------------------
