@@ -25,7 +25,7 @@ $COMPILER --version
 $C_COMPILER --version
 cmake --version
 
-C4STL_DIR=$(cd .. ; pwd)
+C4STL_DIR=$(pwd)
 echo $C4STL_DIR
 pwd
 

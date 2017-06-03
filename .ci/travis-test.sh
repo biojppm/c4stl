@@ -5,11 +5,10 @@ set -x
 
 export C_COMPILER=$(echo "$COMPILER" | sed 's:clang++:clang:g' | sed 's:g++:gcc:g')
 
-C4STL_DIR=$(cd .. ; pwd)
 pwd
-cd build
-pwd
+C4STL_DIR=$(pwd)
 
+cd build
 if [ "$PEDANTIC" == "ON" ] ; then
     cmake -DCMAKE_C_COMPILER=$C_COMPILER -DCMAKE_CXX_COMPILER=$COMPILER \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS="$EXTRA_FLAGS" \
@@ -25,5 +24,6 @@ else
           $C4STL_DIR
 fi
 make CTEST_OUTPUT_ON_FAILURE=1 c4stl-test
+cd -
 
 exit 0
