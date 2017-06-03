@@ -212,12 +212,10 @@ matrix:
 #  - sudo apt-get -y install cmake
 
 install:
-  - pwd
-  - ../.ci/travis-install.sh
+  - bash -x .ci/travis-install.sh
 
 script:
-  - pwd
-  - ../.ci/travis-test.sh
+  - bash -x .ci/travis-test.sh
 
 after_success:
   - echo "Success!"
