@@ -4,7 +4,7 @@ set -e
 set -x
 
 
-if [ $COMPILER == "clang++-3-7" ] ; then
+if [ $COMPILER == "clang++-3.7" ] ; then
     cat >> /etc/apt/sources.list <<EOF
 
 deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main
