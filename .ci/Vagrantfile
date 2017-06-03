@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 # 1) download and install vagrant: https://www.vagrantup.com/downloads.html
-#    (do not install ubuntu's 14.04 16.04 version):
+#    (do not install ubuntu's 14.04 16.04 version, see https://stackoverflow.com/questions/22717428/vagrant-error-failed-to-mount-folders-in-linux-guest ):
 # 2) vagrant plugin install vagrant-vbguest
 # 3) vagrant up
 # 4) vagrant ssh

@@ -21,6 +21,7 @@ fi
 
 sudo -E apt-get install -y software-properties-common python-software-properties
 sudo -E add-apt-repository -y ppa:ubuntu-toolchain-r/test
+sudo -E add-apt-repository -y ppa:george-edison55/cmake-3.x
 sudo -E apt-get -yq update
 
 sudo -E apt-get install -yq --force-yes \
