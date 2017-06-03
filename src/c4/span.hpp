@@ -120,8 +120,8 @@ public:
 
     C4_ALWAYS_INLINE SpanImpl subspan(I first, I num) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(first >= 0 && first < _c4csz || num == 0);
-        C4_XASSERT(first + num >= 0 && first + num <= _c4csz);
+        C4_XASSERT((first >= 0 && first < _c4csz) || num == 0);
+        C4_XASSERT((first + num >= 0) && (first + num <= _c4csz));
         return _c4cthis->_select(_c4cptr + first, num);
     }
     C4_ALWAYS_INLINE SpanImpl subspan(I first) const C4_NOEXCEPT_X ///< goes up until the end of the span
@@ -132,25 +132,25 @@ public:
 
     C4_ALWAYS_INLINE SpanImpl range(I first, I last) const C4_NOEXCEPT_X ///< last element is NOT included
     {
-        C4_XASSERT(first >= 0 && first < _c4csz || first == last);
-        C4_XASSERT(last >= 0 && last <= _c4csz);
+        C4_XASSERT(((first >= 0) && (first < _c4csz)) || (first == last));
+        C4_XASSERT((last >= 0) && (last <= _c4csz));
         C4_XASSERT(last >= first);
         return _c4cthis->_select(_c4cptr + first, last - first);
     }
     C4_ALWAYS_INLINE SpanImpl range(I first) const C4_NOEXCEPT_X ///< goes up until the end of the span
     {
-        C4_XASSERT(first >= 0 && first < _c4csz);
+        C4_XASSERT(((first >= 0) && (first < _c4csz)));
         return _c4cthis->_select(_c4cptr + first, _c4csz - first);
     }
 
     C4_ALWAYS_INLINE SpanImpl first(I num) const C4_NOEXCEPT_X ///< get the first num elements, starting at 0
     {
-        C4_XASSERT(num >= 0 && num < _c4csz);
+        C4_XASSERT((num >= 0) && (num < _c4csz));
         return _c4cthis->_select(_c4cptr, num);
     }
     C4_ALWAYS_INLINE SpanImpl last(I num) const C4_NOEXCEPT_X ///< get the last num elements, starting at size()-num
     {
-        C4_XASSERT(num >= 0 && num < _c4csz);
+        C4_XASSERT((num >= 0) && (num < _c4csz));
         return _c4cthis->_select(_c4cptr + _c4csz - num, num);
     }
 

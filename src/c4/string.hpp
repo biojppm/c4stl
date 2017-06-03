@@ -1953,7 +1953,7 @@ public:
     }
     const_split_proxy split(C sep, size_type start_pos = 0) const
     {
-        C4_XASSERT(start_pos >= 0 && start_pos < _c4cthisSZ || empty());
+        C4_XASSERT((start_pos >= 0 && start_pos < _c4cthisSZ) || empty());
         auto sz = _c4cthisSZ;
         auto ss = substr(0, sz);
         auto it = split_proxy(ss, start_pos, sep);
@@ -3104,7 +3104,7 @@ template< class C, class SizeType, class Alloc >
 constexpr const SizeType basic_text< C, SizeType, Alloc >::npos;
 
 _C4_IMPLEMENT_TPL_STRIMPL_HASH(c4::basic_text< C C4_COMMA SizeType C4_COMMA Alloc >,
-    typename C, typename SizeType, class Alloc);
+    typename C, typename SizeType, class Alloc)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

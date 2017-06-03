@@ -19,6 +19,7 @@
 #   pragma clang diagnostic ignored "-Wunused-variable"
 #   pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__)
+#   pragma GCC diagnostic push
     /* GCC also issues a warning for zero-args calls to variadic macros.
      * This warning is switched on with -pedantic and apparently there is no
      * easy way to turn it off as with clang. But marking this as a system
@@ -26,9 +27,15 @@
      * @see https://gcc.gnu.org/onlinedocs/cpp/System-Headers.html
      * @see http://stackoverflow.com/questions/35587137/ */
 #   pragma GCC system_header
-#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wvariadic-macros"
 #   pragma GCC diagnostic ignored "-Wwrite-strings" // ISO C++ forbids converting a string constant to ‘C* {aka char*}’
+#   pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #   pragma GCC diagnostic ignored "-Wunused-variable"
+#   pragma GCC diagnostic ignored "-Wunused-parameter"
+#   pragma GCC diagnostic ignored "-Wsign-compare" // warning: comparison of integers of different signs: 'const unsigned long' and 'const int'
+#   pragma GCC diagnostic ignored "-Wfloat-equal" // warning: comparing floating point with == or != is unsafe
+#   pragma GCC diagnostic ignored "-Wpedantic"
+#   pragma GCC diagnostic ignored "-pedantic"
 #elif defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable:4018)   // '>=': signed/unsigned mismatch

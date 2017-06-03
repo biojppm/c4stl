@@ -69,6 +69,6 @@ TEST(ScopedMemoryResourceCounts, counts)
         checker.check_max(4, 240);
     }
 
-};
+}
 
 C4_END_NAMESPACE(c4)

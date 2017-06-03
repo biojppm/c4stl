@@ -7,6 +7,11 @@
 #include "c4/test.hpp"
 #include "c4/libtest/archetypes.hpp"
 
+#ifdef __GNUC__
+// this is needed in GCC for preventing warnings about varargs macros in pedantic mode
+#   pragma GCC system_header
+#endif
+
 C4_BEGIN_NAMESPACE(c4)
 
 #define _C4_DEFINE_LIST_TEST_TYPES(List)                            \

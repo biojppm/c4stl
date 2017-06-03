@@ -239,7 +239,7 @@ struct IdOwner
         EXPECT_NE(id, that.id);
     }
 
-    IdOwner(int v = 0) { id = ++s_current; v = val; }
+    IdOwner(int v = 0) { id = ++s_current; val = v; }
     ~IdOwner() { if(id > 0) --s_current; }
     IdOwner(IdOwner const& that) { id = ++s_current; val = that.val; }
     IdOwner(IdOwner     && that) { id = that.id; val = that.val; that.id = 0; }
