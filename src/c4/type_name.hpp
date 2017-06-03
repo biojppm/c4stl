@@ -32,6 +32,7 @@ C4_CONSTEXPR14 cspan<char> type_name();
 template< class T >
 C4_CONSTEXPR14 C4_ALWAYS_INLINE cspan<char> type_name(T const& var)
 {
+    C4_UNUSED(var);
     return type_name< T >();
 }
 
