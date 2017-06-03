@@ -19,3 +19,5 @@ install/
 # test files
 /Testing/
 
+# continuous integration files
+.ci/.vagrant
