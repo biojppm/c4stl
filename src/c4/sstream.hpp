@@ -78,6 +78,7 @@ public:
 
     void reserve(size_type cap);
     C4_ALWAYS_INLINE size_type capacity() const { return m_string.capacity(); }
+    C4_ALWAYS_INLINE size_type size() const { return m_string.size(); }
 
     size_type max_size() const { return m_string.max_size() - 1; }
 

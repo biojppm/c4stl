@@ -75,6 +75,7 @@ TYPED_TEST_CASE_P(RoundTripTest_stdwstring);
 template< class String, class T >
 void do_round_trip_chevron(sstream<String> &ss, T const& val1, T const& val2, T const& val3)
 {
+    C4_LOGP("roundtrip chevron AQUI 0: sz{} p={} g={} cap={}\n", ss.size(), ss.tellp(), ss.tellg(), ss.capacity());
     csubstring sn = c4::type_name< String >();
     csubstring tn = c4::type_name< T >();
     C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 1\n", (int)sn.size(), sn.data(), (int)tn.size(), tn.data());
@@ -89,6 +90,8 @@ void do_round_trip_chevron(sstream<String> &ss, T const& val1, T const& val2, T 
     EXPECT_EQ(v2, val2) << C4_PRETTY_FUNC;
     EXPECT_EQ(v3, val3) << C4_PRETTY_FUNC;
     C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 4\n", (int)sn.size(), sn.data(), (int)tn.size(), tn.data());
+    C4_LOGF("roundtrip chevron< %.*s, %.*s >: AQUI 5 sz={} p={} g={} cap={}\n",
+            (int)sn.size(), sn.data(), (int)tn.size(), tn.data(), ss.size(), ss.tellp(), ss.tellg(), ss.capacity());
 }
 TYPED_TEST_P(RoundTripTest_c4string, chevron)
 {

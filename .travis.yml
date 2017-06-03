@@ -37,9 +37,11 @@ matrix:
           packages:
             - clang-3.7
       env: COMPILER=clang++-3.7 BUILD_TYPE=Quicktest CMK_ARGS="-DC4STL_PEDANTIC=ON -DC4STL_WERROR=ON"
-    - compiler: clang-3
+    - compiler: clang
       addons:
         apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
             - clang-3.7
             - g++-5-multilib
@@ -204,10 +206,10 @@ matrix:
 #  - sudo apt-get -y install cmake
 
 install:
+  - dpkg -L clang-3.7 || echo "none"
   - export C_COMPILER=$(echo "$COMPILER" | sed 's:clang++:clang:g' | sed 's:g++:gcc:g')
   - $COMPILER --version
   - $C_COMPILER --version
-  - dpkg -L clang-3.7 || echo "none"
   - cmake --version
   - sudo apt-get install valgrind
   - if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
