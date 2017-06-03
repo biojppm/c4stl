@@ -207,6 +207,7 @@ install:
   - export C_COMPILER=$(echo "$COMPILER" | sed 's:clang++:clang:g' | sed 's:g++:gcc:g')
   - $COMPILER --version
   - $C_COMPILER --version
+  - dpkg -L clang-3.7 || echo "none"
   - cmake --version
   - sudo apt-get install valgrind
   - if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
