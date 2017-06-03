@@ -168,6 +168,8 @@ skip_commits:
     - .ci/travis*
     - .ci/dev_*
     - .ci/show_*
+    - .ci/vagrant*
+    - .ci/Vagrant*
     - doc/*
     - LICENSE.txt
     - README.*
