@@ -5,10 +5,10 @@ set -x
 
 
 if [ $COMPILER == "clang++-3.7" ] ; then
-    cat >> /etc/apt/sources.list <<EOF
+    sudo bash -c 'cat >> /etc/apt/sources.list <<EOF
 
 deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main
-EOF
+EOF'
     sudo -E apt-get update
     sudo -E apt-get install -y clang-3.7
 fi
