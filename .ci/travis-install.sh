@@ -13,7 +13,7 @@ EOF'
     sudo -E apt-get install -y clang-3.7
 fi
 
-sudo -E apt-get install -y valgrind
+sudo -E apt-get install -y build-essential valgrind
 if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
     PATH=~/.local/bin:${PATH};
     pip install --user --upgrade pip;
