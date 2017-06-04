@@ -3,17 +3,22 @@
 set -e
 set -x
 
+sudo -E add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
 if [ $COMPILER == "clang++-3.7" ] ; then
     sudo bash -c 'cat >> /etc/apt/sources.list <<EOF
 
 deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main
 EOF'
-    sudo -E apt-get update
+fi
+
+sudo -E apt-get update
+
+if [ $COMPILER == "clang++-3.7" ] ; then
     sudo -E apt-get install -y clang-3.7
 fi
 
-sudo -E apt-get install -y build-essential valgrind
+sudo -E apt-get install -y build-essential g++-5 g++-5-multilib valgrind
 if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
     PATH=~/.local/bin:${PATH};
     pip install --user --upgrade pip;
