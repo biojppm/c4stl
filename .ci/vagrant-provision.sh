@@ -31,6 +31,8 @@ sudo -E apt-get install -yq --force-yes \
      g++-5-multilib \
      g++-6 \
      g++-6-multilib \
+     g++-7 \
+     g++-7-multilib \
      clang-3.7 \
      clang-3.8 \
      clang-3.9 \
