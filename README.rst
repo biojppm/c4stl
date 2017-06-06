@@ -1,6 +1,6 @@
-========================  ======================
- Linux + OS X: |travis|    Windows: |appveyor|
-========================  ======================
+===========  ========================  ======================
+ |license|    Linux + OS X: |travis|    Windows: |appveyor|
+===========  ========================  ======================
 
 c4stl
 =====
@@ -302,7 +302,9 @@ Support
 
 Your bug reports are also welcome! Send them to `<https://github.com/biojppm/c4stl/issues>`.
 
-
+.. |license| image:: https://img.shields.io/badge/License-MIT-green.svg
+   :alt: License: MIT
+   :target: https://github.com/biojppm/c4stl/blob/master/LICENSE.txt
 .. |travis| image:: https://travis-ci.org/biojppm/c4stl.svg?branch=master
     :target: https://travis-ci.org/biojppm/c4stl
 .. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/c4stl?branch=master&svg=true
