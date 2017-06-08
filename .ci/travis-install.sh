@@ -32,9 +32,9 @@ if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
     pip install --user cpp-coveralls;
 fi
 
-export C_COMPILER=$(echo "$COMPILER" | sed 's:clang++:clang:g' | sed 's:g++:gcc:g')
-$COMPILER --version
-$C_COMPILER --version
+export CC=$(echo "$CXX" | sed 's:clang++:clang:g' | sed 's:g++:gcc:g')
+$CXX --version
+$CC --version
 cmake --version
 
 C4STL_DIR=$(pwd)
@@ -43,9 +43,10 @@ pwd
 
 # compile and install external libraries
 mkdir -p build/extern_build && cd build/extern_build
-cmake -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${COMPILER} \
-      -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="${XFLAGS}" \
-      -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install $C4STL_DIR/extern
+cmake -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$XFLAGS" \
+      -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install \
+      $C4STL_DIR/extern
 cmake --build . --config Release
 cd -
 

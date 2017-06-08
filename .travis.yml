@@ -10,8 +10,6 @@ addons:
 env:
   global:
     - PATH=/usr/local/bin:$PATH
-    - PEDANTIC=ON
-
 
 # NOTE: The compiler setting is unused. It simply makes the display on
 # travis-ci.org more readable.
@@ -20,33 +18,71 @@ matrix:
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
     - compiler: gcc
-      env: COMPILER=g++-5 BUILD_TYPE=Quicktest
+      env: CXX=g++-5 BT=Quicktest
     - compiler: gcc
-      env: COMPILER=g++-5 XFLAGS="-m32" BUILD_TYPE=Quicktest DPKG="libc6-dbg:i386"
+      env: CXX=g++-5 XFLAGS="-m32" BT=Quicktest DPKG="libc6-dbg:i386"
     #
     #
     - compiler: gcc
-      env: COMPILER=g++-6 BUILD_TYPE=Quicktest DPKG="g++-6"
+      env: CXX=g++-6 BT=Quicktest DPKG="g++-6"
     - compiler: gcc
-      env: COMPILER=g++-6 XFLAGS="-m32" BUILD_TYPE=Quicktest DPKG="g++-6 g++-6-multilib libc6-dbg:i386"
+      env: CXX=g++-6 XFLAGS="-m32" BT=Quicktest DPKG="g++-6 g++-6-multilib libc6-dbg:i386"
+    #
+    #
+    - compiler: gcc
+      env: CXX=g++-7 BT=Quicktest DPKG="g++-7"
+    - compiler: gcc
+      env: CXX=g++-7 XFLAGS="-m32" BT=Quicktest DPKG="g++-7 g++-7-multilib libc7-dbg:i386"
+    #
+    # ----------- clang without sanitizers (faster)
+    #
+    - compiler: clang
+      env: CXX=clang++-3.6 BT=Quicktest DPKG="clang-3.6"
+    - compiler: clang
+      env: CXX=clang++-3.6 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.6 libc6-dbg:i386"
     #
     #
     - compiler: clang
-      env: COMPILER=clang++-3.7 BUILD_TYPE=Quicktest DPKG="clang-3.7"
+      env: CXX=clang++-3.7 BT=Quicktest DPKG="clang-3.7"
     - compiler: clang
-      env: COMPILER=clang++-3.7 XFLAGS="-m32" BUILD_TYPE=Quicktest DPKG="clang-3.7 libc6-dbg:i386"
+      env: CXX=clang++-3.7 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.7 libc6-dbg:i386"
     #
     #
     - compiler: clang
-      env: COMPILER=clang++-3.8 BUILD_TYPE=Quicktest DPKG="clang-3.8"
+      env: CXX=clang++-3.8 BT=Quicktest DPKG="clang-3.8"
     - compiler: clang
-      env: COMPILER=clang++-3.8 XFLAGS="-m32" BUILD_TYPE=Quicktest DPKG="clang-3.8 libc6-dbg:i386"
+      env: CXX=clang++-3.8 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.8 libc6-dbg:i386"
     #
     #
     - compiler: clang
-      env: COMPILER=clang++-3.9 BUILD_TYPE=Quicktest DPKG="clang-3.9"
+      env: CXX=clang++-3.9 BT=Quicktest DPKG="clang-3.9"
     - compiler: clang
-      env: COMPILER=clang++-3.9 XFLAGS="-m32" BUILD_TYPE=Quicktest DPKG="clang-3.9 libc6-dbg:i386"
+      env: CXX=clang++-3.9 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.9 libc6-dbg:i386"
+    #
+    # ----------- clang with sanitizers (slower)
+    #
+    - compiler: clang
+      env: CXX=clang++-3.6 BT=Quicktest SAN=ON DPKG="clang-3.6"
+    - compiler: clang
+      env: CXX=clang++-3.6 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.6 libc6-dbg:i386"
+    #
+    #
+    - compiler: clang
+      env: CXX=clang++-3.7 BT=Quicktest SAN=ON DPKG="clang-3.7"
+    - compiler: clang
+      env: CXX=clang++-3.7 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.7 libc6-dbg:i386"
+    #
+    #
+    - compiler: clang
+      env: CXX=clang++-3.8 BT=Quicktest SAN=ON DPKG="clang-3.8"
+    - compiler: clang
+      env: CXX=clang++-3.8 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.8 libc6-dbg:i386"
+    #
+    #
+    - compiler: clang
+      env: CXX=clang++-3.9 BT=Quicktest SAN=ON DPKG="clang-3.9"
+    - compiler: clang
+      env: CXX=clang++-3.9 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.9 libc6-dbg:i386"
 
 #before_script:
 #  - sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
@@ -61,6 +97,6 @@ script:
 
 after_success:
   - echo "Success!"
-  #- if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
+  #- if [ "${BT}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
   #    coveralls --include src --include include --gcov-options '\-lp' --root .. --build-root .;
   #  fi
