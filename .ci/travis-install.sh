@@ -15,10 +15,15 @@ fi
 sudo -E apt-get update
 
 if [ $COMPILER == "clang++-3.7" ] ; then
-    sudo -E apt-get install -y clang-3.7
+    DPKG="$DPKG clang-3.7"
 fi
 
-sudo -E apt-get install -y build-essential g++-5 g++-5-multilib valgrind
+if [ ! -z "$DPKG" ] ; then
+    echo "additional packages: $DPKG"
+fi
+
+sudo -E apt-get install -y build-essential g++-5 g++-5-multilib valgrind $DPKG
+
 if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
     PATH=~/.local/bin:${PATH};
     pip install --user --upgrade pip;
