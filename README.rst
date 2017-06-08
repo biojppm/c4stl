@@ -232,10 +232,10 @@ Features
 
 * Tested in Windows and Linux.
 
-* Compilers: ``MSVC>=2015``, ``g++>=5``, ``clang++>=3.8``,
+* Compilers: ``MSVC>=2015``, ``g++>=5``, ``clang++>=3.6``,
   ``icc>=2016``. c4stl uses ``std::is_trivially_move_constructible`` and
-  ``std::is_trivially_move_assignable``, which is not available in older
-  libstdc.
+  ``std::is_trivially_move_assignable``, which are not available in older
+  libstdc++ (4.8).
 
 * Tested with valgrind and the clang sanitizers.
 
