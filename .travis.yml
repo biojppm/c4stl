@@ -21,112 +21,89 @@ matrix:
   include:
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
-    - compiler: gcc
-      env: CXX_=g++-5 A=64 BT=Quicktest
-    - compiler: gcc
-      env: CXX_=g++-5 A=32 BT=Quicktest
+    - env: CXX_=g++-5 A=64 BT=Quicktest
+    - env: CXX_=g++-5 A=32 BT=Quicktest
     #
     #
-    - compiler: gcc
-      env: CXX_=g++-6 A=64 BT=Quicktest
-    - compiler: gcc
-      env: CXX_=g++-6 A=32 BT=Quicktest
+    - env: CXX_=g++-6 A=64 BT=Quicktest
+    - env: CXX_=g++-6 A=32 BT=Quicktest
     #
     #
-    - compiler: gcc
-      env: CXX_=g++-7 A=64 BT=Quicktest
-    - compiler: gcc
-      env: CXX_=g++-7 A=32 BT=Quicktest
+    - env: CXX_=g++-7 A=64 BT=Quicktest
+    - env: CXX_=g++-7 A=32 BT=Quicktest
     #
     # ----------- clang without sanitizers (faster)
     #
-    - compiler: clang
-      env: CXX_=clang++-3.6 A=64 BT=Quicktest
-    - compiler: clang
-      env: CXX_=clang++-3.6 A=32 BT=Quicktest
+    - env: CXX_=clang++-3.6 A=64 BT=Quicktest
+    - env: CXX_=clang++-3.6 A=32 BT=Quicktest
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.7 A=64 BT=Quicktest
-    - compiler: clang
-      env: CXX_=clang++-3.7 A=32 BT=Quicktest
+    - env: CXX_=clang++-3.7 A=64 BT=Quicktest
+    - env: CXX_=clang++-3.7 A=32 BT=Quicktest
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.8 A=64 BT=Quicktest
-    - compiler: clang
-      env: CXX_=clang++-3.8 A=32 BT=Quicktest
+    - env: CXX_=clang++-3.8 A=64 BT=Quicktest
+    - env: CXX_=clang++-3.8 A=32 BT=Quicktest
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=64 BT=Quicktest
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=32 BT=Quicktest
+    - env: CXX_=clang++-3.9 A=64 BT=Quicktest
+    - env: CXX_=clang++-3.9 A=32 BT=Quicktest
     #
     # ----------- clang with sanitizers (slower)
     #
-    - compiler: clang
-      env: CXX_=clang++-3.6 A=64 BT=Quicktest SAN=ON
-    - compiler: clang
-      env: CXX_=clang++-3.6 A=32 BT=Quicktest SAN=ON
+    - env: CXX_=clang++-3.6 A=64 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.6 A=32 BT=Quicktest SAN=ALL
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.7 A=64 BT=Quicktest SAN=ON
-    - compiler: clang
-      env: CXX_=clang++-3.7 A=32 BT=Quicktest SAN=ON
+    - env: CXX_=clang++-3.7 A=64 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.7 A=32 BT=Quicktest SAN=ALL
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.8 A=64 BT=Quicktest SAN=ON
-    - compiler: clang
-      env: CXX_=clang++-3.8 A=32 BT=Quicktest SAN=ON
+    - env: CXX_=clang++-3.8 A=64 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.8 A=32 BT=Quicktest SAN=ALL
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=64 BT=Quicktest SAN=ON
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=32 BT=Quicktest SAN=ON
+    - env: CXX_=clang++-3.9 A=64 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.9 A=32 BT=Quicktest SAN=ALL
     #
     # ----------- Coverage (covers all tests, slow) -------------------------
     #
-    #- compiler: gcc
-    #  env: CXX_=g++-6 A=64 BT=Coverage DPKG="g++-6"
+    #- env: CXX_=g++-6 A=64 BT=Coverage
     #
     # DEBUG----------------------------------------------------------------
     # ----------- Debug (covers all tests, slow)
-    #
-    - compiler: gcc
-      env: CXX_=g++-6 A=64 BT=Debug
-    - compiler: gcc
-      env: CXX_=g++-6 A=32 BT=Debug
+    # valgrind is switched off to prevent exceeding the max travis time
+    - env: CXX_=g++-6 A=64 BT=Debug VG=OFF  
+    - env: CXX_=g++-6 A=32 BT=Debug VG=OFF
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=64 BT=Debug
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=32 BT=Debug
+    - env: CXX_=clang++-3.9 A=64 BT=Debug
+    - env: CXX_=clang++-3.9 A=32 BT=Debug
     #
     # RELEASE----------------------------------------------------------------
     # ----------- Release (covers all tests, slow)
     #
-    - compiler: gcc
-      env: CXX_=g++-6 A=64 BT=Release
-    - compiler: gcc
-      env: CXX_=g++-6 A=32 BT=Release
+    - env: CXX_=g++-6 A=64 BT=Release
+    - env: CXX_=g++-6 A=32 BT=Release
     #
     #
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=64 BT=Release
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=32 BT=Release
+    - env: CXX_=clang++-3.9 A=64 BT=Release
+    - env: CXX_=clang++-3.9 A=32 BT=Release
     #
-    # ----------- Full sanitize (covers all tests, VERY slow) ---------------
+    # ----------- Full sanitize (covers all type combination in the tests, VERY slow) ---------------
+    # the sanitizers are run one at a time to prevent exceeding the max travis time
     #
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=64 BT=Debug SAN=ON
-    - compiler: clang
-      env: CXX_=clang++-3.9 A=32 BT=Debug SAN=ON
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=ASAN VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=ASAN VG=OFF
+    #
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=TSAN VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=TSAN VG=OFF
+    #
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=MSAN VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=MSAN VG=OFF
+    #
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=UBSAN VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=UBSAN VG=OFF
 
 
 #before_script:
