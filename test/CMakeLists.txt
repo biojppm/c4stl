@@ -29,6 +29,10 @@ if(C4STL_WERROR)
     endif()
 endif()
 
+if(UNIX)
+    option(C4STL_TEST_VALGRIND "enable valgrind tests" ON)
+endif()
+
 #------------------------------------------------------------------------------
 # Add the coverage command(s)
 
@@ -172,7 +176,7 @@ function(c4stl_add_test name)
             set_target_properties(${t} PROPERTIES FOLDER c4stl-test/${name})
         endif()
     endforeach()
-    if(UNIX AND NOT COVERAGE_BUILD)
+    if(UNIX AND C4STL_TEST_VALGRIND AND NOT COVERAGE_BUILD)
         # @todo: consider doing this for valgrind:
         # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
         # for now we explicitly run it:
