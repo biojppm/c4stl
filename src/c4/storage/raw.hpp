@@ -335,7 +335,7 @@ public:
     C4_ALWAYS_INLINE raw_fixed() {}
     C4_ALWAYS_INLINE ~raw_fixed() {}
 
-    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_ASSERT(cap <= (I)N); }
+    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_UNUSED(cap); C4_ASSERT(cap <= (I)N); }
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
@@ -1092,14 +1092,14 @@ public:
 
     raw_paged(I cap, I page_sz) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator()
     {
-        C4_ASSERT(page_sz > 1);
-        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
+        C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
+        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
         crtp_base::_raw_reserve(cap);
     }
     raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
     {
-        C4_ASSERT(page_sz > 1);
-        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two");
+        C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
+        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
         crtp_base::_raw_reserve(cap);
     }
 
