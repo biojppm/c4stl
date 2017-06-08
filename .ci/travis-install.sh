@@ -3,26 +3,28 @@
 set -e
 set -x
 
+# setup apt for installing
 sudo -E add-apt-repository -y ppa:ubuntu-toolchain-r/test
-
-if [ $COMPILER == "clang++-3.7" ] ; then
-    sudo bash -c 'cat >> /etc/apt/sources.list <<EOF
+sudo bash -c 'cat >> /etc/apt/sources.list <<EOF
 
 deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.7 main
+#deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main # not needed
+deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.9 main
+deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-4.0 main
 EOF'
-fi
-
 sudo -E apt-get update
-
-if [ $COMPILER == "clang++-3.7" ] ; then
-    DPKG="$DPKG clang-3.7"
-fi
 
 if [ ! -z "$DPKG" ] ; then
     echo "additional packages: $DPKG"
 fi
 
-sudo -E apt-get install -y build-essential g++-5 g++-5-multilib valgrind $DPKG
+# g++-5 is needed for clang; otherwise it uses libstdc++ from g++4.8
+# which is not fully C++11
+sudo -E apt-get install -y \
+     build-essential \
+     g++-5 g++-5-multilib \
+     valgrind \
+     $DPKG
 
 if [ "${BUILD_TYPE}" == "Coverage" -a "${TRAVIS_OS_NAME}" == "linux" ]; then
     PATH=~/.local/bin:${PATH};
@@ -42,7 +44,7 @@ pwd
 # compile and install external libraries
 mkdir -p build/extern_build && cd build/extern_build
 cmake -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${COMPILER} \
-      -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="${EXTRA_FLAGS}" \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="${XFLAGS}" \
       -DCMAKE_INSTALL_PREFIX=`pwd`/../extern_install $C4STL_DIR/extern
 cmake --build . --config Release
 cd -
