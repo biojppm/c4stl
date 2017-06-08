@@ -21,69 +21,110 @@ matrix:
     - compiler: gcc
       env: CXX_=g++-5 BT=Quicktest
     - compiler: gcc
-      env: CXX_=g++-5 XFLAGS="-m32" BT=Quicktest DPKG="libc6-dbg:i386"
+      env: CXX_=g++-5 BT=Quicktest XFLAGS="-m32" DPKG="libc6-dbg:i386"
     #
     #
     - compiler: gcc
       env: CXX_=g++-6 BT=Quicktest DPKG="g++-6"
     - compiler: gcc
-      env: CXX_=g++-6 XFLAGS="-m32" BT=Quicktest DPKG="g++-6 g++-6-multilib libc6-dbg:i386"
+      env: CXX_=g++-6 BT=Quicktest XFLAGS="-m32" DPKG="g++-6 g++-6-multilib libc6-dbg:i386"
     #
     #
     - compiler: gcc
       env: CXX_=g++-7 BT=Quicktest DPKG="g++-7"
     - compiler: gcc
-      env: CXX_=g++-7 XFLAGS="-m32" BT=Quicktest DPKG="g++-7 g++-7-multilib libc6-dbg:i386"
+      env: CXX_=g++-7 BT=Quicktest XFLAGS="-m32" DPKG="g++-7 g++-7-multilib libc6-dbg:i386"
     #
     # ----------- clang without sanitizers (faster)
     #
     - compiler: clang
       env: CXX_=clang++-3.6 BT=Quicktest DPKG="clang-3.6"
     - compiler: clang
-      env: CXX_=clang++-3.6 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.6 libc6-dbg:i386"
+      env: CXX_=clang++-3.6 BT=Quicktest XFLAGS="-m32" DPKG="clang-3.6 libc6-dbg:i386"
     #
     #
     - compiler: clang
       env: CXX_=clang++-3.7 BT=Quicktest DPKG="clang-3.7"
     - compiler: clang
-      env: CXX_=clang++-3.7 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.7 libc6-dbg:i386"
+      env: CXX_=clang++-3.7 BT=Quicktest XFLAGS="-m32" DPKG="clang-3.7 libc6-dbg:i386"
     #
     #
     - compiler: clang
       env: CXX_=clang++-3.8 BT=Quicktest DPKG="clang-3.8"
     - compiler: clang
-      env: CXX_=clang++-3.8 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.8 libc6-dbg:i386"
+      env: CXX_=clang++-3.8 BT=Quicktest XFLAGS="-m32" DPKG="clang-3.8 libc6-dbg:i386"
     #
     #
     - compiler: clang
       env: CXX_=clang++-3.9 BT=Quicktest DPKG="clang-3.9"
     - compiler: clang
-      env: CXX_=clang++-3.9 XFLAGS="-m32" BT=Quicktest DPKG="clang-3.9 libc6-dbg:i386"
+      env: CXX_=clang++-3.9 BT=Quicktest XFLAGS="-m32" DPKG="clang-3.9 libc6-dbg:i386"
     #
     # ----------- clang with sanitizers (slower)
     #
     - compiler: clang
       env: CXX_=clang++-3.6 BT=Quicktest SAN=ON DPKG="clang-3.6"
     - compiler: clang
-      env: CXX_=clang++-3.6 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.6 libc6-dbg:i386"
+      env: CXX_=clang++-3.6 BT=Quicktest SAN=ON XFLAGS="-m32" DPKG="clang-3.6 libc6-dbg:i386"
     #
     #
     - compiler: clang
       env: CXX_=clang++-3.7 BT=Quicktest SAN=ON DPKG="clang-3.7"
     - compiler: clang
-      env: CXX_=clang++-3.7 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.7 libc6-dbg:i386"
+      env: CXX_=clang++-3.7 BT=Quicktest SAN=ON XFLAGS="-m32" DPKG="clang-3.7 libc6-dbg:i386"
     #
     #
     - compiler: clang
       env: CXX_=clang++-3.8 BT=Quicktest SAN=ON DPKG="clang-3.8"
     - compiler: clang
-      env: CXX_=clang++-3.8 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.8 libc6-dbg:i386"
+      env: CXX_=clang++-3.8 BT=Quicktest SAN=ON XFLAGS="-m32" DPKG="clang-3.8 libc6-dbg:i386"
     #
     #
     - compiler: clang
       env: CXX_=clang++-3.9 BT=Quicktest SAN=ON DPKG="clang-3.9"
     - compiler: clang
-      env: CXX_=clang++-3.9 XFLAGS="-m32" BT=Quicktest SAN=ON DPKG="clang-3.9 libc6-dbg:i386"
+      env: CXX_=clang++-3.9 BT=Quicktest SAN=ON XFLAGS="-m32" DPKG="clang-3.9 libc6-dbg:i386"
+    #
+    # ----------- Coverage (covers all tests, slow) -------------------------
+    #
+    #- compiler: gcc
+    #  env: CXX_=g++-6 BT=Coverage DPKG="g++-6"
+    #
+    # DEBUG----------------------------------------------------------------
+    # ----------- Debug (covers all tests, slow)
+    #
+    - compiler: gcc
+      env: CXX_=g++-6 BT=Debug DPKG="g++-6"
+    - compiler: gcc
+      env: CXX_=g++-6 BT=Debug XFLAGS="-m32" DPKG="g++-6 g++-6-multilib libc6-dbg:i386"
+    #
+    #
+    - compiler: clang
+      env: CXX_=clang++-3.9 BT=Debug DPKG="clang-3.9"
+    - compiler: clang
+      env: CXX_=clang++-3.9 BT=Debug XFLAGS="-m32" DPKG="clang-3.9 libc6-dbg:i386"
+    #
+    # RELEASE----------------------------------------------------------------
+    # ----------- Release (covers all tests, slow)
+    #
+    - compiler: gcc
+      env: CXX_=g++-6 BT=Release DPKG="g++-6"
+    - compiler: gcc
+      env: CXX_=g++-6 BT=Release XFLAGS="-m32" DPKG="g++-6 g++-6-multilib libc6-dbg:i386"
+    #
+    #
+    - compiler: clang
+      env: CXX_=clang++-3.9 BT=Release DPKG="clang-3.9"
+    - compiler: clang
+      env: CXX_=clang++-3.9 BT=Release XFLAGS="-m32" DPKG="clang-3.9 libc6-dbg:i386"
+    #
+    # ----------- Full sanitize (covers all tests, VERY slow) ---------------
+    #
+    - compiler: clang
+      env: CXX_=clang++-3.9 BT=Debug SAN=ON DPKG="clang-3.9"
+    - compiler: clang
+      env: CXX_=clang++-3.9 BT=Debug SAN=ON DPKG="clang-3.9 libc6-dbg:i386"
+
 
 #before_script:
 #  - sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
