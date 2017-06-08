@@ -33,7 +33,7 @@ matrix:
     - compiler: gcc
       env: CXX_=g++-7 BT=Quicktest DPKG="g++-7"
     - compiler: gcc
-      env: CXX_=g++-7 XFLAGS="-m32" BT=Quicktest DPKG="g++-7 g++-7-multilib libc7-dbg:i386"
+      env: CXX_=g++-7 XFLAGS="-m32" BT=Quicktest DPKG="g++-7 g++-7-multilib libc6-dbg:i386"
     #
     # ----------- clang without sanitizers (faster)
     #
