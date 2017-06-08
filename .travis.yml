@@ -21,28 +21,25 @@ matrix:
   include:
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
-    - env: CXX_=g++-5 A=64 BT=Quicktest
-    - env: CXX_=g++-5 A=32 BT=Quicktest
     #
-    #
-    - env: CXX_=g++-6 A=64 BT=Quicktest
-    - env: CXX_=g++-6 A=32 BT=Quicktest
-    #
-    #
-    - env: CXX_=g++-7 A=64 BT=Quicktest
-    - env: CXX_=g++-7 A=32 BT=Quicktest
-    #
-    # ----------- clang without sanitizers (faster)
-    #
+    - env: CXX_=g++-5       A=64 BT=Quicktest
     - env: CXX_=clang++-3.6 A=64 BT=Quicktest
+    #
+    - env: CXX_=g++-5       A=32 BT=Quicktest
     - env: CXX_=clang++-3.6 A=32 BT=Quicktest
     #
     #
+    - env: CXX_=g++-6       A=64 BT=Quicktest
     - env: CXX_=clang++-3.7 A=64 BT=Quicktest
+    #
+    - env: CXX_=g++-6       A=32 BT=Quicktest
     - env: CXX_=clang++-3.7 A=32 BT=Quicktest
     #
     #
+    - env: CXX_=g++-7       A=64 BT=Quicktest
     - env: CXX_=clang++-3.8 A=64 BT=Quicktest
+    #
+    - env: CXX_=g++-7       A=32 BT=Quicktest
     - env: CXX_=clang++-3.8 A=32 BT=Quicktest
     #
     #
@@ -51,20 +48,20 @@ matrix:
     #
     # ----------- clang with sanitizers (slower)
     #
-    - env: CXX_=clang++-3.6 A=64 BT=Quicktest SAN=ALL
-    - env: CXX_=clang++-3.6 A=32 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.6 A=64 BT=Quicktest SAN=ALL VG=OFF
+    - env: CXX_=clang++-3.6 A=32 BT=Quicktest SAN=ALL VG=OFF
     #
     #
-    - env: CXX_=clang++-3.7 A=64 BT=Quicktest SAN=ALL
-    - env: CXX_=clang++-3.7 A=32 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.7 A=64 BT=Quicktest SAN=ALL VG=OFF
+    - env: CXX_=clang++-3.7 A=32 BT=Quicktest SAN=ALL VG=OFF
     #
     #
-    - env: CXX_=clang++-3.8 A=64 BT=Quicktest SAN=ALL
-    - env: CXX_=clang++-3.8 A=32 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.8 A=64 BT=Quicktest SAN=ALL VG=OFF
+    - env: CXX_=clang++-3.8 A=32 BT=Quicktest SAN=ALL VG=OFF
     #
     #
-    - env: CXX_=clang++-3.9 A=64 BT=Quicktest SAN=ALL
-    - env: CXX_=clang++-3.9 A=32 BT=Quicktest SAN=ALL
+    - env: CXX_=clang++-3.9 A=64 BT=Quicktest SAN=ALL VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Quicktest SAN=ALL VG=OFF
     #
     # ----------- Coverage (covers all tests, slow) -------------------------
     #
