@@ -902,9 +902,9 @@ struct _strWrapImpl : public _strExpr< C, _strWrapImpl< C, S > >
     }
     C4_ALWAYS_INLINE size_t put(C *out, size_t pos) const
     {
-        C4_ASSERT_MSG(out != str.data(), "cannot assign to rvalues in this expression. the lvalue is present in the rhs");
+        C4_ASSERT((out != str.data()) && "cannot assign to rvalues in this expression. the lvalue is present in the rhs");
         C const* in = str.data();
-        C4_ASSERT_MSG(in + len < out + pos || in > out + pos + len, "must not overlap");
+        C4_ASSERT((in + len < out + pos || in > out + pos + len) && "must not overlap");
         traits_type::copy(out + pos, in, len);
         return pos + len;
     }
@@ -943,8 +943,8 @@ struct _strWrapCharPtr : public _strExpr< C, _strWrapCharPtr< C > >
     }
     C4_ALWAYS_INLINE size_t put(C* out, size_t pos) const
     {
-        C4_ASSERT_MSG(out != str, "cannot assign to rvalues in this expression. the lvalue is present in the rhs");
-        C4_ASSERT_MSG(str + len < out + pos || str > out + pos + len, "must not overlap");
+        C4_ASSERT((out != str) && "cannot assign to rvalues in this expression. the lvalue is present in the rhs");
+        C4_ASSERT((str + len < out + pos || str > out + pos + len) && "must not overlap");
         traits_type::copy(out + pos, str, len);
         return pos + len;
     }
@@ -1910,7 +1910,7 @@ public:
             }
             bool operator== (split_iterator_impl const& that) const
             {
-                C4_XASSERT_MSG(m_sep == that.m_sep, "cannot compare split iterators with different separators");
+                C4_XASSERT((m_sep == that.m_sep) && "cannot compare split iterators with different separators");
                 if(m_str.size() != that.m_str.size()) return false;
                 if(m_str.data() != that.m_str.data()) return false;
                 return m_pos == that.m_pos;
@@ -3184,8 +3184,8 @@ private:
     };
     Alloc m_alloc;
 
-    void     _set_short_sz(SizeType sz) { C4_XASSERT_MSG((((char)sz << 1) >> 1) == (char)sz, "size overflow"); m_short.flag_n_sz = (char)sz << 1; }
-    void     _set_long_sz(SizeType sz) { C4_XASSERT_MSG((((char)sz << 1) >> 1) == (char)sz, "size overflow"); m_long.flag_n_sz = (sz << 1) | 1; }
+    void     _set_short_sz(SizeType sz) { C4_XASSERT(((((char)sz << 1) >> 1) == (char)sz) && "size overflow"); m_short.flag_n_sz = (char)sz << 1; }
+    void     _set_long_sz(SizeType sz)  { C4_XASSERT(((((char)sz << 1) >> 1) == (char)sz) && "size overflow"); m_long.flag_n_sz = (sz << 1) | 1; }
     SizeType _get_short_sz() const { return m_short.flag_n_sz >> 1; }
     SizeType _get_long_sz() const { return m_long.flag_n_sz >> 1; }
 

@@ -623,6 +623,10 @@ public:
     raw_small& operator=(raw_small const& that) = delete;
     raw_small& operator=(raw_small     && that) = delete;
 
+    // gcc is triggering a false positive here when compiling in release mode:
+    // error: array subscript is below array bounds [-Werror=array-bounds].
+    // probably this is due to moving a return branch into the assert.
+    // see https://gcc.gnu.org/ml/gcc/2009-09/msg00270.html for a similar example
     C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity <= N ? m_arr[i] : m_ptr[i]; }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity <= N ? m_arr[i] : m_ptr[i]; }
 

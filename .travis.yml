@@ -70,8 +70,12 @@ matrix:
     # DEBUG----------------------------------------------------------------
     # ----------- Debug (covers all tests, slow)
     # valgrind is switched off to prevent exceeding the max travis time
-    - env: CXX_=g++-6 A=64 BT=Debug VG=OFF  
+    - env: CXX_=g++-6 A=64 BT=Debug VG=OFF
     - env: CXX_=g++-6 A=32 BT=Debug VG=OFF
+    #
+    #
+    - env: CXX_=g++-7 A=64 BT=Debug VG=OFF
+    - env: CXX_=g++-7 A=32 BT=Debug VG=OFF
     #
     #
     - env: CXX_=clang++-3.9 A=64 BT=Debug
