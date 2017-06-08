@@ -93,17 +93,17 @@ matrix:
     # ----------- Full sanitize (covers all type combination in the tests, VERY slow) ---------------
     # the sanitizers are run one at a time to prevent exceeding the max travis time
     #
-    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=ASAN VG=OFF
-    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=ASAN VG=OFF
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=A VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=A VG=OFF
     #
-    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=TSAN VG=OFF
-    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=TSAN VG=OFF
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=T VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=T VG=OFF
     #
-    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=MSAN VG=OFF
-    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=MSAN VG=OFF
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=M VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=M VG=OFF
     #
-    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=UBSAN VG=OFF
-    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=UBSAN VG=OFF
+    - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=UB VG=OFF
+    - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=UB VG=OFF
 
 
 #before_script:
