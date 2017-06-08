@@ -31,6 +31,7 @@ function(c4stl_add_target name)
     )
     set(options1arg
         OUTPUT_TARGET_NAMES
+        FOLDER
     )
     set(optionsnarg
         SOURCES
@@ -58,6 +59,9 @@ function(c4stl_add_target name)
         if(_c4al_LIBS)
             target_link_libraries(${name} PUBLIC ${_c4al_LIBS})
         endif()
+        if(_c4al_FOLDER)
+            set_target_properties(${name} PROPERTIES FOLDER ${_c4al_FOLDER})
+        endif()
     endif()
     if(_c4al_SANITIZE AND C4STL_SANITIZE)
         sanitize_target(${name} c4stl
@@ -66,7 +70,7 @@ function(c4stl_add_target name)
             INC_DIRS ${_c4al_INC_DIRS}
             LIBS ${_c4al_LIBS}
             OUTPUT_TARGET_NAMES targets
-            FOLDER sanitize
+            FOLDER "${_c4al_FOLDER}"
             )
     endif()
     if(NOT C4STL_SANITIZE_ONLY)

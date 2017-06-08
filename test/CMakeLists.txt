@@ -136,8 +136,8 @@ c4stl_add_target(c4stl-libtest LIBRARY SANITIZE
     SOURCES ${testsrc}
     LIBS c4stl ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
     INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
+    FOLDER c4stl-test
     )
-set_target_properties(c4stl-libtest PROPERTIES FOLDER c4stl-test)
 
 #------------------------------------------------------------------------------
 
@@ -159,6 +159,7 @@ function(c4stl_add_test name)
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../test/main.cpp ${ARGN}
         LIBS c4stl-libtest ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
         INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
+        FOLDER c4stl-test/${name}
         )
     list(APPEND c4stl_test_list ${name})
     add_custom_target(${name}-build)
@@ -167,7 +168,6 @@ function(c4stl_add_test name)
         add_dependencies(${name}-build ${name})
         add_dependencies(c4stl-test-build ${name}-build)
         add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
-        set_target_properties(${name} PROPERTIES FOLDER c4stl-test/${name})
     endif()
     foreach(s asan msan tsan ubsan)
         set(t ${name}-${s})
@@ -175,7 +175,6 @@ function(c4stl_add_test name)
             add_dependencies(${name}-build ${t})
             sanitize_get_target_command(${CMAKE_CURRENT_BINARY_DIR}/${t} C4STL ${s} cmd)
             add_test(NAME ${t}-run COMMAND ${cmd})
-            set_target_properties(${t} PROPERTIES FOLDER c4stl-test/${name})
         endif()
     endforeach()
     if(UNIX AND C4STL_TEST_VALGRIND AND NOT COVERAGE_BUILD)
