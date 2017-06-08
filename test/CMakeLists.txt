@@ -199,7 +199,7 @@ c4stl_add_test(c4stl-test-ctordtor     ${t}/ctor_dtor.cpp)
 c4stl_add_test(c4stl-test-span         ${t}/span.cpp)
 
 c4stl_add_test(c4stl-test-chartraits   ${t}/char_traits.cpp)
-c4stl_add_test(c4stl-test-sstream      ${t}/sstream.cpp)
+#c4stl_add_test(c4stl-test-sstream      ${t}/sstream.cpp)
 
 # the string tests are separated to save compile time
 c4stl_add_test(c4stl-test-string-substring   ${t}/string.substring.cpp ${t}/string.hpp)
