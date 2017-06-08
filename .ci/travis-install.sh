@@ -15,12 +15,12 @@ EOF'
 
 sudo -E apt-get update
 
-  if [ "$CXX_" == "g++-5" && "$A" == "64" ] ; then DPKG="$DPKG"
-elif [ "$CXX_" == "g++-5" && "$A" == "32" ] ; then DPKG="$DPKG"
-elif [ "$CXX_" == "g++-6" && "$A" == "64" ] ; then DPKG="$DPKG g++-6"
-elif [ "$CXX_" == "g++-6" && "$A" == "32" ] ; then DPKG="$DPKG g++-6 g++-6-multilib"
-elif [ "$CXX_" == "g++-7" && "$A" == "64" ] ; then DPKG="$DPKG g++-7"
-elif [ "$CXX_" == "g++-7" && "$A" == "32" ] ; then DPKG="$DPKG g++-7 g++-7-multilib"
+  if [ "$CXX_" == "g++-5" ] && [ "$A" == "64" ] ; then DPKG="$DPKG"
+elif [ "$CXX_" == "g++-5" ] && [ "$A" == "32" ] ; then DPKG="$DPKG"
+elif [ "$CXX_" == "g++-6" ] && [ "$A" == "64" ] ; then DPKG="$DPKG g++-6"
+elif [ "$CXX_" == "g++-6" ] && [ "$A" == "32" ] ; then DPKG="$DPKG g++-6 g++-6-multilib"
+elif [ "$CXX_" == "g++-7" ] && [ "$A" == "64" ] ; then DPKG="$DPKG g++-7"
+elif [ "$CXX_" == "g++-7" ] && [ "$A" == "32" ] ; then DPKG="$DPKG g++-7 g++-7-multilib"
 elif [ "$CXX_" == "clang++-3.6" ] ; then DPKG="$DPKG clang-3.6"
 elif [ "$CXX_" == "clang++-3.7" ] ; then DPKG="$DPKG clang-3.7"
 elif [ "$CXX_" == "clang++-3.8" ] ; then DPKG="$DPKG clang-3.8"

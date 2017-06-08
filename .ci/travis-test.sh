@@ -27,6 +27,10 @@ if [ ! -z "$CMFLAGS" ] ; then
     echo "additional cmake flags: $CMFLAGS"
 fi
 
+if [ "$A" == "32" ] ; then
+    XFLAGS="-m32"
+fi
+
 #--------------------------------------------------
 
 cd build
