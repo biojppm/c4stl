@@ -9,9 +9,9 @@ pwd
 C4STL_DIR=$(pwd)
 
 if [ "$SAN" == "ON" ] ; then
-    set CMFLAGS="$CMFLAGS -DC4STL_SANITIZE=ON"
+    CMFLAGS="$CMFLAGS -DC4STL_SANITIZE=ON"
 else
-    set CMFLAGS="$CMFLAGS -DC4STL_SANITIZE=OFF"
+    CMFLAGS="$CMFLAGS -DC4STL_SANITIZE=OFF"
 fi
 
 cd build
