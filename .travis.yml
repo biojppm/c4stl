@@ -22,6 +22,13 @@ matrix:
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
     #
+    - env: CXX_=g++-6       A=64 BT=QuicktestRelease
+    - env: CXX_=clang++-3.7 A=64 BT=QuicktestRelease
+    #
+    - env: CXX_=g++-6       A=32 BT=QuicktestRelease
+    - env: CXX_=clang++-3.7 A=32 BT=QuicktestRelease
+    #
+    #
     - env: CXX_=g++-5       A=64 BT=Quicktest
     - env: CXX_=clang++-3.6 A=64 BT=Quicktest
     #
@@ -70,12 +77,9 @@ matrix:
     # DEBUG----------------------------------------------------------------
     # ----------- Debug (covers all tests, slow)
     # valgrind is switched off to prevent exceeding the max travis time
+    #
     - env: CXX_=g++-6 A=64 BT=Debug VG=OFF
     - env: CXX_=g++-6 A=32 BT=Debug VG=OFF
-    #
-    #
-    - env: CXX_=g++-7 A=64 BT=Debug VG=OFF
-    - env: CXX_=g++-7 A=32 BT=Debug VG=OFF
     #
     #
     - env: CXX_=clang++-3.9 A=64 BT=Debug
