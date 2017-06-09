@@ -312,7 +312,8 @@ _C4_LIST_BASIC_TESTS                                                    \
                                                containee_type_name, containee_type, \
                                                storage_type_name, storage_type_macro, \
                                                ...)                     \
-    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, size_t, size_t, storage_type_name, storage_type_macro, ## __VA_ARGS__)
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type, size_t,  size_t, storage_type_name, storage_type_macro, ## __VA_ARGS__) \
+    _C4_CALL_LIST_TESTS(list_tyname, list_ty, containee_type_name, containee_type,    i32, int32_t, storage_type_name, storage_type_macro, ## __VA_ARGS__)
 
 #endif // ! C4_QUICKTEST
 
