@@ -9,6 +9,11 @@ add_configuration_type(Quicktest
     C_FLAGS ${dquicktest}
     CXX_FLAGS ${dquicktest}
     )
+add_configuration_type(QuicktestRelease
+    DEFAULT_FROM RELEASE
+    C_FLAGS ${dquicktest}
+    CXX_FLAGS ${dquicktest}
+    )
 
 option(C4STL_PEDANTIC "Compile in pedantic mode" OFF)
 if(C4STL_PEDANTIC)
