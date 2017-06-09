@@ -9,10 +9,12 @@ add_configuration_type(Quicktest
     C_FLAGS ${dquicktest}
     CXX_FLAGS ${dquicktest}
     )
+getdefine(duse_assert C4_USE_ASSERT)
+getdefine(duse_xassert C4_USE_XASSERT)
 add_configuration_type(QuicktestRelease
     DEFAULT_FROM RELEASE
-    C_FLAGS ${dquicktest}
-    CXX_FLAGS ${dquicktest}
+    C_FLAGS ${dquicktest} ${duse_assert} ${d_use_xassert}
+    CXX_FLAGS ${dquicktest} ${duse_assert} ${d_use_xassert}
     )
 
 option(C4STL_PEDANTIC "Compile in pedantic mode" OFF)
