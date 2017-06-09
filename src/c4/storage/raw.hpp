@@ -558,7 +558,7 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** raw contiguous storage with in-place storage for a small number of objects
+/** raw contiguous storage with in-place room for a small number of objects
  * @tparam N the number of objects
  * @ingroup raw_storage_classes */
 template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
@@ -638,6 +638,7 @@ public:
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? m_arr : m_ptr; }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
+    C4_ALWAYS_INLINE bool is_small() const noexcept { return m_capacity <= N; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
