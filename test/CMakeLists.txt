@@ -3,18 +3,17 @@
 
 include(GetFlags)
 
-get_define(dquicktest C4_QUICKTEST)
+get_define_flags(qtdefs C4_QUICKTEST)
 add_configuration_type(Quicktest
     DEFAULT_FROM DEBUG
-    C_FLAGS ${dquicktest}
-    CXX_FLAGS ${dquicktest}
+    C_FLAGS ${qtdefs}
+    CXX_FLAGS ${qtdefs}
     )
-get_define(duse_assert C4_USE_ASSERT)
-get_define(duse_xassert C4_USE_XASSERT)
+get_define_flags(qtreldefs C4_USE_ASSERT C4_USE_XASSERT)
 add_configuration_type(QuicktestRelease
     DEFAULT_FROM RELEASE
-    C_FLAGS "${dquicktest} ${duse_assert} ${duse_xassert}"
-    CXX_FLAGS "${dquicktest} ${duse_assert} ${duse_xassert}"
+    C_FLAGS ${qtreldefs}
+    CXX_FLAGS ${qtreldefs}
     )
 
 option(C4STL_PEDANTIC "Compile in pedantic mode" OFF)
