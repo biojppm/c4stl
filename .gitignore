@@ -15,6 +15,7 @@ CMakeLists.txt.user
 # build files
 build/
 install/
+.python-version
 
 # test files
 /Testing/
