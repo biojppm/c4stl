@@ -315,6 +315,8 @@ struct raw_fixed
 
     C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
 
+    /** the union with the char buffer is needed to prevent auto-construction
+     * of the elements in m_arr */
     union {
         alignas(Alignment) char _m_buf[N * sizeof(T)];
         alignas(Alignment) T m_arr[N];
@@ -573,6 +575,8 @@ struct raw_small
 #endif
 
     union {
+        /** the union with the char buffer is needed to prevent
+         * auto-construction of the elements in m_arr */
         union {
             alignas(Alignment) T    m_arr[N_];
             alignas(Alignment) char m_buf[N_ * sizeof(T)];
@@ -627,8 +631,8 @@ public:
     // error: array subscript is below array bounds [-Werror=array-bounds].
     // probably this is due to moving a return branch into the assert.
     // see https://gcc.gnu.org/ml/gcc/2009-09/msg00270.html for a similar example
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity <= N ? m_arr[i] : m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_capacity <= N ? m_arr[i] : m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? m_arr[i] : m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? m_arr[i] : m_ptr[i]; }
 
     C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity <= N ? m_arr : m_ptr; }
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? m_arr : m_ptr; }
