@@ -87,13 +87,13 @@ matrix:
     #
     # RELEASE----------------------------------------------------------------
     # ----------- Release (covers all tests, slow)
+    # too slow, unfortunately.
+    #- env: CXX_=g++-6 A=64 BT=Release
+    #- env: CXX_=g++-6 A=32 BT=Release
     #
-    - env: CXX_=g++-6 A=64 BT=Release
-    - env: CXX_=g++-6 A=32 BT=Release
     #
-    #
-    - env: CXX_=clang++-3.7 A=64 BT=Release
-    - env: CXX_=clang++-3.7 A=32 BT=Release
+    #- env: CXX_=clang++-3.7 A=64 BT=Release
+    #- env: CXX_=clang++-3.7 A=32 BT=Release
     #
     # ----------- Full sanitize (covers all type combination in the tests, VERY slow) ---------------
     # the sanitizers are run one at a time to prevent exceeding the max travis time
