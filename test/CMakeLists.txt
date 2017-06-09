@@ -9,8 +9,8 @@ add_configuration_type(Quicktest
     C_FLAGS ${dquicktest}
     CXX_FLAGS ${dquicktest}
     )
-getdefine(duse_assert C4_USE_ASSERT)
-getdefine(duse_xassert C4_USE_XASSERT)
+get_define(duse_assert C4_USE_ASSERT)
+get_define(duse_xassert C4_USE_XASSERT)
 add_configuration_type(QuicktestRelease
     DEFAULT_FROM RELEASE
     C_FLAGS ${dquicktest} ${duse_assert} ${d_use_xassert}
