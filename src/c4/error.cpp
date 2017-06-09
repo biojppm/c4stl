@@ -146,7 +146,10 @@ bool is_debugger_attached()
             static const char TracerPid[] = "TracerPid:";
             char *tracer_pid;
 
-            buf[num_read] = 0;
+            if(num_read < 1024)
+            {
+                buf[num_read] = 0;
+            }
             tracer_pid    = strstr(buf, TracerPid);
             if (tracer_pid)
             {

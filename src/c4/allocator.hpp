@@ -270,10 +270,6 @@ public:
         return mem;
     }
 
-private:
-
-    MemoryResource* m_resource;
-
 };
 
 C4_END_NAMESPACE(c4)

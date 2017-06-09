@@ -805,10 +805,10 @@ public:
         U* operator-> () const C4_NOEXCEPT_X { return &(*this_)[i]; }
 
         iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
-        iterator_impl& operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
+        iterator_impl  operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
 
         iterator_impl& operator-- (   ) noexcept {                           --i; return *this; }
-        iterator_impl& operator-- (int) noexcept { iterator_impl it = *this; --i; return    it; }
+        iterator_impl  operator-- (int) noexcept { iterator_impl it = *this; --i; return    it; }
 
         bool operator== (iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
         bool operator!= (iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
