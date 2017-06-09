@@ -195,6 +195,7 @@ struct srcloc
 //-----------------------------------------------------------------------------
 // assertions
 
+// Doxygen needs this so that only one definition counts
 #ifdef _DOXYGEN_
     /** Explicitly enables assertions, independently of NDEBUG status.
      * This is meant to allow enabling assertions even when NDEBUG is defined.
@@ -233,6 +234,7 @@ struct srcloc
 //-----------------------------------------------------------------------------
 // extreme assertions
 
+// Doxygen needs this so that only one definition counts
 #ifdef _DOXYGEN_
     /** Explicitly enables extreme assertions; this is meant to allow enabling
      * assertions even when NDEBUG is defined. Defaults to undefined.
