@@ -18,3 +18,12 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Test
+====
+
+.. doxygengroup:: span_classes
+   :project: c4stl
+
+              
+
