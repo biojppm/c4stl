@@ -39,6 +39,7 @@ extensions = ['sphinx.ext.todo',
 ]
 breathe_projects = {'c4stl': './doxygen/xml'}
 breathe_default_project = 'c4stl'
+breathe_default_members = ('members', 'undoc-members')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
