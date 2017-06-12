@@ -128,8 +128,5 @@ if(C4STL_BUILD_TESTS)
 endif()
 
 if(C4STL_BUILD_BENCHMARKS)
-    ExternalProject_Import(gbenchmark
-        PREFIX ${C4STL_EXTERN_DIR}
-        INCLUDES benchmark/benchmark.h
-        LIBRARIES benchmark)
+    add_subdirectory(bm)
 endif()
