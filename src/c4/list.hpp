@@ -203,6 +203,14 @@ public:
         }
     }
 
+    void clear()
+    {
+        if(_c4this->m_size == 0) return;
+        _c4this->_set_next(_c4this->m_tail, _c4this->m_fhead);
+        _c4this->m_fhead = _c4this->m_head;
+        _c4this->m_size = 0;
+    }
+
 public:
 
     T      & front()       C4_NOEXCEPT_X { C4_XASSERT(!_c4this ->empty()); return _c4this ->elm(_c4this ->m_head); }
