@@ -22,10 +22,11 @@ env:
 # travis-ci.org more readable.
 # WARNING: do not use the name CXX. Travis will ignore the value here.
 matrix:
-  include:
+  allow_failures:
     #
     # -------------------------------------------------------------------------
     - env: SONARQUBE=1 CXX_=g++-5 A=64
+ include:
     #
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
