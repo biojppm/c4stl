@@ -2,6 +2,7 @@
 # to make a quick test covering less combinations
 
 include(GetFlags)
+include(ExternalProjectUtils)
 
 get_define_flags(qtdefs C4_QUICKTEST)
 add_configuration_type(Quicktest

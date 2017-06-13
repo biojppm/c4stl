@@ -27,9 +27,6 @@ endif()
 
 option(C4STL_BUILD_TESTS "build unit tests" ON)
 option(C4STL_BUILD_BENCHMARKS "build benchmarks" ON)
-if(C4STL_BUILD_TESTS OR C4STL_BUILD_BENCHMARKS)
-    include(ExternalProjectUtils)
-endif()
 
 
 function(c4stl_add_target name)

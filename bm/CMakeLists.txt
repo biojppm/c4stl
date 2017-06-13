@@ -1,3 +1,5 @@
+include(ExternalProjectUtils)
+
 ExternalProject_Import(gbenchmark
     PREFIX ${C4STL_EXTERN_DIR}
     INCLUDES benchmark/benchmark.h
