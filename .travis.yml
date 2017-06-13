@@ -6,6 +6,10 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-trusty
+  sonarqube: # https://docs.travis-ci.com/user/sonarqube/
+    organization: "jpmag" # the key of the org you chose at step #3
+    token:
+      secure: ZAoBOLpLHcOuXc4yJSmg1Y8ydrJlVCVRBWB8ajIzKoJ///akYBrRu8p3SFHi7H9BoHrbXN1Ta22dqPywtNQuwkDOMOtWijDgI8HJgmNeDXyXajchxKCA3BEfjpb8mh9qQzn7WaS4CLoYps2RUxFnBLsqJlDve6rsNVib+qBMq0GUWIiVnI26NWukFz2L+teMM+p4ZKSR/OUp2OydJO/ZJvcjlcxlpnOXqZ+p9k4ft9QFjZp16Oh1VOVdJsBgZGPtBmaX0iiynIc1beSLoewnwF+LvaEG0LDlRtHXwaUYtXFnWIpYab96VXrv0ub5iGhPi4AmvT9URTFHt52NVIP/myaxX02730A7/eJvTVatPka9UTy/vKY4JE+HM+kMd6U8MLjHb8ZzQKAWJl7zIgULS5O0XcANajfS3zBsNnt9co5N+fLvmr4ziAHPJrui2z0hCLaIa1zKAn7LXa7oFAqRxHaOUyfS9STjOYJdxRatIEo+wrl6FRN8Cr/8tMASbzL0kbJmn6qJWjSy5qn+zmQ31GmvJZtszj2I+FBGAVW0XqAndwGr9rgpEHXcu9v0r7xnRqlBB2ihIu/swDB/WT5CmS32K4n9WdC25XJljlUi6Xq9jl0ZF+Q/3KkNGX1w4IPzjTCEj/K3A4N8WhC/9uoViIMi4FGD33Xf60DJ1TsTASs=
 
 # we're not using combination parameters here to ensure that the builds
 # run in the order we want. (We want to perform the fastest tests first so
@@ -19,6 +23,10 @@ env:
 # WARNING: do not use the name CXX. Travis will ignore the value here.
 matrix:
   include:
+    #
+    # -------------------------------------------------------------------------
+    - env: SONARQUBE=1
+    #
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
     #
@@ -101,19 +109,11 @@ matrix:
     - env: CXX_=clang++-3.9 A=64 BT=Debug SAN=UB VG=OFF
     - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=UB VG=OFF
 
-
-addons:
-  sonarqube: # https://docs.travis-ci.com/user/sonarqube/
-    organization: "jpmag" # the key of the org you chose at step #3
-    token:
-      secure: ZAoBOLpLHcOuXc4yJSmg1Y8ydrJlVCVRBWB8ajIzKoJ///akYBrRu8p3SFHi7H9BoHrbXN1Ta22dqPywtNQuwkDOMOtWijDgI8HJgmNeDXyXajchxKCA3BEfjpb8mh9qQzn7WaS4CLoYps2RUxFnBLsqJlDve6rsNVib+qBMq0GUWIiVnI26NWukFz2L+teMM+p4ZKSR/OUp2OydJO/ZJvcjlcxlpnOXqZ+p9k4ft9QFjZp16Oh1VOVdJsBgZGPtBmaX0iiynIc1beSLoewnwF+LvaEG0LDlRtHXwaUYtXFnWIpYab96VXrv0ub5iGhPi4AmvT9URTFHt52NVIP/myaxX02730A7/eJvTVatPka9UTy/vKY4JE+HM+kMd6U8MLjHb8ZzQKAWJl7zIgULS5O0XcANajfS3zBsNnt9co5N+fLvmr4ziAHPJrui2z0hCLaIa1zKAn7LXa7oFAqRxHaOUyfS9STjOYJdxRatIEo+wrl6FRN8Cr/8tMASbzL0kbJmn6qJWjSy5qn+zmQ31GmvJZtszj2I+FBGAVW0XqAndwGr9rgpEHXcu9v0r7xnRqlBB2ihIu/swDB/WT5CmS32K4n9WdC25XJljlUi6Xq9jl0ZF+Q/3KkNGX1w4IPzjTCEj/K3A4N8WhC/9uoViIMi4FGD33Xf60DJ1TsTASs=
-
 install:
   - bash -x .ci/travis-install.sh
 
 script:
   - bash -x .ci/travis-test.sh
-  - sonar-scanner
 
 after_success:
   - echo "Success!"
