@@ -28,13 +28,11 @@ matrix:
     - env: CXX_=g++-6       A=64 BT=QuicktestRelease
     - env: CXX_=clang++-3.9 A=64 BT=QuicktestRelease
     #
-    #
     - env: CXX_=g++-5       A=32 BT=Quicktest
     - env: CXX_=clang++-3.6 A=32 BT=Quicktest
     #
     - env: CXX_=g++-6       A=32 BT=QuicktestRelease
     - env: CXX_=clang++-3.9 A=32 BT=QuicktestRelease
-    #
     #
     - env: CXX_=g++-6       A=64 BT=Quicktest
     - env: CXX_=clang++-3.7 A=64 BT=Quicktest
@@ -42,13 +40,11 @@ matrix:
     - env: CXX_=g++-6       A=32 BT=Quicktest
     - env: CXX_=clang++-3.7 A=32 BT=Quicktest
     #
-    #
     - env: CXX_=g++-7       A=64 BT=Quicktest
     - env: CXX_=clang++-3.8 A=64 BT=Quicktest
     #
     - env: CXX_=g++-7       A=32 BT=Quicktest
     - env: CXX_=clang++-3.8 A=32 BT=Quicktest
-    #
     #
     - env: CXX_=clang++-3.9 A=64 BT=Quicktest
     - env: CXX_=clang++-3.9 A=32 BT=Quicktest
@@ -58,14 +54,11 @@ matrix:
     - env: CXX_=clang++-3.6 A=64 BT=Quicktest SAN=ALL VG=OFF
     - env: CXX_=clang++-3.6 A=32 BT=Quicktest SAN=ALL VG=OFF
     #
-    #
     - env: CXX_=clang++-3.7 A=64 BT=Quicktest SAN=ALL VG=OFF
     - env: CXX_=clang++-3.7 A=32 BT=Quicktest SAN=ALL VG=OFF
     #
-    #
     - env: CXX_=clang++-3.8 A=64 BT=Quicktest SAN=ALL VG=OFF
     - env: CXX_=clang++-3.8 A=32 BT=Quicktest SAN=ALL VG=OFF
-    #
     #
     - env: CXX_=clang++-3.9 A=64 BT=Quicktest SAN=ALL VG=OFF
     - env: CXX_=clang++-3.9 A=32 BT=Quicktest SAN=ALL VG=OFF
@@ -81,7 +74,6 @@ matrix:
     - env: CXX_=g++-6 A=64 BT=Debug VG=OFF
     - env: CXX_=g++-6 A=32 BT=Debug VG=OFF
     #
-    #
     - env: CXX_=clang++-3.9 A=64 BT=Debug
     - env: CXX_=clang++-3.9 A=32 BT=Debug
     #
@@ -90,7 +82,6 @@ matrix:
     # too slow, unfortunately.
     #- env: CXX_=g++-6 A=64 BT=Release
     #- env: CXX_=g++-6 A=32 BT=Release
-    #
     #
     #- env: CXX_=clang++-3.7 A=64 BT=Release
     #- env: CXX_=clang++-3.7 A=32 BT=Release
@@ -111,16 +102,18 @@ matrix:
     - env: CXX_=clang++-3.9 A=32 BT=Debug SAN=UB VG=OFF
 
 
-#before_script:
-#  - sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-#  - sudo apt-get update
-#  - sudo apt-get -y install cmake
+addons:
+  sonarqube: # https://docs.travis-ci.com/user/sonarqube/
+    organization: "jpmag" # the key of the org you chose at step #3
+    token:
+      secure: ZAoBOLpLHcOuXc4yJSmg1Y8ydrJlVCVRBWB8ajIzKoJ///akYBrRu8p3SFHi7H9BoHrbXN1Ta22dqPywtNQuwkDOMOtWijDgI8HJgmNeDXyXajchxKCA3BEfjpb8mh9qQzn7WaS4CLoYps2RUxFnBLsqJlDve6rsNVib+qBMq0GUWIiVnI26NWukFz2L+teMM+p4ZKSR/OUp2OydJO/ZJvcjlcxlpnOXqZ+p9k4ft9QFjZp16Oh1VOVdJsBgZGPtBmaX0iiynIc1beSLoewnwF+LvaEG0LDlRtHXwaUYtXFnWIpYab96VXrv0ub5iGhPi4AmvT9URTFHt52NVIP/myaxX02730A7/eJvTVatPka9UTy/vKY4JE+HM+kMd6U8MLjHb8ZzQKAWJl7zIgULS5O0XcANajfS3zBsNnt9co5N+fLvmr4ziAHPJrui2z0hCLaIa1zKAn7LXa7oFAqRxHaOUyfS9STjOYJdxRatIEo+wrl6FRN8Cr/8tMASbzL0kbJmn6qJWjSy5qn+zmQ31GmvJZtszj2I+FBGAVW0XqAndwGr9rgpEHXcu9v0r7xnRqlBB2ihIu/swDB/WT5CmS32K4n9WdC25XJljlUi6Xq9jl0ZF+Q/3KkNGX1w4IPzjTCEj/K3A4N8WhC/9uoViIMi4FGD33Xf60DJ1TsTASs=
 
 install:
   - bash -x .ci/travis-install.sh
 
 script:
   - bash -x .ci/travis-test.sh
+  - sonar-scanner
 
 after_success:
   - echo "Success!"
