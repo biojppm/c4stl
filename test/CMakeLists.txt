@@ -9,7 +9,7 @@ add_configuration_type(Quicktest
     C_FLAGS ${qtdefs}
     CXX_FLAGS ${qtdefs}
     )
-get_define_flags(qtreldefs C4_USE_ASSERT C4_USE_XASSERT)
+get_define_flags(qtreldefs C4_QUICKTEST C4_USE_ASSERT C4_USE_XASSERT)
 add_configuration_type(QuicktestRelease
     DEFAULT_FROM RELEASE
     C_FLAGS ${qtreldefs}
