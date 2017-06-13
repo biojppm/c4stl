@@ -40,7 +40,7 @@ fi
 # g++-5 is needed for clang; otherwise it uses libstdc++ from g++4.8
 # which is not fully C++11 and does not have some important type traits
 # such as std::is_trivially_move_constructible.
-sudo -E apt-get install -y \
+sudo -E apt-get install -y --force-yes \
      build-essential \
      g++-5 g++-5-multilib \
      valgrind \
