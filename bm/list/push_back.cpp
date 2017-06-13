@@ -29,21 +29,30 @@ struct do_reserve< std::list< T, Args... > >
     }
 };
 
+template< class T, class... Args >
+struct do_reserve< std::forward_list< T, Args... > >
+{
+    using L = std::forward_list< T, Args... >;
+    static void reserve(L &li, size_t cap)
+    {
+    }
+};
+
 
 template< class T, class I > using flat_list__raw      = c4::flat_list     < T, I, c4::stg::raw< c4::flat_list_elm<T, I>, I > >;
 template< class T, class I > using split_list__raw     = c4::split_list    < T, I, c4::stg::raw< T, I > >;
 template< class T, class I > using flat_fwd_list__raw  = c4::flat_fwd_list < T, I, c4::stg::raw< c4::flat_fwd_list_elm<T, I>, I > >;
 template< class T, class I > using split_fwd_list__raw = c4::split_fwd_list< T, I, c4::stg::raw< T, I > >;
 
-template< class T, class I, size_t N = 256 > using flat_list__raw_fixed      = c4::flat_list     < T, I, c4::stg::raw_fixed< c4::flat_list_elm<T, I>, N, I > >;
-template< class T, class I, size_t N = 256 > using split_list__raw_fixed     = c4::split_list    < T, I, c4::stg::raw_fixed< T, N, I > >;
-template< class T, class I, size_t N = 256 > using flat_fwd_list__raw_fixed  = c4::flat_fwd_list < T, I, c4::stg::raw_fixed< c4::flat_fwd_list_elm<T, I>, N, I > >;
-template< class T, class I, size_t N = 256 > using split_fwd_list__raw_fixed = c4::split_fwd_list< T, I, c4::stg::raw_fixed< T, N, I > >;
+template< class T, class I, size_t N > using flat_list__raw_fixed      = c4::flat_list     < T, I, c4::stg::raw_fixed< c4::flat_list_elm<T, I>, N, I > >;
+template< class T, class I, size_t N > using split_list__raw_fixed     = c4::split_list    < T, I, c4::stg::raw_fixed< T, N, I > >;
+template< class T, class I, size_t N > using flat_fwd_list__raw_fixed  = c4::flat_fwd_list < T, I, c4::stg::raw_fixed< c4::flat_fwd_list_elm<T, I>, N, I > >;
+template< class T, class I, size_t N > using split_fwd_list__raw_fixed = c4::split_fwd_list< T, I, c4::stg::raw_fixed< T, N, I > >;
 
-template< class T, class I, size_t N = 256 > using flat_list__raw_paged      = c4::flat_list     < T, I, c4::stg::raw_paged< c4::flat_list_elm<T, I>, I, N > >;
-template< class T, class I, size_t N = 256 > using split_list__raw_paged     = c4::split_list    < T, I, c4::stg::raw_paged< T, I, N > >;
-template< class T, class I, size_t N = 256 > using flat_fwd_list__raw_paged  = c4::flat_fwd_list < T, I, c4::stg::raw_paged< c4::flat_fwd_list_elm<T, I>, I, N > >;
-template< class T, class I, size_t N = 256 > using split_fwd_list__raw_paged = c4::split_fwd_list< T, I, c4::stg::raw_paged< T, I, N > >;
+template< class T, class I, size_t N > using flat_list__raw_paged      = c4::flat_list     < T, I, c4::stg::raw_paged< c4::flat_list_elm<T, I>, I, N > >;
+template< class T, class I, size_t N > using split_list__raw_paged     = c4::split_list    < T, I, c4::stg::raw_paged< T, I, N > >;
+template< class T, class I, size_t N > using flat_fwd_list__raw_paged  = c4::flat_fwd_list < T, I, c4::stg::raw_paged< c4::flat_fwd_list_elm<T, I>, I, N > >;
+template< class T, class I, size_t N > using split_fwd_list__raw_paged = c4::split_fwd_list< T, I, c4::stg::raw_paged< T, I, N > >;
 
 template< class T, class I > using flat_list__raw_paged_rt      = c4::flat_list     < T, I, c4::stg::raw_paged_rt< c4::flat_list_elm<T, I>, I > >;
 template< class T, class I > using split_list__raw_paged_rt     = c4::split_list    < T, I, c4::stg::raw_paged_rt< T, I > >;
@@ -53,24 +62,26 @@ template< class T, class I > using split_fwd_list__raw_paged_rt = c4::split_fwd_
 #define BM(name, li, ...)                                               \
     BENCHMARK_TEMPLATE(BM_List##name, li< __VA_ARGS__ >)                \
     ->RangeMultiplier(2)                                                \
-    ->Range(4, 1<<16)                                                   \
+    ->Range(4, 1<<19)                                                   \
     ->Complexity()
 
 #define CALL_BM_FOR_C4LIST(name, litype, ty, ...) \
-    BM(name, litype, ty, uint64_t, ## __VA_ARGS__);    \
-    BM(name, litype, ty,  int64_t, ## __VA_ARGS__);    \
-    BM(name, litype, ty, uint32_t, ## __VA_ARGS__);    \
-    BM(name, litype, ty,  int32_t, ## __VA_ARGS__)
+    BM(name, litype, ty, size_t, ## __VA_ARGS__);
 
 #define CALL_BM(name, ty)                                           \
-    CALL_BM_FOR_C4LIST(PushBack, flat_list__raw, ty);               \
-    CALL_BM_FOR_C4LIST(PushBack, flat_list__raw_paged, ty);         \
-    CALL_BM_FOR_C4LIST(PushBack, split_list__raw, ty);              \
-    CALL_BM_FOR_C4LIST(PushBack, split_list__raw_paged, ty);        \
-    CALL_BM_FOR_C4LIST(PushBack, flat_fwd_list__raw, ty);           \
-    CALL_BM_FOR_C4LIST(PushBack, flat_fwd_list__raw_paged, ty);     \
-    CALL_BM_FOR_C4LIST(PushBack, split_fwd_list__raw, ty);          \
-    CALL_BM_FOR_C4LIST(PushBack, split_fwd_list__raw_paged, ty)
+    BM(name, std::list, ty);                                        \
+    CALL_BM_FOR_C4LIST(name, flat_list__raw, ty);                   \
+    CALL_BM_FOR_C4LIST(name, flat_list__raw_paged, ty, 256);        \
+    CALL_BM_FOR_C4LIST(name, flat_list__raw_paged_rt, ty);          \
+    CALL_BM_FOR_C4LIST(name, split_list__raw, ty);                  \
+    CALL_BM_FOR_C4LIST(name, split_list__raw_paged, ty, 256);       \
+    CALL_BM_FOR_C4LIST(name, split_list__raw_paged_rt, ty);         \
+    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw, ty);               \
+    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw_paged, ty, 256);    \
+    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw_paged_rt, ty);      \
+    CALL_BM_FOR_C4LIST(name, split_fwd_list__raw, ty);              \
+    CALL_BM_FOR_C4LIST(name, split_fwd_list__raw_paged, ty, 256);   \
+    CALL_BM_FOR_C4LIST(name, split_fwd_list__raw_paged_rt, ty)
 
 template< class List >
 void do_push_back(List& li, bm::State &st)
@@ -88,7 +99,7 @@ void do_push_back(List& li, bm::State &st)
         }
         li.clear();
     }
-    st.SetComplexityN(st.range(0));
+    st.SetComplexityN(st.range(0) * sizeof(T));
     st.SetItemsProcessed(count);
     st.SetBytesProcessed(count * sizeof(T));
 }
@@ -108,17 +119,15 @@ void BM_ListPushBackWithReserve(bm::State& st)
     do_push_back(li, st);
 }
 
-BM(PushBack, std::list, int);
+/* This is N2 as expected.
 CALL_BM(PushBack, int);
 CALL_BM(PushBack, NumBytes<64>);
 CALL_BM(PushBack, NumBytes<512>);
+*/
 
-
-BM(PushBackWithReserve, std::list, int);
 CALL_BM(PushBackWithReserve, int);
 CALL_BM(PushBackWithReserve, NumBytes<64>);
 CALL_BM(PushBackWithReserve, NumBytes<512>);
-
 
 
 BENCHMARK_MAIN();
