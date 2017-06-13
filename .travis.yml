@@ -26,7 +26,7 @@ matrix:
     #
     # -------------------------------------------------------------------------
     - env: SONARQUBE=1 CXX_=g++-5 A=64
- include:
+  include:
     #
     # QUICKTEST----------------------------------------------------------------
     # default version for gcc in trusty is 4.8; c4stl won't work with it.
