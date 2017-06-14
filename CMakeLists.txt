@@ -7,24 +7,17 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(ConfigurationTypes)
 include(CreateSourceGroup)
 include(SanitizeTarget)
+include(StaticAnalysis)
 
-set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
-
-setup_sanitize(C4STL)
 option(C4STL_SANITIZE_ONLY "don't compile unsanitized targets" OFF)
-
-option(C4STL_PVS_STUDIO_ENABLED "use the PVS-Studio static analyzer https://www.viva64.com/en/b/0457/" OFF)
-if(C4STL_PVS_STUDIO_ENABLED)
-    set(C4STL_PVS_STUDIO_FORMAT "errorfile" CACHE STRING "PVS-Studio output format. Choices: xml,csv,errorfile(like gcc/clang),tasklist(qtcreator)")
-    #set(C4STL_PVS_STUDIO_EXCLUDES "" CACHE STRING "PVS-Studio exclude list: directories to be skipped")
-    #set(C4STL_PVS_STUDIO_SUPPRESS "" CACHE STRING "PVS-Studio diagnostic suppressions. Eg V595,V730")
-    #set(C4STL_PVS_STUDIO_FILTER_RULES "" CACHE STRING "PVS-Studio diagnostic suppressions")
-endif()
+setup_sanitize(C4STL)
+setup_static_analysis(C4STL)
 
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
 option(C4STL_BUILD_TESTS "build unit tests" ON)
 option(C4STL_BUILD_BENCHMARKS "build benchmarks" ON)
 
@@ -66,37 +59,11 @@ function(c4stl_add_target name)
             target_link_libraries(${name} PUBLIC ${_c4al_LIBS})
         endif()
         if(_c4al_FOLDER)
-            set_target_properties(${name} PROPERTIES FOLDER ${_c4al_FOLDER})
+            set_target_properties(${name} PROPERTIES FOLDER "${_c4al_FOLDER}")
         endif()
-        if(C4STL_PVS_STUDIO_ENABLED)
-            include(PVS-Studio)
-            include(GetFlags)
-            include(GetTargetPropertyRecursive)
-            get_target_property_recursive(_c4al_pvs_incs ${name} INCLUDE_DIRECTORIES)
-            get_include_flags(_c4al_pvs_incs ${_c4al_pvs_incs})
-            separate_arguments(_c4al_cxx_flags_sep UNIX_COMMAND "${CMAKE_CXX_FLAGS} ${_c4al_pvs_incs}")
-            separate_arguments(_c4al_c_flags_sep UNIX_COMMAND "${CMAKE_C_FLAGS} ${_c4al_pvs_incs}")
-            pvs_studio_add_target(TARGET ${name}-pvs
-                ALL # indicates that the analysis starts when you build the project
-                #PREPROCESSOR ${_c4al_preproc}
-                FORMAT tasklist
-                LOG "${CMAKE_CURRENT_BINARY_DIR}/${name}.pvs-analysis.tasks"
-                ANALYZE ${name} #main_target subtarget:path/to/subtarget
-                CXX_FLAGS ${_c4al_cxx_flags_sep}
-                C_FLAGS ${_c4al_c_flags_sep}
-                #CONFIG "/path/to/PVS-Studio.cfg"
-                )
-            if(NOT TARGET c4stl-pvs-all)
-                add_custom_target(c4stl-pvs-all)
-            endif()
-            add_dependencies(c4stl-pvs-all ${name}-pvs)
-            #pvs_studio_add_target(TARGET ${name}-pvs
-            #    OUTPUT FORMAT ${C4STL_PVS_STUDIO_FORMAT}
-            #    ANALYZE ${name}
-            #    LOG "${CMAKE_CURRENT_BINARY_DIR}/${name}.pvs-report.plog"
-            #    #LICENSE "/path/to/PVS-Studio.lic"
-            #    )
-        endif(C4STL_PVS_STUDIO_ENABLED)
+    endif()
+    if(C4STL_LINT)
+        static_analysis_target(C4STL ${name} "${_c4al_FOLDER}")
     endif()
     if(_c4al_SANITIZE AND C4STL_SANITIZE)
         sanitize_target(${name} c4stl
