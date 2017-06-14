@@ -149,7 +149,7 @@ build_script:
 
 test_script:
   - echo %configuration%
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" -DC4STL_DEV=ON ..
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" "-DC4STL_EXTERN_DIR=_extern_install" -DC4STL_DEV=ON -DC4STL_SANITIZE=OFF -DC4STL_LINT=OFF ..
   - dir
   - dir test
   - cmake --build . --config %configuration% --target c4stl-test
