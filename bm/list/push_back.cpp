@@ -4,6 +4,8 @@
 #include "c4/allocator.hpp"
 #include "c4/list.hpp"
 
+#include "c4/libtest/supprwarn_push.hpp"
+
 #include <list>
 #include <forward_list>
 
@@ -65,22 +67,24 @@ template< class T, class I > using split_fwd_list__raw_paged_rt = c4::split_fwd_
     ->Range(4, 1<<19)                                                   \
     ->Complexity()
 
-#define CALL_BM_FOR_C4LIST(name, litype, ty, ...) \
-    BM(name, litype, ty, size_t, ## __VA_ARGS__);
+#define CALL_BM_FOR_C4LIST(name, litype, ty) \
+    BM(name, litype, ty, size_t);
+#define CALL_BM_FOR_C4LIST_TPL1(name, litype, ty, arg1) \
+    BM(name, litype, ty, size_t, arg1);
 
-#define CALL_BM(name, ty)                                           \
-    BM(name, std::list, ty);                                        \
-    CALL_BM_FOR_C4LIST(name, flat_list__raw, ty);                   \
-    CALL_BM_FOR_C4LIST(name, flat_list__raw_paged, ty, 256);        \
-    CALL_BM_FOR_C4LIST(name, flat_list__raw_paged_rt, ty);          \
-    CALL_BM_FOR_C4LIST(name, split_list__raw, ty);                  \
-    CALL_BM_FOR_C4LIST(name, split_list__raw_paged, ty, 256);       \
-    CALL_BM_FOR_C4LIST(name, split_list__raw_paged_rt, ty);         \
-    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw, ty);               \
-    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw_paged, ty, 256);    \
-    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw_paged_rt, ty);      \
-    CALL_BM_FOR_C4LIST(name, split_fwd_list__raw, ty);              \
-    CALL_BM_FOR_C4LIST(name, split_fwd_list__raw_paged, ty, 256);   \
+#define CALL_BM(name, ty)                                               \
+    BM(name, std::list, ty);                                            \
+    CALL_BM_FOR_C4LIST(name, flat_list__raw, ty);                       \
+    CALL_BM_FOR_C4LIST_TPL1(name, flat_list__raw_paged, ty, 256);       \
+    CALL_BM_FOR_C4LIST(name, flat_list__raw_paged_rt, ty);              \
+    CALL_BM_FOR_C4LIST(name, split_list__raw, ty);                      \
+    CALL_BM_FOR_C4LIST_TPL1(name, split_list__raw_paged, ty, 256);      \
+    CALL_BM_FOR_C4LIST(name, split_list__raw_paged_rt, ty);             \
+    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw, ty);                   \
+    CALL_BM_FOR_C4LIST_TPL1(name, flat_fwd_list__raw_paged, ty, 256);   \
+    CALL_BM_FOR_C4LIST(name, flat_fwd_list__raw_paged_rt, ty);          \
+    CALL_BM_FOR_C4LIST(name, split_fwd_list__raw, ty);                  \
+    CALL_BM_FOR_C4LIST_TPL1(name, split_fwd_list__raw_paged, ty, 256);  \
     CALL_BM_FOR_C4LIST(name, split_fwd_list__raw_paged_rt, ty)
 
 template< class List >
