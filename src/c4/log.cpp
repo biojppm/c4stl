@@ -20,8 +20,8 @@ C4_BEGIN_NAMESPACE(c4)
 // units from logging before this object is initialized.
 Log& _fn_log()
 {
-    static Log log;
-    return log;
+    static Log _the_log;
+    return _the_log;
 }
 Log& log = _fn_log();
 thread_local LogBuffer s_log_buffer;
@@ -182,7 +182,7 @@ void Log::writecl(Channel const* ch, Level_e level, const char *s, size_t sz)
     b.clear();
 }
 
-Log::StrReader&& Log::str()
+Log::StrReader Log::str()
 {
 #ifdef C4_LOG_THREAD_SAFE
     m_strbuf_mtx.lock();
@@ -190,7 +190,7 @@ Log::StrReader&& Log::str()
 #else
     StrReader r(m_strbuf);
 #endif
-    return std::move(r);
+    return r;
 }
 
 void Log::pump(const char *str, size_t sz)

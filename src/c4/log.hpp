@@ -232,7 +232,8 @@ public:
     {
 #ifdef C4_LOG_THREAD_SAFE
         StrReader(std::mutex &m, LogBuffer &s_) : lk(m, std::adopt_lock_t{}), s(s_) {}
-        std::lock_guard< std::mutex > lk;
+        std::unique_lock< std::mutex > lk;
+        StrReader(StrReader&& that) : lk(std::move(that.lk)), s(that.s) {}
 #else
         StrReader(LogBuffer &s_) : s(s_) {}
 #endif
@@ -372,7 +373,7 @@ public:
 
     LogBuffer& buf();
 
-    StrReader&& str();
+    StrReader str();
 
     void pump(const char *str, size_t sz);
 
