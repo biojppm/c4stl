@@ -3,91 +3,45 @@ project(c4stl)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-include(ConfigurationTypes)
-include(CreateSourceGroup)
-include(SanitizeTarget)
-include(StaticAnalysis)
+include(c4stlAddTarget)
 
-option(C4STL_SANITIZE_ONLY "don't compile unsanitized targets" OFF)
-setup_sanitize(C4STL)
-setup_static_analysis(C4STL)
+option(C4STL_DEV "enable development targets: tests, benchmarks, sanitize, static analysis, coverage" OFF)
+option(C4STL_BUILD_TESTS "build unit tests" ${C4STL_DEV})
+option(C4STL_BUILD_BENCHMARKS "build benchmarks" ${C4STL_DEV})
 
+setup_sanitize(C4STL ${C4STL_DEV})
+setup_static_analysis(C4STL ${C4STL_DEV})
+
+# -----------------------------------------------------------
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+option(C4STL_PEDANTIC "Compile in pedantic mode" ${C4STL_DEV})
+if(C4STL_PEDANTIC)
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wfloat-equal -fstrict-aliasing")
+    endif()
+endif()
+
+option(C4STL_WERROR "Compile with compiler warnings as errors" ${C4STL_DEV})
+if(C4STL_WERROR)
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
+        #set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /WX")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -pedantic-errors")
+    endif()
+endif()
+
+# -----------------------------------------------------------
 set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
-option(C4STL_BUILD_TESTS "build unit tests" ON)
-option(C4STL_BUILD_BENCHMARKS "build benchmarks" ON)
-
-
-function(c4stl_add_target name)
-    set(options0arg
-        LIBRARY
-        EXECUTABLE
-        SANITIZE
-    )
-    set(options1arg
-        OUTPUT_TARGET_NAMES
-        FOLDER
-    )
-    set(optionsnarg
-        SOURCES
-        INC_DIRS
-        LIBS
-        MORE_ARGS
-    )
-    cmake_parse_arguments(_c4al "${options0arg}" "${options1arg}" "${optionsnarg}" ${ARGN})
-    if(${_c4al_LIBRARY})
-        set(_what LIBRARY)
-    elseif(${_c4al_EXECUTABLE})
-        set(_what EXECUTABLE)
-    endif()
-
-    create_source_group("" "${CMAKE_CURRENT_SOURCE_DIR}" "${_c4al_SOURCES}")
-    if(NOT C4STL_SANITIZE_ONLY)
-        if(${_c4al_LIBRARY})
-            add_library(${name} ${_c4al_SOURCES} ${_c4al_MORE_ARGS})
-        elseif(${_c4al_EXECUTABLE})
-            add_executable(${name} ${_c4al_SOURCES} ${_c4al_MORE_ARGS})
-        endif()
-        if(_c4al_INC_DIRS)
-            target_include_directories(${name} PUBLIC ${_c4al_INC_DIRS})
-        endif()
-        if(_c4al_LIBS)
-            target_link_libraries(${name} PUBLIC ${_c4al_LIBS})
-        endif()
-        if(_c4al_FOLDER)
-            set_target_properties(${name} PROPERTIES FOLDER "${_c4al_FOLDER}")
-        endif()
-    endif()
-    if(C4STL_LINT)
-        static_analysis_target(C4STL ${name} "${_c4al_FOLDER}")
-    endif()
-    if(_c4al_SANITIZE AND C4STL_SANITIZE)
-        sanitize_target(${name} c4stl
-            ${_what}
-            SOURCES ${_c4al_SOURCES}
-            INC_DIRS ${_c4al_INC_DIRS}
-            LIBS ${_c4al_LIBS}
-            OUTPUT_TARGET_NAMES targets
-            FOLDER "${_c4al_FOLDER}"
-            )
-    endif()
-    if(NOT C4STL_SANITIZE_ONLY)
-        list(INSERT targets 0 ${name})
-    endif()
-    if(_c4al_OUTPUT_TARGET_NAMES)
-        set(${_c4al_OUTPUT_TARGET_NAMES} ${targets} PARENT_SCOPE)
-    endif()
-endfunction() # c4stl_add_target
-
 
 add_subdirectory(src)
 
 if(C4STL_BUILD_TESTS)
-    enable_testing()
     add_subdirectory(test)
 endif()
 

@@ -4,6 +4,8 @@
 include(GetFlags)
 include(ExternalProjectUtils)
 
+enable_testing()
+
 get_define_flags(qtdefs C4_QUICKTEST)
 add_configuration_type(Quicktest
     DEFAULT_FROM DEBUG
@@ -17,33 +19,14 @@ add_configuration_type(QuicktestRelease
     CXX_FLAGS ${qtreldefs}
     )
 
-option(C4STL_PEDANTIC "Compile in pedantic mode" OFF)
-if(C4STL_PEDANTIC)
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wfloat-equal -fstrict-aliasing")
-    endif()
-endif()
-
-option(C4STL_WERROR "Compile with compiler warnings as errors" OFF)
-if(C4STL_WERROR)
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
-        #set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /WX")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -pedantic-errors")
-    endif()
-endif()
-
 if(UNIX)
-    option(C4STL_TEST_VALGRIND "enable valgrind tests" ON)
+    option(C4STL_BUILD_TESTS_VALGRIND "enable valgrind tests" ${C4STL_DEV})
 endif()
 
 #------------------------------------------------------------------------------
 # Add the coverage command(s)
 
-set(c4stl_coverage_available ON)
+set(c4stl_coverage_available ${C4STL_DEV})
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "(Apple)?[Cc]lang")
     if("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS 3)
 	message(STATUS "Coverage: clang version must be 3.0.0 or greater. No coverage available.")
@@ -184,7 +167,7 @@ function(c4stl_add_test name)
             add_test(NAME ${t}-run COMMAND ${cmd})
         endif()
     endforeach()
-    if(UNIX AND C4STL_TEST_VALGRIND AND NOT COVERAGE_BUILD)
+    if(UNIX AND C4STL_BUILD_TESTS_VALGRIND AND NOT COVERAGE_BUILD)
         # @todo: consider doing this for valgrind:
         # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
         # for now we explicitly run it:

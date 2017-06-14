@@ -20,7 +20,7 @@ function(c4stl_add_bm name_wo_pfx)
     # target to build the benchmark executable
     add_executable(${_abm_name} ${ARGN})
     target_include_directories(${_abm_name}
-        PUBLIC ${gbenchmark_INCLUDE_DIRS})
+        PUBLIC ${gbenchmark_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test)
     target_link_libraries(${_abm_name}
         PUBLIC c4stl ${gbenchmark_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
     set_target_properties(${_abm_name} PROPERTIES FOLDER "c4stl-bm/${_abm_folder}")
