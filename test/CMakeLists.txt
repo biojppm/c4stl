@@ -4,8 +4,6 @@
 include(GetFlags)
 include(ExternalProjectUtils)
 
-enable_testing()
-
 get_define_flags(qtdefs C4_QUICKTEST)
 add_configuration_type(Quicktest
     DEFAULT_FROM DEBUG
@@ -150,24 +148,28 @@ function(c4stl_add_test name)
         LIBS c4stl-libtest ${gtest_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
         INC_DIRS ${gtest_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../test
         FOLDER c4stl-test/${name}
+        OUTPUT_TARGET_NAMES more_targets
         )
     list(APPEND c4stl_test_list ${name})
-    add_custom_target(${name}-build)
-    add_dependencies(c4stl-test-build ${name}-build)
-    set_target_properties(${name}-build PROPERTIES FOLDER c4stl-test/${name})
+    if(more_targets)
+        add_custom_target(${name}-all)
+        add_dependencies(c4stl-test-build ${name}-all)
+        set_target_properties(${name}-all PROPERTIES FOLDER c4stl-test/${name})
+    endif()
     if(NOT C4STL_SANITIZE_ONLY)
-        add_dependencies(${name}-build ${name})
-        add_test(NAME ${name}-run COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
+        add_dependencies(${name}-all ${name})
+        add_test(NAME ${name}-run
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
     endif()
     foreach(s asan msan tsan ubsan)
         set(t ${name}-${s})
         if(TARGET ${t})
-            add_dependencies(${name}-build ${t})
+            add_dependencies(${name}-all ${t})
             sanitize_get_target_command(${CMAKE_CURRENT_BINARY_DIR}/${t} C4STL ${s} cmd)
             add_test(NAME ${t}-run COMMAND ${cmd})
         endif()
     endforeach()
-    if(UNIX AND C4STL_BUILD_TESTS_VALGRIND AND NOT COVERAGE_BUILD)
+    if(UNIX AND (C4STL_BUILD_TESTS_VALGRIND AND NOT COVERAGE_BUILD))
         # @todo: consider doing this for valgrind:
         # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
         # for now we explicitly run it:

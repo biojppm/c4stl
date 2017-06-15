@@ -46,5 +46,6 @@ if(C4STL_BUILD_TESTS)
 endif()
 
 if(C4STL_BUILD_BENCHMARKS)
+    enable_testing()
     add_subdirectory(bm)
 endif()
