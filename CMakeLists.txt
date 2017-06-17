@@ -26,7 +26,7 @@ if(C4STL_PEDANTIC)
     endif()
 endif()
 
-option(C4STL_WERROR "Compile with compiler warnings as errors" ${C4STL_DEV})
+option(C4STL_WERROR "Compile with warnings as errors" ${C4STL_DEV})
 if(C4STL_WERROR)
     if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
@@ -42,10 +42,11 @@ set(C4STL_EXTERN_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
 add_subdirectory(src)
 
 if(C4STL_BUILD_TESTS)
+    enable_testing() # this must be done here (and not inside the test dir)
+                     # so that the test targets are available at the top level
     add_subdirectory(test)
 endif()
 
 if(C4STL_BUILD_BENCHMARKS)
-    enable_testing()
     add_subdirectory(bm)
 endif()
