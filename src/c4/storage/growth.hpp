@@ -38,7 +38,7 @@ struct growth_least_wm
 /** Grow to the double of the current size if it is bigger than at_least;
  * if not, then just to at_least.
  * @ingroup storage_growth_policies  */
-struct growth_pot
+struct growth_two
 {
     C4_ALWAYS_INLINE static size_t next_size(size_t /*elm_size*/, size_t curr, size_t at_least) noexcept
     {
@@ -46,13 +46,13 @@ struct growth_pot
         return nxt > at_least ? nxt : at_least;
     }
 };
-/** growth_pot with watermark.
+/** growth_two with watermark.
  * @ingroup storage_growth_policies  */
-struct growth_pot_wm
+struct growth_two_wm
 {
     C4_ALWAYS_INLINE static size_t next_size(size_t elm_size, size_t curr, size_t at_least) noexcept
     {
-        size_t ns = growth_pot::next_size(elm_size, curr, at_least);
+        size_t ns = growth_two::next_size(elm_size, curr, at_least);
         if(ns <= curr) return curr;
         return ns;
     }
@@ -62,6 +62,7 @@ struct growth_pot_wm
 //-----------------------------------------------------------------------------
 /** Grow by the Fibonacci ratio if the result is bigger than at_least;
  * if not, then just to at_least.
+ * @warning do not use a number larger than phi; see http://lokiastari.com/blog/2016/03/25/resizemaths/
  * @ingroup storage_growth_policies  */
 struct growth_phi
 {
@@ -132,7 +133,7 @@ struct growth_default
     C4_ALWAYS_INLINE static size_t next_size(size_t elm_size, size_t curr, size_t at_least) noexcept
     {
         if(at_least*elm_size <= threshold)
-            return growth_pot_wm::next_size(elm_size, curr, at_least);
+            return growth_two_wm::next_size(elm_size, curr, at_least);
         else
             return growth_phi_wm::next_size(elm_size, curr, at_least);
     }
