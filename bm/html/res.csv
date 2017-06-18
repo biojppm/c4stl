@@ -1,0 +1,25 @@
+Run on (4 X 3800 MHz CPU s)
+2017-06-17 20:11:33
+***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
+***WARNING*** Library was built as DEBUG. Timings may be affected.
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"BM_ListPushBackWithReserve<std::list< int >>/4",1249353,532.775,532.768,ns,3.00318e+07,7.50795e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/8",679507,1026.8,1026.78,ns,3.11652e+07,7.79131e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/16",349710,2000.41,2000.38,ns,3.19939e+07,7.99847e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/32",176960,3956.48,3956.45,ns,3.23522e+07,8.08805e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/64",88932,7836.59,7836.54,ns,3.26675e+07,8.16687e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/128",44955,15558.9,15558.8,ns,3.29074e+07,8.22685e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/256",22544,31033.7,31033.4,ns,3.29967e+07,8.24917e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/512",11253,62194.3,62186.7,ns,3.29331e+07,8.23327e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/1024",5647,123879,123877,ns,3.3065e+07,8.26625e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/2048",2826,247959,247956,ns,3.30382e+07,8.25954e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/4096",1399,496234,496227,ns,3.30171e+07,8.25428e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/8192",703,991868,991861,ns,3.30369e+07,8.25922e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/16384",353,1.98433e+06,1.98432e+06,ns,3.3027e+07,8.25675e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/32768",176,3.9696e+06,3.96956e+06,ns,3.30193e+07,8.25482e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/65536",88,7.93762e+06,7.93756e+06,ns,3.30258e+07,8.25644e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/131072",44,1.59091e+07,1.59088e+07,ns,3.29558e+07,8.23894e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/262144",22,3.18068e+07,3.18066e+07,ns,3.29672e+07,8.24181e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>/524288",10,6.36976e+07,6.36969e+07,ns,3.29239e+07,8.23099e+06,,,
+"BM_ListPushBackWithReserve<std::list< int >>_BigO",,30.3631,30.3627,N,,,,,
+"BM_ListPushBackWithReserve<std::list< int >>_RMS",,0.00154952,0.00154585,,,,,,
