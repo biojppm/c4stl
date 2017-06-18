@@ -7,6 +7,42 @@ function c4Log() {
   alert(s);
 }
 
+// https://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object
+function c4Clone(obj) {
+  var copy;
+
+  // Handle the 3 simple types, and null or undefined
+  if (null == obj || "object" != typeof obj) return obj;
+
+  // Handle Date
+  if (obj instanceof Date) {
+    copy = new Date();
+    copy.setTime(obj.getTime());
+    return copy;
+  }
+
+  // Handle Array
+  if (obj instanceof Array) {
+    copy = [];
+    for (var i = 0, len = obj.length; i < len; i++) {
+      copy[i] = c4Clone(obj[i]);
+    }
+    return copy;
+  }
+
+  // Handle Object
+  if (obj instanceof Object) {
+    copy = {};
+    for (var attr in obj) {
+      if (obj.hasOwnProperty(attr)) copy[attr] = c4Clone(obj[attr]);
+    }
+    return copy;
+  }
+
+  throw new Error("Unable to copy obj! Its type isn't supported.");
+}
+
+
 // http://planetozh.com/blog/2008/04/javascript-basename-and-dirname/
 function c4Basename(path) {
   return path.replace(/\\/g,'/').replace( /.*\//, '' );
@@ -31,7 +67,7 @@ function c4ReadTextFile(file) {
       if(rawFile.status === 200 || rawFile.status == 0)
       {
         txt = rawFile.responseText;
-        console.log("XHR: received:\n" + txt);
+        //console.log("XHR: received:\n" + txt);
       }
     }
   }
@@ -106,13 +142,10 @@ function c4ReadBenchmarkResults(fileName) {
       bm[p] = [];
     }
   }
-  console.log("CARALHO:\n");
-  console.log(bm);
   var currname = null;
   for(var i = 0; i < obj.length; i++) {
     var r = obj[i];
     var name = r.name.replace(/"/g, '');
-    console.log(r.name + ' -----> ' + name);
     if(name.endsWith('_BigO')) {
       bm.complexity_label = obj.bytes_per_second;
       bm.complexity_real_time = obj.real_time;
@@ -138,7 +171,7 @@ function c4ReadBenchmarkResults(fileName) {
       }
     }
   }
-  console.log("CONA:\n");
+  console.log("Loaded benchmark results for " + fileName + ":\n");
   console.log(bm);
   return bm;
 }
@@ -151,97 +184,129 @@ function c4XYData(x, y) {
   return ret;
 }
 
-console.log('fonix0');
+
+function c4LoadChart(thiscase, params={}) {
+  console.log('fonix0');
+  var r = {
+    series: [],
+    data: [],
+  };
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i];
+    if(!e.data) {
+      e.data = c4ReadBenchmarkResults(e.file);
+    }
+    var xy = c4XYData(e.data[params.x.field], e.data[params.y.field]);
+    r.series.push(e.name);
+    r.data.push(xy);
+  }
+  var app = angular.module("dashboardApp") // get existing
+  var options = c4Clone(app.c4DefaultChartOptions)
+
+  console.log('fonix1');
+  app.controller(params.idCtrl, function ($scope) {
+    console.log('fonix2');
+    $scope.series = r.series;
+    $scope.data = r.data;
+    /*$scope.onClick = function (points, evt) {
+      console.log(points, evt);
+    };*/
+    $scope.options = options
+    $scope.options.scales.xAxes[0].scaleLabel = {
+      display: true,
+      labelString: params.x.label,
+    }
+    $scope.options.scales.yAxes[0].scaleLabel = {
+      display: true,
+      labelString: params.y.label,
+    }
+    console.log('fonix3');
+  });
+  console.log('fonix4');
+
+  return r;
+}
+
+function c4LoadCase(thiscase) {
+  thiscase = {
+    name:'list / push_back() with reserve / int',
+    entries:[
+      {name:'std::list<int>', file:'res.csv'},
+      {name:'c4::flat_list<int>', file:'res-flr.csv'},
+    ],
+  };
+
+  // var ph1 = angular.element(document.querySelector('#page-header'))
+  $('#page-header').html(thiscase.name)
+
+  var app = angular.module("dashboardApp") // get existing
+
+  c4LoadChart(thiscase, {
+    idCtrl: "CPUTimeCtrl",
+    x: {field:"n", label:"n"},
+    y: {field:"cpu_time", label:"ns"}, // FIXME: the label must be read from the benchmark data
+  })
+  c4LoadChart(thiscase, {
+    idCtrl: "ItemsPerSecCtrl",
+    x: {field:"n", label:"n"},
+    y: {field:"items_per_second", label:"items/s"},
+  })
+  c4LoadChart(thiscase, {
+    idCtrl: "BytesPerSecCtrl",
+    x: {field:"n", label:"n"},
+    y: {field:"bytes_per_second", label:"bytes/s"},
+  })
+}
+
 (function () {
   'use strict';
-  console.log('fonix0');
 
-  var dashboardApp = angular.module("dashboardApp", ["chart.js"])
+  console.log('c4: creating app...');
+  var dashboardApp = angular.module("dashboardApp", ["chart.js"]) // create
+  console.log('c4: app created.');
+
+  // save this object for reusing later
+  dashboardApp.c4DefaultChartOptions = {
+    colors: ['#97BBCD', '#DCDCDC', '#F7464A', '#46BFBD', '#FDB45C', '#949FB1', '#4D5360'],
+    legend: {display: true },
+    showLines: true,
+    elements: {
+      line: { fill: false },
+      xy: { fill: false },
+    },
+    scales: {
+      xAxes: [
+        {
+          id: 'x-axis-1',
+          type: 'logarithmic',
+          display: true,
+          position: 'bottom'
+        },
+      ],
+      yAxes: [
+        {
+          id: 'y-axis-1',
+          type: 'logarithmic',
+          display: true,
+          position: 'left'
+        },
+        /*{
+          id: 'y-axis-2',
+          type: 'linear',
+          display: true,
+          position: 'right'
+          }*/
+      ]
+    }
+  }
 
   // Configure all charts
   // http://www.chartjs.org/docs/latest/
   dashboardApp.config(function (ChartJsProvider) {
-    ChartJsProvider.setOptions({
-      colors: ['#97BBCD', '#DCDCDC', '#F7464A', '#46BFBD', '#FDB45C', '#949FB1', '#4D5360'],
-      legend: {display: true },
-      showLines: true,
-      elements: {
-        line: { fill: false },
-        xy: { fill: false },
-      },
-      scales: {
-        xAxes: [
-          {
-            id: 'x-axis-1',
-            type: 'logarithmic',
-            display: true,
-            position: 'bottom'
-          },
-        ],
-        yAxes: [
-          {
-            id: 'y-axis-1',
-            type: 'logarithmic',
-            display: true,
-            position: 'left'
-          },
-          /*{
-            id: 'y-axis-2',
-            type: 'linear',
-            display: true,
-            position: 'right'
-          }*/
-        ]
-      }
-    });
+    ChartJsProvider.setOptions(dashboardApp.c4DefaultChartOptions);
   });
 
-  console.log("fonix1");
-
-  var stdlist = c4ReadBenchmarkResults('res.csv');
-  var flatlist = c4ReadBenchmarkResults('res-flr.csv');
-  console.log("fonix1.1");
-
-  dashboardApp.controller("CPUTimeCtrl", function ($scope) {
-    console.log('fonix2');
-    $scope.series = [stdlist.name, flatlist.name];
-    $scope.data = [
-      c4XYData(stdlist.n, stdlist.cpu_time),
-      c4XYData(flatlist.n, flatlist.cpu_time),
-    ];
-    /*$scope.onClick = function (points, evt) {
-      console.log(points, evt);
-    };*/
-    console.log('fonix3');
-  });
-
-  dashboardApp.controller("ItemsPerSecCtrl", function ($scope) {
-    console.log('fonix2');
-    $scope.series = [stdlist.name, flatlist.name];
-    $scope.data = [
-      c4XYData(stdlist.n, stdlist.items_per_second),
-      c4XYData(flatlist.n, flatlist.items_per_second),
-    ];
-    /*$scope.onClick = function (points, evt) {
-      console.log(points, evt);
-    };*/
-    console.log('fonix3');
-  });
-
-  dashboardApp.controller("BytesPerSecCtrl", function ($scope) {
-    console.log('fonix2');
-    $scope.series = [stdlist.name, flatlist.name];
-    $scope.data = [
-      c4XYData(stdlist.n, stdlist.bytes_per_second),
-      c4XYData(flatlist.n, flatlist.bytes_per_second),
-    ];
-    /*$scope.onClick = function (points, evt) {
-      console.log(points, evt);
-    };*/
-    console.log('fonix3');
-  });
-
-  console.log('fonix4');
+  c4LoadCase({});
 
 })();
 
