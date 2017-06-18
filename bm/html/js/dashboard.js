@@ -198,60 +198,50 @@ console.log('fonix0');
 
   console.log("fonix1");
 
-  dashboardApp.controller("LineCtrl", function ($scope) {
+  var stdlist = c4ReadBenchmarkResults('res.csv');
+  var flatlist = c4ReadBenchmarkResults('res-flr.csv');
+  console.log("fonix1.1");
 
+  dashboardApp.controller("CPUTimeCtrl", function ($scope) {
     console.log('fonix2');
-
-    var stdlist = c4ReadBenchmarkResults('res.csv');
-    var flatlist = c4ReadBenchmarkResults('res-flr.csv');
-
-    console.log('fonix2.1');
-  $scope.series = [stdlist.name, flatlist.name];
-  $scope.data = [
-    c4XYData(stdlist.n, stdlist.cpu_time),//[ {x: 0, y: 10}, {x: 0, y: 1}, {x: 1, y: 6}, {x: 4, y: 2} ],
-    c4XYData(flatlist.n, flatlist.cpu_time),//[ {x: 0, y: 2}, {x: 5, y: 7}, {x: 4, y: 2}, {x: 2, y: 9} ]
-  ];
-  /*$scope.options = {
-    scales: {
-      xAxes: [{
-        type: 'logarithmic',//'linear',
-        position: 'bottom'
-      }]
-    }
-  };*/
-/*    $scope.series = [stdlist.name]//, flatlist.name]//['Series A', 'Series B'];
-    $scope.labels = stdlist.n//, flatlist.n]//["January", "February", "March", "April", "May", "June", "July", "August", "September"];
+    $scope.series = [stdlist.name, flatlist.name];
     $scope.data = [
-      stdlist.cpu_time,
-      //flatlist.cpu_time,
-    ];*/
-    $scope.onClick = function (points, evt) {
+      c4XYData(stdlist.n, stdlist.cpu_time),
+      c4XYData(flatlist.n, flatlist.cpu_time),
+    ];
+    /*$scope.onClick = function (points, evt) {
       console.log(points, evt);
-    };
+    };*/
+    console.log('fonix3');
+  });
+
+  dashboardApp.controller("ItemsPerSecCtrl", function ($scope) {
+    console.log('fonix2');
+    $scope.series = [stdlist.name, flatlist.name];
+    $scope.data = [
+      c4XYData(stdlist.n, stdlist.items_per_second),
+      c4XYData(flatlist.n, flatlist.items_per_second),
+    ];
+    /*$scope.onClick = function (points, evt) {
+      console.log(points, evt);
+    };*/
+    console.log('fonix3');
+  });
+
+  dashboardApp.controller("BytesPerSecCtrl", function ($scope) {
+    console.log('fonix2');
+    $scope.series = [stdlist.name, flatlist.name];
+    $scope.data = [
+      c4XYData(stdlist.n, stdlist.bytes_per_second),
+      c4XYData(flatlist.n, flatlist.bytes_per_second),
+    ];
+    /*$scope.onClick = function (points, evt) {
+      console.log(points, evt);
+    };*/
     console.log('fonix3');
   });
 
   console.log('fonix4');
-
-  dashboardApp.controller('mainController',
-                          ['$scope', '$timeout',
-                           function($scope, $timeout){
-  $scope.labels = [
-    moment().add(-7, 'hour').format('HH:00'),
-    moment().add(-6, 'hour').format('HH:00'),
-    moment().add(-5, 'hour').format('HH:00'),
-    moment().add(-4, 'hour').format('HH:00'),
-    moment().add(-3, 'hour').format('HH:00'),
-    moment().add(-2, 'hour').format('HH:00'),
-    moment().add(-1, 'hour').format('HH:00')
-  ];
-  $scope.series = ['Series A', 'Series B'];
-  $scope.data = [
-    [1, 2, 3, 4, 5, 6, 7],
-    [7, 6, 5, 4, 3, 2, 1]
-  ];
-
-}]);
 
 })();
 

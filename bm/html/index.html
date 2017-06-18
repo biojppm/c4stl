@@ -122,9 +122,9 @@
             </div>
           </div>
 
-          <h2 class="sub-header">A graph</h2>
-          <div ng-controller="LineCtrl">
-            <canvas id="line"
+          <h2 class="sub-header">CPU Time</h2>
+          <div ng-controller="CPUTimeCtrl">
+            <canvas id="chart_cpu_time"
                     class="chart chart-line"
                     chart-data="data"
                     chart-labels="labels"
@@ -135,14 +135,29 @@
             </canvas>
           </div>
 
-          <h2 class="sub-header">Another graph</h2>
-          <div ng-controller="mainController">
-            <canvas id="line" 
-                    class="chart chart-line" 
-                    chart-data="data" 
-                    chart-labels="labels" 
+          <h2 class="sub-header">Items/sec</h2>
+          <div ng-controller="ItemsPerSecCtrl">
+            <canvas id="chart_itemspsec"
+                    class="chart chart-line"
+                    chart-data="data"
+                    chart-labels="labels"
+                    chart-series="series"
                     chart-options="options"
-                    chart-series="series">
+                    chart-dataset-override="datasetOverride"
+                    chart-click="onClick">
+            </canvas>
+          </div>
+
+          <h2 class="sub-header">Bytes/sec</h2>
+          <div ng-controller="BytesPerSecCtrl">
+            <canvas id="chart_bytespsec"
+                    class="chart chart-line"
+                    chart-data="data"
+                    chart-labels="labels"
+                    chart-series="series"
+                    chart-options="options"
+                    chart-dataset-override="datasetOverride"
+                    chart-click="onClick">
             </canvas>
           </div>
 
