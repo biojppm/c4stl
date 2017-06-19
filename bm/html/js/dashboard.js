@@ -418,8 +418,6 @@ var c4Cases = {
       entries:[
         {name:'std::list<int>', file:'res.csv', baseline:true},
         {name:'c4::flat_list<int,size_t,ptr>', file:'res-flr.csv'},
-        {name:'c4::flat_list<int,size_t,paged>', file:'res-flrp.csv'},
-        {name:'c4::flat_list<int,size_t,paged_rt>', file:'res-flrp_rt.csv'},
       ],
     },
     {
@@ -443,7 +441,7 @@ function c4LoadBenchmarkNav() {
   var nav = ""
   for (var topic in c4Cases) {
     if (c4Cases.hasOwnProperty(topic)) {
-      nav += '<li id="bm-nav-topic-' + topic + '"><a href="#" ';
+      nav += '<li id="bm-nav-topic-' + topic + '"><a href="#benchmark-topic-div" ';
       nav += 'onclick="c4SelectTopic(\''+topic+'\')">';
       nav += '<pre>' + topic + '</pre></a></li>'
     }
@@ -471,6 +469,7 @@ function c4SelectTopic(which) {
 
     tableCols = [
       {field: 'id', title: 'id'},
+      {field: 'topic', title: 'topic'},
       {field: 'name', title: 'name'},
       {field: 'desc', title: 'Description'},
     ]
@@ -480,7 +479,8 @@ function c4SelectTopic(which) {
       var c = c4Cases[which][i]
       var line = {
         id: i,
-        name: '<a href="#" onclick="c4SelectBenchmark('+i+');">' + c.name + '</a>',
+        topic: c4CurrentCase.topic,
+        name: '<a href="#benchmark-results" onclick="c4SelectBenchmark('+i+');">' + c.name + '</a>',
         desc: c.desc,
       };
       tableData.push(line);
@@ -562,7 +562,8 @@ function c4SelectBenchmark(which) {
     ChartJsProvider.setOptions(dashboardApp.c4DefaultChartOptions);
   });
 
-  c4LoadCase(null); // this is needed
+  c4SelectTopic("list");
+  c4SelectBenchmark(0); // this is needed
   c4LoadBenchmarkNav();
 
 })();
