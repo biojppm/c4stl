@@ -56,6 +56,7 @@ function c4Dirname(path) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };*/
 
+
 // https://stackoverflow.com/questions/14446447/javascript-read-local-text-file
 function c4ReadTextFile(file) {
   var rawFile = new XMLHttpRequest();
@@ -108,7 +109,8 @@ function c4BenchmarkTextToObj(txt) {
     if(!arr[i]) continue;
     if(!headers) {
       if(arr[i].startsWith('name')) {
-        headers = arr[i].split(',');
+        headers = c4CSVtoArray(arr[i])
+        obj.csv_names = headers
       }
       continue;
     }
@@ -124,35 +126,37 @@ function c4BenchmarkTextToObj(txt) {
   return obj;
 }
 
+
 function c4ReadBenchmarkResults(fileName) {
   var path = window.location.href;
   path = c4Dirname(path);
   path += '/' + fileName;
   var txt = c4ReadTextFile(path);
-  var obj = c4BenchmarkTextToObj(txt);
+  var csv = c4BenchmarkTextToObj(txt);
   // we assume the benchmark is for a sequence of n,
   // with two additional entries for complexity and RMS at end.
   var bm = {};
+  bm.csv = csv;
   bm.n = [];
   // now create arrays in the bm object
   // select the first benchmark; it should have all data
-  var bm0 = obj[0];
+  var bm0 = csv[0];
   for(var p in bm0) {
     if (bm0.hasOwnProperty(p) && p != 'name') {
       bm[p] = [];
     }
   }
   var currname = null;
-  for(var i = 0; i < obj.length; i++) {
-    var r = obj[i];
+  for(var i = 0; i < csv.length; i++) {
+    var r = csv[i];
     var name = r.name.replace(/"/g, '');
     if(name.endsWith('_BigO')) {
-      bm.complexity_label = obj.bytes_per_second;
-      bm.complexity_real_time = obj.real_time;
-      bm.complexity_cpu_time = obj.cpu_time;
+      bm.complexity_label = csv.bytes_per_second;
+      bm.complexity_real_time = csv.real_time;
+      bm.complexity_cpu_time = csv.cpu_time;
     } else if(name.endsWith('_RMS')) {
-      bm.complexity_rms_real_time = obj.real_time;
-      bm.complexity_rms_cpu_time = obj.cpu_time;
+      bm.complexity_rms_real_time = csv.real_time;
+      bm.complexity_rms_cpu_time = csv.cpu_time;
     } else {
       var spl = name.split('/');
       var n = spl.pop();
@@ -187,6 +191,17 @@ function c4XYData(x, y) {
 
 function c4LoadChart(thiscase, params={}) {
   console.log('fonix0');
+
+  var speedup_baseline = null
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i];
+    if(e.baseline) {
+      speedup_baseline = e
+      thiscase.baseline = speedup_baseline
+      break
+    }
+  }
+
   var r = {
     series: [],
     data: [],
@@ -224,15 +239,64 @@ function c4LoadChart(thiscase, params={}) {
   });
   console.log('fonix4');
 
+  tableColumns = [{field: params.x.field, title: params.x.field},]
+  tableColumnsSpeedup = [{field: params.x.field, title: params.x.field},]
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i];
+    tableColumns.push({
+      field: e.name,
+      title: e.name,
+    });
+    tableColumnsSpeedup.push({
+      field: e.name + '[speedup]',
+      title: e.name + '[speedup]',
+    });
+  }
+  tableData = []
+  tableDataSpeedup = []
+  for(var j = 0; j < e.data[params.x.field].length; ++j) {
+    var line = {}
+    var lineSpeedup = {}
+    for(var i = 0; i < thiscase.entries.length; ++i) {
+      var e = thiscase.entries[i];
+      var n = null;
+      if(!n) {
+        n = e.data[params.x.field][j];
+        line[params.x.field] = n;
+        lineSpeedup[params.x.field] = n;
+      } else {
+        assert(n == e.data[params.x.field][j], n, e.data[params.x.field][j])
+      }
+      line[e.name] = e.data[params.y.field][j];
+      var speedup = speedup_baseline.data[params.y.field][j] / e.data[params.y.field][j]
+      if(params.reciprocal) {
+        speedup = 1. / speedup
+      }
+      lineSpeedup[e.name + '[speedup]'] = speedup
+    }
+    tableData.push(line);
+    tableDataSpeedup.push(lineSpeedup);
+  }
+  $('#' + params.idCtrl + '_table').bootstrapTable({
+    columns: tableColumns,
+    data: tableData,
+  })
+  $('#' + params.idCtrl + '_table_speedup').bootstrapTable({
+    columns: tableColumnsSpeedup,
+    data: tableDataSpeedup,
+  })
   return r;
 }
+
 
 function c4LoadCase(thiscase) {
   thiscase = {
     name:'list / push_back() with reserve / int',
     entries:[
-      {name:'std::list<int>', file:'res.csv'},
-      {name:'c4::flat_list<int>', file:'res-flr.csv'},
+      {name:'std::list<int>', file:'res.csv', baseline:true},
+      {name:'c4::flat_list__buf<int>', file:'res-flr.csv'},
+      {name:'c4::flat_list__paged<int>', file:'res-flrp.csv'},
+      {name:'c4::flat_list__paged_rt<int>', file:'res-flrp_rt.csv'},
     ],
   };
 
@@ -248,15 +312,43 @@ function c4LoadCase(thiscase) {
   })
   c4LoadChart(thiscase, {
     idCtrl: "ItemsPerSecCtrl",
+    reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"items_per_second", label:"items/s"},
   })
   c4LoadChart(thiscase, {
     idCtrl: "BytesPerSecCtrl",
+    reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"bytes_per_second", label:"bytes/s"},
   })
+
+
+  var tableColumns = []
+  var csv_names = thiscase.entries[0].data.csv.csv_names
+  for(var k = 0; k < csv_names.length; ++k) {
+    var n = csv_names[k]
+    tableColumns.push({field: n, title: n})
+  }
+  var tableData = []
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i].data.csv
+    for(var j = 0; j < e.length; ++j) {
+      var line = {}
+      for(var k = 0; k < csv_names.length; ++k) {
+        var n = csv_names[k]
+        line[n] = e[j][n]
+      }
+      tableData.push(line)
+    }
+    tableData.push({})
+  }
+  $('#fullResultsTable').bootstrapTable({
+    columns: tableColumns,
+    data: tableData,
+  })
 }
+
 
 (function () {
   'use strict';
@@ -309,5 +401,3 @@ function c4LoadCase(thiscase) {
   c4LoadCase({});
 
 })();
-
-console.log('fonix5');
