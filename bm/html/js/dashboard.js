@@ -34,7 +34,9 @@ function c4Clone(obj) {
   if (obj instanceof Object) {
     copy = {};
     for (var attr in obj) {
-      if (obj.hasOwnProperty(attr)) copy[attr] = c4Clone(obj[attr]);
+      if (obj.hasOwnProperty(attr)) {
+        copy[attr] = c4Clone(obj[attr]);
+      }
     }
     return copy;
   }
@@ -99,6 +101,7 @@ function c4CSVtoArray(text) {
   if (/,\s*$/.test(text)) a.push('');
   return a;
 };
+
 
 // https://stackoverflow.com/questions/28543821/convert-csv-lines-into-javascript-objects
 function c4BenchmarkTextToObj(txt) {
@@ -207,8 +210,8 @@ function c4LoadChartAndTable(thiscase, params={}) {
   }
 
   // create the chart
-  app = angular.module("dashboardApp")
-  app.controller(params.idCtrl, function ($scope) {
+  app = angular.module("dashboardApp");
+  app.controller(params.y.field + '_ctrl', function ($scope) {
     var options = c4Clone(app.c4DefaultChartOptions)
     $scope.series = r.series;
     $scope.data = r.data;
@@ -242,7 +245,6 @@ function c4LoadDataToComplexityTable(thiscase) {
   tableData = []
   for(var i = 0; i < thiscase.entries.length; ++i) {
     var e = thiscase.entries[i];
-    console.log("COMPLEXITY:\n", e)
     line = {
       name: e.name,
       complexity: e.data.complexity_label,
@@ -329,27 +331,17 @@ function c4LoadDataToChartTables(thiscase, params) {
   }
 
   // set the table(s)
-  $('#' + params.idCtrl + '_table').bootstrapTable({
+  $('#' + params.y.field + '_table').bootstrapTable({
     columns: tableColumns,
     data: tableData,
   })
-  $('#' + params.idCtrl + '_table_speedup').bootstrapTable({
+  $('#' + params.y.field + '_table_speedup').bootstrapTable({
     columns: tableColumnsSpeedup,
     data: tableDataSpeedup,
   })
 }
 
 function c4LoadCase(thiscase) {
-  thiscase = {
-    name:'list / push_back() with reserve / int',
-    desc:'benchmarks time taken to push n elements to an initially empty list. The list capacity is reserved before pushing the data. Complexity measures total time for the N elements, not time per push_back().',
-    entries:[
-      {name:'std::list<int>', file:'res.csv', baseline:true},
-      {name:'c4::flat_list__buf<int>', file:'res-flr.csv'},
-      {name:'c4::flat_list__paged<int>', file:'res-flrp.csv'},
-      {name:'c4::flat_list__paged_rt<int>', file:'res-flrp_rt.csv'},
-    ],
-  };
 
   for(var i = 0; i < thiscase.entries.length; ++i) {
     var e = thiscase.entries[i];
@@ -369,18 +361,15 @@ function c4LoadCase(thiscase) {
 
   // load the sections
   c4LoadChartAndTable(thiscase, {
-    idCtrl: "CPUTimeCtrl",
     x: {field:"n", label:"n"},
     y: {field:"cpu_time", label:"cpu_time (ns)"}, // FIXME: the label must be read from the benchmark data
   })
   c4LoadChartAndTable(thiscase, {
-    idCtrl: "ItemsPerSecCtrl",
     reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"items_per_second", label:"items/s"},
   })
   c4LoadChartAndTable(thiscase, {
-    idCtrl: "BytesPerSecCtrl",
     reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"bytes_per_second", label:"bytes/s"},
@@ -390,6 +379,124 @@ function c4LoadCase(thiscase) {
   c4LoadDataToComplexityTable(thiscase)
 
   c4LoadDataToFullResultsTable(thiscase)
+}
+
+// this is here as a placeholder; ultimately the cases will be loaded from a
+// json file written by the benchmark creator (probably cmake calling python)
+var c4Cases = {
+  stream: [
+  ],
+  span: [
+  ],
+  vector: [
+  ],
+  map: [{
+    name:'map / insert() with reserve / int',
+    desc:'bla bla bla map benchmark',
+    entries:[
+      {name:'std::map<int>', file:'res.csv', baseline:true},
+      {name:'c4::flat_map<int,size_t,ptr>', file:'res-flr.csv'},
+      {name:'c4::flat_map<int,size_t,paged>', file:'res-flrp.csv'},
+      {name:'c4::flat_map<int,size_t,paged_rt>', file:'res-flrp_rt.csv'},
+    ],
+  }],
+  list: [
+    {
+      name:'list / push_back() / int',
+      desc:'bla bla bla',
+      entries:[
+        {name:'std::list<int>', file:'res.csv', baseline:true},
+        {name:'c4::flat_list<int,size_t,ptr>', file:'res-flr.csv'},
+        {name:'c4::flat_list<int,size_t,paged>', file:'res-flrp.csv'},
+        {name:'c4::flat_list<int,size_t,paged_rt>', file:'res-flrp_rt.csv'},
+      ],
+    },
+    {
+      name:'list / push_back() with reserve / int',
+      desc:'benchmarks time taken to push n elements to an initially empty list. The list capacity is reserved before pushing the data. Complexity measures total time for the N elements, not time per push_back().',
+      entries:[
+        {name:'std::list<int>', file:'res.csv', baseline:true},
+        {name:'c4::flat_list<int,size_t,ptr>', file:'res-flr.csv'},
+        {name:'c4::flat_list<int,size_t,paged>', file:'res-flrp.csv'},
+        {name:'c4::flat_list<int,size_t,paged_rt>', file:'res-flrp_rt.csv'},
+      ],
+    }
+  ],
+};
+var c4CurrentCase = {
+  topic: null,
+  bm: null
+}
+
+function c4LoadBenchmarkNav() {
+  var nav = ""
+  for (var topic in c4Cases) {
+    if (c4Cases.hasOwnProperty(topic)) {
+      nav += '<li id="bm-nav-topic-' + topic + '"><a href="#" ';
+      nav += 'onclick="c4SelectTopic(\''+topic+'\')">';
+      nav += '<pre>' + topic + '</pre></a></li>'
+    }
+  }
+  $('#bm-nav').html(nav);
+  c4SelectTopic(null);
+}
+
+
+function c4SelectTopic(which) {
+  if(which != null && which == c4CurrentCase.topic) return;
+  console.log("c4SelectTopic:", which)
+  if(c4CurrentCase.topic) {
+    $('#bm-nav-topic-' + c4CurrentCase.topic).removeClass("active");
+  }
+  c4CurrentCase.topic = which;
+  if(!which) {
+    $('#benchmark-topic-div').addClass("c4-hidden");
+    $('#jumbo-tip').html('Start by selecting a topic from the menu above.');
+  } else {
+    $('#bm-nav-topic-' + which).addClass("active");
+    $('#benchmark-topic-div').removeClass("c4-hidden");
+    $('#benchmark-topic-header').html(which + ' - available benchmarks.');
+    $('#jumbo-tip').html('Currently selected topic: ' + which);
+
+    tableCols = [
+      {field: 'id', title: 'id'},
+      {field: 'name', title: 'name'},
+      {field: 'desc', title: 'Description'},
+    ]
+    tableData = []
+    console.log(c4Cases[which]);
+    for(var i = 0; i < c4Cases[which].length; ++i) {
+      var c = c4Cases[which][i]
+      var line = {
+        id: i,
+        name: '<a href="#" onclick="c4SelectBenchmark('+i+');">' + c.name + '</a>',
+        desc: c.desc,
+      };
+      tableData.push(line);
+    }
+    $('#benchmark-topic-table').bootstrapTable("destroy");
+    $('#benchmark-topic-table').bootstrapTable({
+      columns: tableCols,
+      data: tableData,
+    });
+  }
+  c4SelectBenchmark(null);
+  console.log("c4SelectTopic:", which, " -- done")
+}
+
+
+function c4SelectBenchmark(which) {
+  if(which != null && which == c4CurrentCase.bm) return;
+  console.log("c4SelectBenchmark:", which);
+  c4CurrentCase.bm = which;
+  if(which) {
+    which_case = c4Cases[c4CurrentCase.topic][which];
+    c4LoadCase(which_case);
+    $('#benchmark-results').removeClass("c4-hidden");
+  } else {
+    $('#benchmark-results').addClass("c4-hidden");
+  }
+  console.log("c4SelectBenchmark:", which, " -- done");
 }
 
 
@@ -402,6 +509,7 @@ function c4LoadCase(thiscase) {
 
   // save this object for reusing later
   dashboardApp.c4DefaultChartOptions = {
+    // http://www.chartjs.org/docs/latest/
     colors: ['#97BBCD', '#DCDCDC', '#F7464A', '#46BFBD', '#FDB45C', '#949FB1', '#4D5360'],
     legend: {display: true },
     showLines: true,
@@ -436,11 +544,10 @@ function c4LoadCase(thiscase) {
   }
 
   // Configure all charts
-  // http://www.chartjs.org/docs/latest/
   dashboardApp.config(function (ChartJsProvider) {
     ChartJsProvider.setOptions(dashboardApp.c4DefaultChartOptions);
   });
 
-  c4LoadCase({});
+  c4LoadBenchmarkNav();
 
 })();

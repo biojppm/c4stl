@@ -26,13 +26,14 @@
 
     <!-- Bootstrap table -->
     <link rel="stylesheet"
-          href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.css">
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.css">
 
     <!-- Angular chart -->
     <link href="css/angular-chart.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="css/navbar-fixed-top.css" rel="stylesheet">
+    <link href="css/dashboard.css" rel="stylesheet">
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <link href="css/ie10-viewport-bug-workaround.css" rel="stylesheet">
@@ -60,25 +61,33 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">c4stl benchmarks</a>
+          <a class="navbar-brand" href="#" onclick="c4SelectTopic(null);">c4stl benchmarks</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
+            <!--<li class="active"><a href="#">Home</a></li>-->
             <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
+              <a href="#"
+                 class="dropdown-toggle"
+                 data-toggle="dropdown"
+                 role="button"
+                 aria-haspopup="true"
+                 aria-expanded="false">Topics <span class="caret"></span></a>
+              <ul id="bm-nav" class="dropdown-menu">
+                <!--
+                <li><a href="#"><pre>stream</pre></a></li>
+                <li><a href="#"><pre>span</pre></a></li>
+                <li><a href="#"><pre>vector</pre></a></li>
+                <li><a href="#"><pre>list</pre></a></li>
                 <li role="separator" class="divider"></li>
                 <li class="dropdown-header">Nav header</li>
                 <li><a href="#">Separated link</a></li>
                 <li><a href="#">One more separated link</a></li>
+                -->
               </ul>
             </li>
+            <li><a href="https://github.com/biojppm/c4stl">Code</a></li>
+            <li><a href="https://github.com/biojppm/c4stl">Docs</a></li>
           </ul>
           <!--<ul class="nav navbar-nav navbar-right">
             <li><a href="../navbar/">Default</a></li>
@@ -91,98 +100,103 @@
 
     <div class="container">
 
-      <!-- Main component for a primary marketing message or call to action -->
       <div class="jumbotron">
-        <h1>Navbar example</h1>
-        <p>This example is a quick exercise to illustrate how the default, static and fixed to top navbar work. It includes the responsive CSS and HTML, so it also adapts to your viewport and device.</p>
-        <p>To see the difference between static and fixed top navbars, just scroll.</p>
-        <p>
-          <a class="btn btn-lg btn-primary" href="../../components/#navbar" role="button">View navbar docs &raquo;</a>
-        </p>
+        <h1>c4stl benchmarks</h1>
+        <p><a href="https://github.com/biojppm/c4stl">c4stl</a> is a C++ library
+        of performance-minded contiguous containers, strings and
+        streams. Here you can browse the results of the library
+        benchmarks.</p>
+        <p id="jumbo-tip"/>
       </div>
 
-          <h1 id="page-header" class="page-header">Benchmark results</h1>
+      <div id="benchmark-topic-div" class="c4-hidden">
+        <h1 id="benchmark-topic-header" class="page-header">Available benchmarks</h1>
+        <div class="table-responsive">
+          <table id="benchmark-topic-table" class="table table-striped">
+          </table>
+        </div>
+      </div>
 
-          <div id="benchmark-desc" class="alert alert-info">
-          </div>
-          <h2 class="sub-header">Complexity</h2>
-          <div class="table-responsive">
-            <table id="complexity_table" class="table table-striped">
-            </table>
-          </div>
+      <div id="benchmark-results" class="c4-hidden">
+        <h1 id="page-header" class="page-header">Benchmark results</h1>
 
-          <h2 class="sub-header">CPU Time</h2>
-          <div ng-controller="CPUTimeCtrl">
-            <canvas id="chart_cpu_time"
-                    class="chart chart-line"
-                    chart-data="data"
-                    chart-labels="labels"
-                    chart-series="series"
-                    chart-options="options"
-                    chart-dataset-override="datasetOverride"
-                    chart-click="onClick">
-            </canvas>
-          </div>
-          <div class="table-responsive">
-            <table id="CPUTimeCtrl_table" class="table table-striped">
-            </table>
-          </div>
-          <div class="table-responsive">
-            <table id="CPUTimeCtrl_table_speedup" class="table table-striped">
-            </table>
-          </div>
+        <div id="benchmark-desc" class="alert alert-info"/>
+        <h2 class="sub-header">Complexity</h2>
+        <div class="table-responsive">
+          <table id="complexity_table" class="table table-striped">
+          </table>
+        </div>
 
-          <h2 class="sub-header">Items/sec</h2>
-          <div ng-controller="ItemsPerSecCtrl">
-            <canvas id="chart_itemspsec"
-                    class="chart chart-line"
-                    chart-data="data"
-                    chart-labels="labels"
-                    chart-series="series"
-                    chart-options="options"
-                    chart-dataset-override="datasetOverride"
-                    chart-click="onClick">
-            </canvas>
-          </div>
-          <div class="table-responsive">
-            <table id="ItemsPerSecCtrl_table" class="table table-striped">
-            </table>
-          </div>
-          <div class="table-responsive">
-            <table id="ItemsPerSecCtrl_table_speedup" class="table table-striped">
-            </table>
-          </div>
+        <h2 class="sub-header">CPU Time</h2>
+        <div ng-controller="cpu_time_ctrl">
+          <canvas class="chart chart-line"
+                  chart-data="data"
+                  chart-labels="labels"
+                  chart-series="series"
+                  chart-options="options"
+                  chart-dataset-override="datasetOverride"
+                  chart-click="onClick">
+          </canvas>
+        </div>
+        <div class="table-responsive">
+          <table id="cpu_time_table" class="table table-striped">
+          </table>
+        </div>
+        <div class="table-responsive">
+          <table id="cpu_time_table_speedup" class="table table-striped">
+          </table>
+        </div>
 
-          <h2 class="sub-header">Bytes/sec</h2>
-          <div ng-controller="BytesPerSecCtrl">
-            <canvas id="chart_bytespsec"
-                    class="chart chart-line"
-                    chart-data="data"
-                    chart-labels="labels"
-                    chart-series="series"
-                    chart-options="options"
-                    chart-dataset-override="datasetOverride"
-                    chart-click="onClick">
-            </canvas>
-          </div>
-          <div class="table-responsive">
-            <table id="BytesPerSecCtrl_table" class="table table-striped">
-            </table>
-          </div>
-          <div class="table-responsive">
-            <table id="BytesPerSecCtrl_table_speedup" class="table table-striped">
-            </table>
-          </div>
+        <h2 class="sub-header">Items/sec</h2>
+        <div ng-controller="items_per_second_ctrl">
+          <canvas class="chart chart-line"
+                  chart-data="data"
+                  chart-labels="labels"
+                  chart-series="series"
+                  chart-options="options"
+                  chart-dataset-override="datasetOverride"
+                  chart-click="onClick">
+          </canvas>
+        </div>
+        <div class="table-responsive">
+          <table id="items_per_second_table" class="table table-striped">
+          </table>
+        </div>
+        <div class="table-responsive">
+          <table id="items_per_second_table_speedup" class="table table-striped">
+          </table>
+        </div>
 
-          <h2 class="sub-header">Full results</h2>
-          <div class="table-responsive">
-            <table id="fullResultsTable" class="table table-striped"
-                   data-toggle="table"
-                   data-show-columns="true"
-                   data-show-toggle="true"
-                   >
-            </table>
-          </div>
+        <h2 class="sub-header">Bytes/sec</h2>
+        <div ng-controller="bytes_per_second_ctrl">
+          <canvas class="chart chart-line"
+                  chart-data="data"
+                  chart-labels="labels"
+                  chart-series="series"
+                  chart-options="options"
+                  chart-dataset-override="datasetOverride"
+                  chart-click="onClick">
+          </canvas>
+        </div>
+        <div class="table-responsive">
+          <table id="bytes_per_second_table" class="table table-striped">
+          </table>
+        </div>
+        <div class="table-responsive">
+          <table id="bytes_per_second_table_speedup" class="table table-striped">
+          </table>
+        </div>
+
+        <h2 class="sub-header">Full results</h2>
+        <div class="table-responsive">
+          <table id="fullResultsTable" class="table table-striped"
+                 data-toggle="table"
+                 data-show-columns="true"
+                 data-show-toggle="true"
+                 >
+          </table>
+        </div>
+      </div>
 
     </div> <!-- /container -->
 
@@ -194,8 +208,6 @@
     <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.js"></script><!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
-    <!-- Just to make our placeholder images work. Don't actually copy the next line! -->
-    <script src="js/holder.js"></script>
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <script src="js/ie10-viewport-bug-workaround.js"></script>
 
