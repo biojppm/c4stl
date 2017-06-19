@@ -170,6 +170,7 @@ skip_commits:
     - .ci/show_*
     - .ci/vagrant*
     - .ci/Vagrant*
+    - bm/html/*
     - doc/*
     - LICENSE.txt
     - README.*
