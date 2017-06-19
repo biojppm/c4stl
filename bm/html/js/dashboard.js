@@ -199,14 +199,16 @@ function c4LoadChartAndTable(thiscase, params={}) {
     series: [],
     data: [],
   };
-  for(var i = 0; i < thiscase.entries.length; ++i) {
-    var e = thiscase.entries[i];
-    if(!e.data) {
-      e.data = c4ReadBenchmarkResults(e.file);
+  if(thiscase) {
+    for(var i = 0; i < thiscase.entries.length; ++i) {
+      var e = thiscase.entries[i];
+      if(!e.data) {
+        e.data = c4ReadBenchmarkResults(e.file);
+      }
+      var xy = c4XYData(e.data[params.x.field], e.data[params.y.field]);
+      r.series.push(e.name);
+      r.data.push(xy);
     }
-    var xy = c4XYData(e.data[params.x.field], e.data[params.y.field]);
-    r.series.push(e.name);
-    r.data.push(xy);
   }
 
   // create the chart
@@ -229,7 +231,9 @@ function c4LoadChartAndTable(thiscase, params={}) {
     }
   });
 
-  c4LoadDataToChartTables(thiscase, params)
+  if(thiscase) {
+    c4LoadDataToChartTables(thiscase, params)
+  }
 }
 
 
@@ -255,10 +259,11 @@ function c4LoadDataToComplexityTable(thiscase) {
     tableData.push(line);
   }
 
+  $('#complexity_table').bootstrapTable("destroy");
   $('#complexity_table').bootstrapTable({
     columns: tableColumns,
     data: tableData,
-  })
+  });
 }
 
 
@@ -282,6 +287,7 @@ function c4LoadDataToFullResultsTable(thiscase) {
     }
     tableData.push({})
   }
+  $('#fullResultsTable').bootstrapTable("destroy");
   $('#fullResultsTable').bootstrapTable({
     columns: tableColumns,
     data: tableData,
@@ -331,10 +337,12 @@ function c4LoadDataToChartTables(thiscase, params) {
   }
 
   // set the table(s)
+  $('#' + params.y.field + '_table').bootstrapTable("destroy");
   $('#' + params.y.field + '_table').bootstrapTable({
     columns: tableColumns,
     data: tableData,
   })
+  $('#' + params.y.field + '_table_speedup').bootstrapTable("destroy");
   $('#' + params.y.field + '_table_speedup').bootstrapTable({
     columns: tableColumnsSpeedup,
     data: tableDataSpeedup,
@@ -343,42 +351,45 @@ function c4LoadDataToChartTables(thiscase, params) {
 
 function c4LoadCase(thiscase) {
 
-  for(var i = 0; i < thiscase.entries.length; ++i) {
-    var e = thiscase.entries[i];
-    if(e.baseline) {
-      thiscase.baseline = e
-      break
+  if(thiscase) {
+    for(var i = 0; i < thiscase.entries.length; ++i) {
+      var e = thiscase.entries[i];
+      if(e.baseline) {
+        thiscase.baseline = e;
+        break
+      }
     }
-  }
-  if(!thiscase.baseline) {
-    thiscase.baseline = thiscase.entries[0]
-  }
+    if(!thiscase.baseline) {
+      thiscase.baseline = thiscase.entries[0];
+    }
 
-  // set the title and description
-  $('#page-header').html(thiscase.name)
+    // set the title and description
+    $('#page-header').html(thiscase.name);
 
-  $('#benchmark-desc').html(thiscase.desc)
+    $('#benchmark-desc').html(thiscase.desc);
+  }
 
   // load the sections
   c4LoadChartAndTable(thiscase, {
     x: {field:"n", label:"n"},
     y: {field:"cpu_time", label:"cpu_time (ns)"}, // FIXME: the label must be read from the benchmark data
-  })
+  });
   c4LoadChartAndTable(thiscase, {
     reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"items_per_second", label:"items/s"},
-  })
+  });
   c4LoadChartAndTable(thiscase, {
     reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"bytes_per_second", label:"bytes/s"},
-  })
+  });
 
 
-  c4LoadDataToComplexityTable(thiscase)
-
-  c4LoadDataToFullResultsTable(thiscase)
+  if(thiscase) {
+    c4LoadDataToComplexityTable(thiscase);
+    c4LoadDataToFullResultsTable(thiscase);
+  }
 }
 
 // this is here as a placeholder; ultimately the cases will be loaded from a
@@ -489,9 +500,12 @@ function c4SelectBenchmark(which) {
   if(which != null && which == c4CurrentCase.bm) return;
   console.log("c4SelectBenchmark:", which);
   c4CurrentCase.bm = which;
-  if(which) {
+  if(which != null) {
+    console.log("c4SelectBenchmark:", which, "aqui 0");
     which_case = c4Cases[c4CurrentCase.topic][which];
+    console.log("c4SelectBenchmark:", which, "aqui 1", which_case);
     c4LoadCase(which_case);
+    console.log("c4SelectBenchmark:", which, "aqui 2", which_case);
     $('#benchmark-results').removeClass("c4-hidden");
   } else {
     $('#benchmark-results').addClass("c4-hidden");
@@ -548,6 +562,7 @@ function c4SelectBenchmark(which) {
     ChartJsProvider.setOptions(dashboardApp.c4DefaultChartOptions);
   });
 
+  c4LoadCase(null); // this is needed
   c4LoadBenchmarkNav();
 
 })();
