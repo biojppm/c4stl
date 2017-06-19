@@ -151,12 +151,12 @@ function c4ReadBenchmarkResults(fileName) {
     var r = csv[i];
     var name = r.name.replace(/"/g, '');
     if(name.endsWith('_BigO')) {
-      bm.complexity_label = csv.bytes_per_second;
-      bm.complexity_real_time = csv.real_time;
-      bm.complexity_cpu_time = csv.cpu_time;
+      bm.complexity_label = r.time_unit;
+      bm.complexity_real_time = r.real_time;
+      bm.complexity_cpu_time = r.cpu_time;
     } else if(name.endsWith('_RMS')) {
-      bm.complexity_rms_real_time = csv.real_time;
-      bm.complexity_rms_cpu_time = csv.cpu_time;
+      bm.complexity_rms_real_time = r.real_time;
+      bm.complexity_rms_cpu_time = r.cpu_time;
     } else {
       var spl = name.split('/');
       var n = spl.pop();
@@ -189,19 +189,9 @@ function c4XYData(x, y) {
 }
 
 
-function c4LoadChart(thiscase, params={}) {
-  console.log('fonix0');
+function c4LoadChartAndTable(thiscase, params={}) {
 
-  var speedup_baseline = null
-  for(var i = 0; i < thiscase.entries.length; ++i) {
-    var e = thiscase.entries[i];
-    if(e.baseline) {
-      speedup_baseline = e
-      thiscase.baseline = speedup_baseline
-      break
-    }
-  }
-
+  // process the data for the chart
   var r = {
     series: [],
     data: [],
@@ -215,12 +205,11 @@ function c4LoadChart(thiscase, params={}) {
     r.series.push(e.name);
     r.data.push(xy);
   }
-  var app = angular.module("dashboardApp") // get existing
-  var options = c4Clone(app.c4DefaultChartOptions)
 
-  console.log('fonix1');
+  // create the chart
+  app = angular.module("dashboardApp")
   app.controller(params.idCtrl, function ($scope) {
-    console.log('fonix2');
+    var options = c4Clone(app.c4DefaultChartOptions)
     $scope.series = r.series;
     $scope.data = r.data;
     /*$scope.onClick = function (points, evt) {
@@ -235,10 +224,71 @@ function c4LoadChart(thiscase, params={}) {
       display: true,
       labelString: params.y.label,
     }
-    console.log('fonix3');
   });
-  console.log('fonix4');
 
+  c4LoadDataToChartTables(thiscase, params)
+}
+
+
+function c4LoadDataToComplexityTable(thiscase) {
+  // process the data for the table
+  tableColumns = [
+    {field: 'name', title: 'name'},
+    {field: 'complexity', title: 'complexity'},
+    {field: 'value', title: 'factor'},
+    {field: 'rms', title: 'rms'},
+    {field: 'speedup', title: 'factor speedup'},
+  ]
+  tableData = []
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i];
+    console.log("COMPLEXITY:\n", e)
+    line = {
+      name: e.name,
+      complexity: e.data.complexity_label,
+      value: e.data.complexity_cpu_time,
+      rms: e.data.complexity_rms_cpu_time,
+      speedup: thiscase.baseline.data.complexity_cpu_time / e.data.complexity_cpu_time
+    }
+    tableData.push(line);
+  }
+
+  $('#complexity_table').bootstrapTable({
+    columns: tableColumns,
+    data: tableData,
+  })
+}
+
+
+function c4LoadDataToFullResultsTable(thiscase) {
+  var tableColumns = []
+  var csv_names = thiscase.entries[0].data.csv.csv_names
+  for(var k = 0; k < csv_names.length; ++k) {
+    var n = csv_names[k]
+    tableColumns.push({field: n, title: n})
+  }
+  var tableData = []
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i].data.csv
+    for(var j = 0; j < e.length; ++j) {
+      var line = {}
+      for(var k = 0; k < csv_names.length; ++k) {
+        var n = csv_names[k]
+        line[n] = e[j][n]
+      }
+      tableData.push(line)
+    }
+    tableData.push({})
+  }
+  $('#fullResultsTable').bootstrapTable({
+    columns: tableColumns,
+    data: tableData,
+  })
+}
+
+
+function c4LoadDataToChartTables(thiscase, params) {
+  // process the data for the table
   tableColumns = [{field: params.x.field, title: params.x.field},]
   tableColumnsSpeedup = [{field: params.x.field, title: params.x.field},]
   for(var i = 0; i < thiscase.entries.length; ++i) {
@@ -268,7 +318,7 @@ function c4LoadChart(thiscase, params={}) {
         assert(n == e.data[params.x.field][j], n, e.data[params.x.field][j])
       }
       line[e.name] = e.data[params.y.field][j];
-      var speedup = speedup_baseline.data[params.y.field][j] / e.data[params.y.field][j]
+      var speedup = thiscase.baseline.data[params.y.field][j] / e.data[params.y.field][j]
       if(params.reciprocal) {
         speedup = 1. / speedup
       }
@@ -277,6 +327,8 @@ function c4LoadChart(thiscase, params={}) {
     tableData.push(line);
     tableDataSpeedup.push(lineSpeedup);
   }
+
+  // set the table(s)
   $('#' + params.idCtrl + '_table').bootstrapTable({
     columns: tableColumns,
     data: tableData,
@@ -285,13 +337,12 @@ function c4LoadChart(thiscase, params={}) {
     columns: tableColumnsSpeedup,
     data: tableDataSpeedup,
   })
-  return r;
 }
-
 
 function c4LoadCase(thiscase) {
   thiscase = {
     name:'list / push_back() with reserve / int',
+    desc:'benchmarks time taken to push n elements to an initially empty list. The list capacity is reserved before pushing the data. Complexity measures total time for the N elements, not time per push_back().',
     entries:[
       {name:'std::list<int>', file:'res.csv', baseline:true},
       {name:'c4::flat_list__buf<int>', file:'res-flr.csv'},
@@ -300,23 +351,35 @@ function c4LoadCase(thiscase) {
     ],
   };
 
-  // var ph1 = angular.element(document.querySelector('#page-header'))
+  for(var i = 0; i < thiscase.entries.length; ++i) {
+    var e = thiscase.entries[i];
+    if(e.baseline) {
+      thiscase.baseline = e
+      break
+    }
+  }
+  if(!thiscase.baseline) {
+    thiscase.baseline = thiscase.entries[0]
+  }
+
+  // set the title and description
   $('#page-header').html(thiscase.name)
 
-  var app = angular.module("dashboardApp") // get existing
+  $('#benchmark-desc').html(thiscase.desc)
 
-  c4LoadChart(thiscase, {
+  // load the sections
+  c4LoadChartAndTable(thiscase, {
     idCtrl: "CPUTimeCtrl",
     x: {field:"n", label:"n"},
-    y: {field:"cpu_time", label:"ns"}, // FIXME: the label must be read from the benchmark data
+    y: {field:"cpu_time", label:"cpu_time (ns)"}, // FIXME: the label must be read from the benchmark data
   })
-  c4LoadChart(thiscase, {
+  c4LoadChartAndTable(thiscase, {
     idCtrl: "ItemsPerSecCtrl",
     reciprocal: true,
     x: {field:"n", label:"n"},
     y: {field:"items_per_second", label:"items/s"},
   })
-  c4LoadChart(thiscase, {
+  c4LoadChartAndTable(thiscase, {
     idCtrl: "BytesPerSecCtrl",
     reciprocal: true,
     x: {field:"n", label:"n"},
@@ -324,29 +387,9 @@ function c4LoadCase(thiscase) {
   })
 
 
-  var tableColumns = []
-  var csv_names = thiscase.entries[0].data.csv.csv_names
-  for(var k = 0; k < csv_names.length; ++k) {
-    var n = csv_names[k]
-    tableColumns.push({field: n, title: n})
-  }
-  var tableData = []
-  for(var i = 0; i < thiscase.entries.length; ++i) {
-    var e = thiscase.entries[i].data.csv
-    for(var j = 0; j < e.length; ++j) {
-      var line = {}
-      for(var k = 0; k < csv_names.length; ++k) {
-        var n = csv_names[k]
-        line[n] = e[j][n]
-      }
-      tableData.push(line)
-    }
-    tableData.push({})
-  }
-  $('#fullResultsTable').bootstrapTable({
-    columns: tableColumns,
-    data: tableData,
-  })
+  c4LoadDataToComplexityTable(thiscase)
+
+  c4LoadDataToFullResultsTable(thiscase)
 }
 
 
