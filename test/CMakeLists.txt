@@ -160,6 +160,13 @@ function(c4stl_add_test name)
         add_dependencies(${name}-all ${name})
         add_test(NAME ${name}-run
             COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
+        if(UNIX AND (C4STL_BUILD_TESTS_VALGRIND AND NOT COVERAGE_BUILD))
+            # @todo: consider doing this for valgrind:
+            # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
+            # for now we explicitly run it:
+            add_test(NAME ${name}-valgrind
+                COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
+        endif()
     endif()
     foreach(s asan msan tsan ubsan)
         set(t ${name}-${s})
@@ -169,13 +176,6 @@ function(c4stl_add_test name)
             add_test(NAME ${t}-run COMMAND ${cmd})
         endif()
     endforeach()
-    if(UNIX AND (C4STL_BUILD_TESTS_VALGRIND AND NOT COVERAGE_BUILD))
-        # @todo: consider doing this for valgrind:
-        # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
-        # for now we explicitly run it:
-        add_test(NAME ${name}-valgrind
-            COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
-    endif()
 endfunction(c4stl_add_test)
 
 #------------------------------------------------------------------------------
