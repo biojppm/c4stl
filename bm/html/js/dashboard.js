@@ -192,6 +192,8 @@ function c4XYData(x, y) {
 }
 
 
+var c4ChartsInited = {};
+
 function c4LoadChartAndTable(thiscase, params={}) {
 
   // process the data for the chart
@@ -211,25 +213,42 @@ function c4LoadChartAndTable(thiscase, params={}) {
     }
   }
 
-  // create the chart
-  app = angular.module("dashboardApp");
-  app.controller(params.y.field + '_ctrl', function ($scope) {
-    var options = c4Clone(app.c4DefaultChartOptions)
-    $scope.series = r.series;
-    $scope.data = r.data;
-    /*$scope.onClick = function (points, evt) {
-      console.log(points, evt);
-    };*/
-    $scope.options = options
-    $scope.options.scales.xAxes[0].scaleLabel = {
-      display: true,
-      labelString: params.x.label,
-    }
-    $scope.options.scales.yAxes[0].scaleLabel = {
-      display: true,
-      labelString: params.y.label,
-    }
-  });
+  var cname = params.y.field + '_ctrl';
+  var app = angular.module("dashboardApp");
+
+  // since I couldn't easily find out how to retrigger the call to
+  // the function passed to the controller, I save the data and scope
+  // elsewhere and thereafter call $apply()
+  if(!c4ChartsInited[cname]) {
+    c4ChartsInited[cname] = {data: r};
+    // create the chart
+    app.controller(cname, function ($scope) {
+      console.log("xxxxxxxxxxxxxxx  0", cname);
+      c4ChartsInited[cname].scope = $scope;
+      var options = c4Clone(app.c4DefaultChartOptions)
+      $scope.series = c4ChartsInited[cname].data.series;
+      $scope.data = c4ChartsInited[cname].data.data;
+      /*$scope.onClick = function (points, evt) {
+        console.log(points, evt);
+        };*/
+      $scope.options = options
+      $scope.options.scales.xAxes[0].scaleLabel = {
+        display: true,
+        labelString: params.x.label,
+      }
+      $scope.options.scales.yAxes[0].scaleLabel = {
+        display: true,
+        labelString: params.y.label,
+      }
+      console.log("xxxxxxxxxxxxxxx  1", cname);
+    });
+  } else {
+    console.log("zzzzzzzzzzzz 1", cname, c4ChartsInited[cname]);
+    c4ChartsInited[cname].scope.series = r.series;
+    c4ChartsInited[cname].scope.data = r.data;
+    c4ChartsInited[cname].scope.$apply(); // HERE! this is needed
+    console.log("zzzzzzzzzzzz 2", cname, c4ChartsInited[cname]);
+  }
 
   if(thiscase) {
     c4LoadDataToChartTables(thiscase, params)
