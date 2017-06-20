@@ -59,6 +59,17 @@ function c4Dirname(path) {
 };*/
 
 
+// https://stackoverflow.com/questions/6234773/can-i-escape-html-special-chars-in-javascript
+function c4EscapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
 // https://stackoverflow.com/questions/14446447/javascript-read-local-text-file
 function c4ReadTextFile(file) {
   var rawFile = new XMLHttpRequest();
@@ -118,6 +129,7 @@ function c4BenchmarkTextToObj(txt) {
       continue;
     }
     var data = c4CSVtoArray(arr[i]);
+    console.log("name", i, data[0]);
     var res = {};
     for(var j = 0; j < data.length; j++) {
       res[headers[j].trim()] = data[j].trim();
@@ -268,13 +280,17 @@ function c4LoadDataToComplexityTable(thiscase) {
   tableData = []
   for(var i = 0; i < thiscase.entries.length; ++i) {
     var e = thiscase.entries[i];
+    var su = thiscase.baseline.data.complexity_cpu_time / e.data.complexity_cpu_time;
+    su = su.toFixed(3);
+    var name = c4EscapeHtml(e.name);
     line = {
-      name: e.name,
+      name: name,
       complexity: e.data.complexity_label,
       value: e.data.complexity_cpu_time,
       rms: e.data.complexity_rms_cpu_time,
-      speedup: thiscase.baseline.data.complexity_cpu_time / e.data.complexity_cpu_time
+      speedup: su,
     }
+    console.log("speedup:", thiscase.name, e.name, line);
     tableData.push(line);
   }
 
@@ -290,27 +306,28 @@ function c4LoadDataToFullResultsTable(thiscase) {
   var tableColumns = []
   var csv_names = thiscase.entries[0].data.csv.csv_names
   for(var k = 0; k < csv_names.length; ++k) {
-    var n = csv_names[k]
-    tableColumns.push({field: n, title: n})
+    var n = c4EscapeHtml(csv_names[k]);
+    tableColumns.push({field: n, title: n});
   }
   var tableData = []
   for(var i = 0; i < thiscase.entries.length; ++i) {
-    var e = thiscase.entries[i].data.csv
+    var e = thiscase.entries[i].data.csv;
     for(var j = 0; j < e.length; ++j) {
-      var line = {}
+      var line = {};
       for(var k = 0; k < csv_names.length; ++k) {
-        var n = csv_names[k]
-        line[n] = e[j][n]
+        var n = csv_names[k];
+        var en = c4EscapeHtml(e[j][n]);
+        line[n] = en;
       }
-      tableData.push(line)
+      tableData.push(line);
     }
-    tableData.push({})
+    tableData.push({});
   }
   $('#fullResultsTable').bootstrapTable("destroy");
   $('#fullResultsTable').bootstrapTable({
     columns: tableColumns,
     data: tableData,
-  })
+  });
 }
 
 
@@ -320,13 +337,11 @@ function c4LoadDataToChartTables(thiscase, params) {
   tableColumnsSpeedup = [{field: params.x.field, title: params.x.field},]
   for(var i = 0; i < thiscase.entries.length; ++i) {
     var e = thiscase.entries[i];
-    tableColumns.push({
-      field: e.name,
-      title: e.name,
-    });
+    var n = c4EscapeHtml(e.name);
+    tableColumns.push({field: e.name, title: n,});
     tableColumnsSpeedup.push({
       field: e.name + '[speedup]',
-      title: e.name + '[speedup]',
+      title: n + '[speedup]',
     });
   }
   tableData = []
@@ -342,14 +357,15 @@ function c4LoadDataToChartTables(thiscase, params) {
         line[params.x.field] = n;
         lineSpeedup[params.x.field] = n;
       } else {
-        assert(n == e.data[params.x.field][j], n, e.data[params.x.field][j])
+        assert(n == e.data[params.x.field][j], n, e.data[params.x.field][j]);
       }
       line[e.name] = e.data[params.y.field][j];
-      var speedup = thiscase.baseline.data[params.y.field][j] / e.data[params.y.field][j]
+      var speedup = thiscase.baseline.data[params.y.field][j] / e.data[params.y.field][j];
       if(params.reciprocal) {
-        speedup = 1. / speedup
+        speedup = 1. / speedup;
       }
-      lineSpeedup[e.name + '[speedup]'] = speedup
+      speedup = speedup.toFixed(3);
+      lineSpeedup[e.name + '[speedup]'] = speedup;
     }
     tableData.push(line);
     tableDataSpeedup.push(lineSpeedup);
