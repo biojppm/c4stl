@@ -34,4 +34,4 @@ function(c4stl_add_bm name_wo_pfx)
     add_dependencies(c4stl-bm-run ${_abm_name})
 endfunction()
 
-c4stl_add_bm(list-push_back list/push_back.cpp)
+add_subdirectory(list)
