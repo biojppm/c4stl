@@ -24,7 +24,7 @@ template< class T, class... Args >
 struct do_reserve< std::list< T, Args... > >
 {
     using L = std::list< T, Args... >;
-    static void reserve(L &li, size_t cap)
+    static void reserve(L &/*li*/, size_t /*cap*/)
     {
     }
 };
@@ -33,7 +33,7 @@ template< class T, class... Args >
 struct do_reserve< std::forward_list< T, Args... > >
 {
     using L = std::forward_list< T, Args... >;
-    static void reserve(L &li, size_t cap)
+    static void reserve(L &/*li*/, size_t /*cap*/)
     {
     }
 };
