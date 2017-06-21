@@ -68,6 +68,8 @@ class BmCreator:
         identifier = re.sub(r'::', r'_', identifier)
         identifier = re.sub(r'_*$', r'', identifier)
         cpp_name = self.name + '/' + identifier + '.cpp'
+        # the type is passed in a macro call, so it can't contain commas
+        type_name = re.sub(r',', r' C4_COMMA ', type_name)
         d['type_name'] = type_name
         cm = "c4stl_add_bm({topic}-{name}-{identifier}    {cpp_name})\n"
         cm = cm.format(topic=self.topic,

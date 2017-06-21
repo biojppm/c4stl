@@ -31,7 +31,7 @@ void BM_ListPushBackWithReserve(bm::State& st)
     st.SetBytesProcessed(count * sizeof(T));
 }
 
-BENCHMARK_TEMPLATE(BM_ListPushBackWithReserve, split_fwd_list__paged_rt< NumBytes<4096>, int64_t >)
+BENCHMARK_TEMPLATE(BM_ListPushBackWithReserve, split_fwd_list__paged_rt< NumBytes<4096> C4_COMMA  int64_t >)
     ->RangeMultiplier(2)
     ->Range(4, 1<<19)
     ->Complexity();
