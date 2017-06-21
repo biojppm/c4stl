@@ -331,7 +331,7 @@ See also:
     <DisplayString Condition="m_elms.m_capacity &gt;  $T5">{{sz={m_size}}} [LONG]</DisplayString>
     <Expand>
       <Item Name="[size]">m_size</Item>
-      <Item Name="[capacity]">m_elms.m_capacity</Item>
+      <Item Name="[capacity]">m_elm.m_capacity</Item>
       <Item Name="[head]" Condition="m_head == npos">npos</Item>
       <Item Name="[head]" Condition="m_head != npos">m_head</Item>
       <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
@@ -359,7 +359,7 @@ See also:
     <DisplayString Condition="m_elms.m_capacity &gt;  $T5">{{sz={m_size}}} [LONG]</DisplayString>
     <Expand>
       <Item Name="[size]">m_size</Item>
-      <Item Name="[capacity]">m_elms.m_capacity</Item>
+      <Item Name="[capacity]">m_elm.m_capacity</Item>
       <Item Name="[head]" Condition="m_head == npos">npos</Item>
       <Item Name="[head]" Condition="m_head != npos">m_head</Item>
       <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
