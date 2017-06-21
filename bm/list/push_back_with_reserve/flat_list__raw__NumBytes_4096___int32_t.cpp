@@ -26,7 +26,7 @@ void BM_ListPushBackWithReserve(bm::State& st)
         }
         li.clear();
     }
-    st.SetComplexityN(st.range(0) * sizeof(T));
+    st.SetComplexityN(st.range(0));
     st.SetItemsProcessed(count);
     st.SetBytesProcessed(count * sizeof(T));
 }
