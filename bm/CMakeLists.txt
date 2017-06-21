@@ -32,13 +32,19 @@ function(c4stl_add_bm name_wo_pfx)
     set(_abm_output "${c4stl_bm_dir}/results/${_abm_output_dir}/${_abm_output_exe}.csv")
 
     # target to run the benchmark
-    add_custom_target(${_abm_name}-run
+    add_custom_command(OUTPUT ${_abm_output}
         COMMAND $<TARGET_FILE:${_abm_name}> --benchmark_out_format=csv --benchmark_out=${_abm_output}
         DEPENDS ${_abm_name}
         COMMENT "${_abm_name} - writing to ${_abm_output}")
+    add_custom_target(${_abm_name}-run
+        DEPENDS ${_abm_output})
+    #add_custom_target(${_abm_name}-run
+    #    COMMAND $<TARGET_FILE:${_abm_name}> --benchmark_out_format=csv --benchmark_out=${_abm_output}
+    #    BYPRODUCTS ${_abm_output}
+    #    DEPENDS ${_abm_name}
+    #    COMMENT "${_abm_name} - writing to ${_abm_output}")
     set_target_properties(${_abm_name}-run PROPERTIES
         FOLDER "c4stl-bm/${_abm_folder}")
-    add_dependencies(${_abm_name}-run ${_abm_name})
 
     # add convenience targets to allow building or running several benchmarks at once
     if(NOT TARGET c4stl-bm)
