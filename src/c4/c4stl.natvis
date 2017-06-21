@@ -297,6 +297,86 @@ See also:
     </Expand>
   </Type>
 
+  <!-- flat_list+flat_fwd_list, ptr storage -->
+  <Type Name="c4::flat_fwd_list&lt;*,*,c4::stg::raw&lt;*,*,*,*,*&gt;&gt;">
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::stg::raw&lt;*,*,*,*,*&gt;&gt;"/>
+    <!-- -->
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[capacity]">m_elms.m_capacity</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elms]">m_elms</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elms[cursor].elm</Item>
+            <Exec>cursor = m_elms[cursor].next</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <!-- split_list, ptr storage -->
+  <Type Name="c4::split_list&lt;*,*,c4::stg::raw&lt;*,*,*,*,*&gt;&gt;">
+    <!-- -->
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[capacity]">m_elm.m_capacity</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elm]">m_elm</Item>
+      <Item Name="[m_prev]">m_prev</Item>
+      <Item Name="[m_next]">m_next</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elm[cursor]</Item>
+            <Exec>cursor = m_next[cursor]</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <!-- split_fwd_list, ptr storage -->
+  <Type Name="c4::split_fwd_list&lt;*,*,c4::stg::raw&lt;*,*,*,*,*&gt;&gt;">
+    <!-- -->
+    <DisplayString>{{sz={m_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">m_size</Item>
+      <Item Name="[capacity]">m_elm.m_capacity</Item>
+      <Item Name="[head]" Condition="m_head == npos">npos</Item>
+      <Item Name="[head]" Condition="m_head != npos">m_head</Item>
+      <Item Name="[tail]" Condition="m_tail == npos">npos</Item>
+      <Item Name="[tail]" Condition="m_tail != npos">m_tail</Item>
+      <Item Name="[m_elm]">m_elm</Item>
+      <Item Name="[m_next]">m_next</Item>
+      <!-- https://msdn.microsoft.com/en-us/library/jj620914.aspx -->
+      <CustomListItems MaxItemsPerView="500" ExcludeView="Test">
+        <Variable Name="cursor" InitialValue="m_head" />
+        <Size>m_size</Size>
+        <Loop>
+          <If Condition="cursor != npos">
+            <Item>m_elm[cursor]</Item>
+            <Exec>cursor = m_next[cursor]</Exec>
+          </If>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+
   <!-- flat_list+flat_fwd_list, small storage -->
   <Type Name="c4::flat_fwd_list&lt;*,*,c4::stg::raw_small&lt;*,*,*,*,*,*&gt;&gt;">
     <AlternativeType Name="c4::flat_list&lt;*,*,c4::stg::raw_small&lt;*,*,*,*,*,*&gt;&gt;"/>
