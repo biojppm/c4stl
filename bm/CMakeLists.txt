@@ -25,6 +25,9 @@ function(c4stl_add_bm name_wo_pfx)
         OUTPUT_NAME ${_abm_output_exe}
         RUNTIME_OUTPUT_DIRECTORY ${c4stl_bm_dir}/${_abm_output_dir}
         FOLDER "c4stl-bm/${_abm_folder}")
+    if(MSVC)
+        target_link_libraries(${_abm_name} PUBLIC shlwapi.lib)
+    endif()
 
     # output file for the benchmark
     if(NOT EXISTS "${c4stl_bm_dir}/results/${_abm_output_dir}")
