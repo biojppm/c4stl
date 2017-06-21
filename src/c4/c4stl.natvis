@@ -461,10 +461,10 @@ See also:
   </Type>
 
   <!-- flat_list+flat_fwd_list, paged storage, dynamic page size -->
-  <Type Name="c4::flat_fwd_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
+  <Type Name="c4::flat_fwd_list&lt;*,*,c4::stg::raw_paged&lt;*,0,*,*,*&gt;&gt;">
     <AlternativeType Name="c4::flat_fwd_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
     <AlternativeType Name="c4::flat_fwd_list&lt;*,*,c4::default_list_storage&gt;"/>
-    <AlternativeType Name="c4::flat_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;"/>
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::stg::raw_paged&lt;*,0,*,*,*&gt;&gt;"/>
     <AlternativeType Name="c4::flat_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
     <AlternativeType Name="c4::flat_list&lt;*,*,c4::default_list_storage&gt;"/>
     <!-- -->
@@ -490,8 +490,8 @@ See also:
     </Expand>
   </Type>
   <!-- flat_list+flat_fwd_list, paged storage, fixed page size -->
-  <Type Name="c4::flat_fwd_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
-    <AlternativeType Name="c4::flat_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;"/>
+  <Type Name="c4::flat_fwd_list&lt;*,*,c4::stg::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+    <AlternativeType Name="c4::flat_list&lt;*,*,c4::stg::raw_paged&lt;*,*,*,*,*&gt;&gt;"/>
     <!-- -->
     <DisplayString>{{sz={m_size}}}</DisplayString>
     <Expand>
@@ -516,7 +516,7 @@ See also:
   </Type>
 
   <!-- split_list, paged storage, dynamic page size -->
-  <Type Name="c4::split_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
+  <Type Name="c4::split_list&lt;*,*,c4::stg::raw_paged&lt;*,0,*,*,*&gt;&gt;">
     <AlternativeType Name="c4::split_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
     <AlternativeType Name="c4::split_list&lt;*,*,c4::default_list_storage&gt;"/>
     <DisplayString>{{sz={m_size}}}</DisplayString>
@@ -595,7 +595,7 @@ See also:
     </Expand>
   </Type>
   <!-- split_fwd_list, paged storage, fixed page size -->
-  <Type Name="c4::split_fwd_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+  <Type Name="c4::split_fwd_list&lt;*,*,c4::stg::raw_paged&lt;*,*,*,*,*&gt;&gt;">
     <DisplayString>{{sz={m_size}}}</DisplayString>
     <Expand>
       <Item Name="[size]">m_size</Item>
