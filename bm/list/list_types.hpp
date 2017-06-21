@@ -44,6 +44,11 @@ template< class T, class I > using split_list__raw     = c4::split_list    < T, 
 template< class T, class I > using flat_fwd_list__raw  = c4::flat_fwd_list < T, I, c4::stg::raw< c4::flat_fwd_list_elm<T, I>, I > >;
 template< class T, class I > using split_fwd_list__raw = c4::split_fwd_list< T, I, c4::stg::raw< T, I > >;
 
+template< class T, class I, size_t N=16 > using flat_list__small      = c4::flat_list     < T, I, c4::stg::raw_small< c4::flat_list_elm<T, I>, I, N > >;
+template< class T, class I, size_t N=16 > using split_list__small     = c4::split_list    < T, I, c4::stg::raw_small< T, I, N > >;
+template< class T, class I, size_t N=16 > using flat_fwd_list__small  = c4::flat_fwd_list < T, I, c4::stg::raw_small< c4::flat_fwd_list_elm<T, I>, I, N > >;
+template< class T, class I, size_t N=16 > using split_fwd_list__small = c4::split_fwd_list< T, I, c4::stg::raw_small< T, I, N > >;
+
 template< class T, class I, size_t N=256 > using flat_list__fixed      = c4::flat_list     < T, I, c4::stg::raw_fixed< c4::flat_list_elm<T, I>, N, I > >;
 template< class T, class I, size_t N=256 > using split_list__fixed     = c4::split_list    < T, I, c4::stg::raw_fixed< T, N, I > >;
 template< class T, class I, size_t N=256 > using flat_fwd_list__fixed  = c4::flat_fwd_list < T, I, c4::stg::raw_fixed< c4::flat_fwd_list_elm<T, I>, N, I > >;
