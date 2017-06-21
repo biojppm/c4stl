@@ -236,16 +236,15 @@ See also:
   </Type>
 
   <Type Name="c4::stg::raw_small&lt;*,*,*,*,*,*&gt;">
-    <DisplayString Condition="m_capacity &lt;= $T2">{{cap={m_capacity}}} [SHORT]</DisplayString>
-    <DisplayString Condition="m_capacity &gt;  $T2">{{cap={m_capacity}}} [LONG]</DisplayString>
+    <DisplayString Condition="m_capacity &lt;= $T3">{{cap={m_capacity}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_capacity &gt;  $T3">{{cap={m_capacity}}} [LONG]</DisplayString>
     <Expand>
-      <Item Name="[capacity]">m_capacity</Item>
-      <Item Name="[status]" Condition="m_capacity &lt;= $T2">[SHORT]</Item>
-      <Item Name="[status]" Condition="m_capacity &gt;  $T2">[LONG]</Item>
+      <Item Name="[capacity]" Condition="m_capacity &lt;= $T3">m_capacity</Item>
+      <Item Name="[capacity]" Condition="m_capacity &gt;  $T3">m_capacity</Item>
       <ArrayItems>
         <Size>m_capacity</Size>
-        <ValuePointer Condition="m_capacity &lt;= $T2">m_arr</ValuePointer>
-        <ValuePointer Condition="m_capacity &gt;  $T2">m_ptr</ValuePointer>
+        <ValuePointer Condition="m_capacity &lt;= $T3">m_arr</ValuePointer>
+        <ValuePointer Condition="m_capacity &gt;  $T3">m_ptr</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
