@@ -43,9 +43,37 @@ function(c4stl_add_bm name_wo_pfx)
     add_custom_target(${_abm_name}-run
         COMMAND $<TARGET_FILE:${_abm_name}> --benchmark_out_format=csv --benchmark_out=${_abm_output}
         DEPENDS ${_abm_name}
-        COMMENT "c4stl-bm: writing to ${_abm_output}")
-    set_target_properties(${_abm_name}-run PROPERTIES FOLDER "c4stl-bm/${_abm_folder}")
+        COMMENT "${_abm_name} - writing to ${_abm_output}")
+    set_target_properties(${_abm_name}-run PROPERTIES
+        FOLDER "c4stl-bm/${_abm_folder}")
     add_dependencies(c4stl-bm-run ${_abm_name})
+
+    # add convenience targets to allow building & running several benchmarks at once
+    string(REPLACE "/" ";" _abm_split ${_abm_folder})   # example: list/push_back_with_reserve/split_fwd_list__paged__NumBytes_4096___int32_t ---> list;push_back_with_reserve;split_fwd_list__paged__NumBytes_4096___int32_t
+    string(REPLACE "__" ";" _abm_split "${_abm_split}") # example: list;push_back_with_reserve;split_fwd_list__paged__NumBytes_4096___int32_t ---> list;push_back_with_reserve;split_fwd_list;paged;NumBytes_4096;_int32_t
+    #message(STATUS "${_abm_folder} => ${_abm_split}")
+    # pop the last list element
+    list(REMOVE_AT _abm_split -1)
+    #message(STATUS "${_abm_folder} => ${_abm_split}")
+    foreach(_abm_elm ${_abm_split})
+        if(NOT _abm_curr_tgt)
+            set(_abm_curr_tgt "c4stl-bm-${_abm_elm}")
+        else()
+            set(_abm_curr_tgt "${_abm_curr_tgt}-${_abm_elm}")
+        endif()
+        #message(STATUS "${_abm_folder}: target ${_abm_curr_tgt}")
+        if(NOT TARGET ${_abm_curr_tgt})
+            #message(STATUS "${_abm_folder}: target ${_abm_curr_tgt} --- ADDING!")
+            add_custom_target(${_abm_curr_tgt})
+        endif()
+        add_dependencies(${_abm_curr_tgt} ${_abm_name})
+        #message(STATUS "${_abm_folder}: target ${_abm_curr_tgt}-run")
+        if(NOT TARGET ${_abm_curr_tgt}-run)
+            #message(STATUS "${_abm_folder}: target ${_abm_curr_tgt}-run --- ADDING!")
+            add_custom_target(${_abm_curr_tgt}-run)
+        endif()
+        add_dependencies(${_abm_curr_tgt}-run ${_abm_name}-run)
+    endforeach()
 endfunction()
 
 add_subdirectory(list)
