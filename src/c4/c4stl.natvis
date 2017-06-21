@@ -250,24 +250,24 @@ See also:
   </Type>
 
   <Type Name="c4::stg::raw_paged&lt;*,*,*,*,*&gt;">
-    <DisplayString>{{pg_sz={$T2} num_pgs={m_num_pages}}}</DisplayString>
+    <DisplayString>{{pg_sz={$T3} #pgs={m_num_pages}}}</DisplayString>
     <Expand>
-      <Item Name="[capacity]">$T2 * m_num_pages</Item>
-      <Item Name="[page size]">$T2</Item>
+      <Item Name="[capacity]">$T3 * m_num_pages</Item>
+      <Item Name="[page size]">$T3</Item>
       <Item Name="[num pages]">m_num_pages</Item>
-      <Synthetic Name="[page 0]" Condition="m_num_pages >= 1"><Expand><ArrayItems Condition="m_num_pages > 0"><Size>$T2</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 1]" Condition="m_num_pages >= 2"><Expand><ArrayItems Condition="m_num_pages > 1"><Size>$T2</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 2]" Condition="m_num_pages >= 3"><Expand><ArrayItems Condition="m_num_pages > 2"><Size>$T2</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 3]" Condition="m_num_pages >= 4"><Expand><ArrayItems Condition="m_num_pages > 3"><Size>$T2</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 4]" Condition="m_num_pages >= 5"><Expand><ArrayItems Condition="m_num_pages > 4"><Size>$T2</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 5]" Condition="m_num_pages >= 6"><Expand><ArrayItems Condition="m_num_pages > 5"><Size>$T2</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 6]" Condition="m_num_pages >= 7"><Expand><ArrayItems Condition="m_num_pages > 6"><Size>$T2</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 7]" Condition="m_num_pages >= 8"><Expand><ArrayItems Condition="m_num_pages > 7"><Size>$T2</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 0]" Condition="m_num_pages >= 1"><Expand><ArrayItems Condition="m_num_pages > 0"><Size>$T3</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 1]" Condition="m_num_pages >= 2"><Expand><ArrayItems Condition="m_num_pages > 1"><Size>$T3</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 2]" Condition="m_num_pages >= 3"><Expand><ArrayItems Condition="m_num_pages > 2"><Size>$T3</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 3]" Condition="m_num_pages >= 4"><Expand><ArrayItems Condition="m_num_pages > 3"><Size>$T3</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 4]" Condition="m_num_pages >= 5"><Expand><ArrayItems Condition="m_num_pages > 4"><Size>$T3</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 5]" Condition="m_num_pages >= 6"><Expand><ArrayItems Condition="m_num_pages > 5"><Size>$T3</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 6]" Condition="m_num_pages >= 7"><Expand><ArrayItems Condition="m_num_pages > 6"><Size>$T3</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 7]" Condition="m_num_pages >= 8"><Expand><ArrayItems Condition="m_num_pages > 7"><Size>$T3</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
       <Synthetic Name="[......]" Condition="m_num_pages >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
     </Expand>
   </Type>
 
-  <Type Name="c4::stg::raw_paged&lt;*,0,*,*,*&gt;">
+  <Type Name="c4::stg::raw_paged&lt;*,*,0,*,*&gt;">
     <AlternativeType Name="c4::stg::raw_paged_rt&lt;*,*&gt;"/>
     <AlternativeType Name="c4::default_list_storage&lt;*,*&gt;"/>
     <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_num_pages}}}</DisplayString>
@@ -463,7 +463,7 @@ See also:
     </Expand>
   </Type>
   <!-- split_list, paged storage, fixed page size -->
-  <Type Name="c4::split_list&lt;*,*,c4::raw_paged&lt;*,*,*,*,*&gt;&gt;">
+  <Type Name="c4::split_list&lt;*,*,c4::stg::raw_paged&lt;*,*,*,*,*&gt;&gt;">
     <DisplayString>{{sz={m_size}}}</DisplayString>
     <Expand>
       <Item Name="[size]">m_size</Item>
@@ -489,8 +489,8 @@ See also:
   </Type>
   
   <!-- split_fwd_list, paged storage, dynamic page size -->
-  <Type Name="c4::split_fwd_list&lt;*,*,c4::raw_paged&lt;*,0,*,*,*&gt;&gt;">
-    <AlternativeType Name="c4::split_fwd_list&lt;*,*,c4::stg::raw_paged_rt&lt; *, * &gt;&gt;"/>
+  <Type Name="c4::split_fwd_list&lt;*,*,c4::stg::raw_paged&lt;*,*,0,*,*&gt;&gt;">
+    <AlternativeType Name="c4::split_fwd_list&lt;*,*,c4::stg::raw_paged_rt&lt;*,*,0,*,*&gt;&gt;"/>
     <AlternativeType Name="c4::split_fwd_list&lt;*,*,c4::default_list_storage&gt;"/>
     <DisplayString>{{sz={m_size}}}</DisplayString>
     <Expand>
