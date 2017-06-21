@@ -6,13 +6,6 @@ ExternalProject_Import(gbenchmark
     LIBRARIES benchmark)
 find_package(Threads REQUIRED)
 
-add_custom_target(c4stl-bm-build)
-set_target_properties(c4stl-bm-build PROPERTIES FOLDER c4stl-bm)
-
-add_custom_target(c4stl-bm-run)
-set_target_properties(c4stl-bm-run PROPERTIES FOLDER c4stl-bm)
-add_dependencies(c4stl-bm-run c4stl-bm-build)
-
 set(c4stl_bm_dir ${CMAKE_CURRENT_BINARY_DIR})
 
 function(c4stl_add_bm name_wo_pfx)
@@ -31,7 +24,6 @@ function(c4stl_add_bm name_wo_pfx)
         OUTPUT_NAME ${_abm_output_exe}
         RUNTIME_OUTPUT_DIRECTORY ${c4stl_bm_dir}/${_abm_output_dir}
         FOLDER "c4stl-bm/${_abm_folder}")
-    add_dependencies(c4stl-bm-build ${_abm_name})
 
     # output file for the benchmark
     if(NOT EXISTS "${c4stl_bm_dir}/results/${_abm_output_dir}")
@@ -47,9 +39,19 @@ function(c4stl_add_bm name_wo_pfx)
     set_target_properties(${_abm_name}-run PROPERTIES
         FOLDER "c4stl-bm/${_abm_folder}")
     add_dependencies(${_abm_name}-run ${_abm_name})
-    add_dependencies(c4stl-bm-run ${_abm_name}-run)
 
     # add convenience targets to allow building or running several benchmarks at once
+    if(NOT TARGET c4stl-bm)
+        add_custom_target(c4stl-bm)
+        set_target_properties(c4stl-bm PROPERTIES FOLDER c4stl-bm)
+    endif()
+    add_dependencies(c4stl-bm ${_abm_name})
+    if(NOT TARGET c4stl-bm-run)
+        add_custom_target(c4stl-bm-run)
+        set_target_properties(c4stl-bm-run PROPERTIES FOLDER c4stl-bm)
+        add_dependencies(c4stl-bm-run c4stl-bm)
+    endif()
+    add_dependencies(c4stl-bm-run ${_abm_name}-run)
     string(REPLACE "/" ";" _abm_split ${_abm_folder})   # example: list/push_back_with_reserve/split_fwd_list__paged__NumBytes_4096___int32_t ---> list;push_back_with_reserve;split_fwd_list__paged__NumBytes_4096___int32_t
     string(REPLACE "__" ";" _abm_split "${_abm_split}") # example: list;push_back_with_reserve;split_fwd_list__paged__NumBytes_4096___int32_t ---> list;push_back_with_reserve;split_fwd_list;paged;NumBytes_4096;_int32_t
     list(REMOVE_AT _abm_split -1) # pop the last list element
