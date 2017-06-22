@@ -26,6 +26,77 @@ C4_BEGIN_NAMESPACE(c4)
 
 
 template< class List >
+struct is_dbl_list
+    :
+    public std::integral_constant
+    <
+        bool,
+        c4::is_instance_of_tpl< c4::flat_list, List >::value
+        ||
+        c4::is_instance_of_tpl< c4::split_list, List >::value
+    >
+{};
+
+
+template< class List >
+void list_check_free_list(List const& li)
+{
+    C4_ASSERT(li.size() <= li.capacity());
+    EXPECT_EQ(li.slack(), li.capacity()-li.size());
+    using I = typename List::size_type;
+    if(li.size() < li.capacity())
+    {
+        EXPECT_NE(li.m_fhead, List::npos);
+    }
+    else
+    {
+        EXPECT_EQ(li.m_fhead, List::npos); // this is not true, need to fix
+    }
+
+    if(li.capacity() == 0) return;
+    I cursor = li.m_fhead;
+    I count = 0;
+    while(cursor != List::npos)
+    {
+        count++;
+        cursor = li.next(cursor);
+    }
+    EXPECT_EQ(count, li.capacity()-li.size());
+
+    list_check_free_list_prev(li, is_dbl_list< List >{});
+}
+template< class List >
+void list_check_free_list_prev(List const& li, std::true_type /*is_dbl_list*/)
+{
+    using I = typename List::size_type;
+    if(li.capacity() == 0) return;
+    // get the last valid elm in the free list
+    I last = li.m_fhead;
+    if(last == List::npos) return;
+    I cursor = li.next(last);
+    while(cursor != List::npos)
+    {
+        last = li.next(last);
+        cursor = li.next(cursor);
+    }
+    C4_ASSERT(last != List::npos);
+    cursor = last;
+    I count = 0;
+    while(cursor != List::npos)
+    {
+        count++;
+        cursor = li.prev(cursor);
+    }
+    EXPECT_EQ(count, li.capacity()-li.size());
+}
+template< class List >
+void list_check_free_list_prev(List const& /*li*/, std::false_type /*is_dbl_list*/)
+{
+    // nothing to do - fwd lists have no prev elm
+}
+
+
+template< class List >
 void list_test0_ctor_empty()
 {
     _C4_DEFINE_LIST_TEST_TYPES(List);
@@ -44,6 +115,7 @@ void list_test0_ctor_empty()
         }
         EXPECT_EQ(li.begin(), li.end());
         EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+        list_check_free_list(li);
     }
 }
 
@@ -61,9 +133,27 @@ void list_test0_ctor_with_capacity()
         EXPECT_GE(li.capacity(), 5);
         EXPECT_EQ(li.begin(), li.end());
         EXPECT_EQ(std::distance(li.begin(), li.end()), 0);
+        list_check_free_list(li);
     }
 }
 
+template< class List >
+void list_test0_small_reserve_to_long()
+{
+    using I = typename List::size_type;
+    List li;
+    list_check_free_list(li);
+    li.reserve(li.capacity() + I(8));  // reserve more than the initial capacity
+    list_check_free_list(li); // the free list should be uninterrupted
+    li.reserve(li.capacity() + I(8)); // again
+    list_check_free_list(li);
+    li.reserve(li.capacity() + I(8));
+    list_check_free_list(li);
+    li.reserve(li.capacity() + I(8));
+    list_check_free_list(li);
+    li.reserve(li.capacity() + I(8));
+    list_check_free_list(li);
+}
 
 template< class List >
 void list_test0_ctor_with_initlist()
@@ -100,6 +190,8 @@ void list_test0_ctor_with_initlist()
                 EXPECT_EQ(crli.front(), proto::get(0));
                 EXPECT_EQ(crli.back(), proto::get(iback));
             }
+
+            list_check_free_list(li);
         }
     }
 }
@@ -144,6 +236,8 @@ void list_test0_push_back_copy()
                 EXPECT_EQ(crli.front(), proto::get(0));
                 EXPECT_EQ(crli.back(), proto::get(iback));
             }
+
+            list_check_free_list(li);
         }
     }
 }
@@ -160,8 +254,10 @@ void list_test0_push_back_move()
         auto dtch = CT::check_dtors(2 * il.size()); // 1 movedfrom + 1 movedto
         {
             CList li;
+            list_check_free_list(li);
             li.reserve(szconv<I>(il.size())); // reserve the list to prevent moves
                                               // when it would be resized
+            list_check_free_list(li);
             for(auto const& elm : il)
             {
                 auto tmp = elm; // this will be copied here
@@ -180,6 +276,8 @@ void list_test0_push_back_move()
                 auto const& ref = proto::get(pos++);
                 EXPECT_EQ(v, ref);
             }
+
+            list_check_free_list(li);
         }
     }
 }
@@ -196,7 +294,9 @@ void list_test0_grow_to_reallocate()
     {
         I target_size = 0;
         List li;
+        list_check_free_list(li);
         li.push_back(arr[0]); // make it have at least some initial capacity
+        list_check_free_list(li);
         I cap = li.capacity();
 
         // find a target size which will trigger allocations/deallocations
@@ -229,6 +329,7 @@ void list_test0_grow_to_reallocate()
         }
         C4_ASSERT_MSG(li.size() == target_size, "target=%zu sz=%zu max=%zu", (size_t)target_size, (size_t)li.size(), (size_t)li.max_size());
         C4_ASSERT(li.size() > cap);
+        list_check_free_list(li);
 
         pos = 0;
         for(auto const& v : li)
@@ -260,6 +361,10 @@ TEST(listtestname, ctor_with_capacity)                          \
 TEST(listtestname, ctor_with_initlist)                          \
 {                                                               \
     list_test0_ctor_with_initlist< listtype >();                \
+}                                                               \
+TEST(listtestname, small_reserve_to_long)                       \
+{                                                               \
+    list_test0_small_reserve_to_long< listtype >();             \
 }                                                               \
 TEST(listtestname, push_back_copy)                              \
 {                                                               \
