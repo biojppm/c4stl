@@ -121,7 +121,7 @@ public:
             _c4this->_set_tail(sz - 1);
         }
         _c4this->m_size = sz;
-        _c4this->_set_fhead(slack() ? sz : ListType::npos);
+        _c4this->_set_fhead(slack() ? sz : I(ListType::npos));
         sz = 0;
         for(auto const& e : il)
         {
