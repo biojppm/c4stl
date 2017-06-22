@@ -156,7 +156,6 @@ void _do_list_test0_small_reserve_to_long(stg::fixed_t)
 template< class List, class TagType >
 void _do_list_test0_small_reserve_to_long(TagType)
 {
-    auto tn = c4::type_name< List >();
     using I = typename List::size_type;
     List li;
     list_check_free_list(li);
