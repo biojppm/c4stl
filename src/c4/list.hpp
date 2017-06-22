@@ -262,6 +262,18 @@ class _dbl_list_crtp : public _list_crtp< T, I, ListType >
 {
 public:
 
+    void _set_seq_head(I cap, I next_cap)
+    {
+        // Set the full free list (from the current tail to the next
+        // capacity), not just from the previous capacity to the next
+        // capacity. This is needed because we need to set the prev of the
+        // first new free element to the tail of the previous free list, and
+        // we don't know where that tail is unless we explicitly store it.
+        I first = _c4this->m_tail != ListType::npos ? _c4this->m_tail : 0;
+        _c4this->_init_seq(first, next_cap);
+        _c4this->_adjust_fhead(cap, next_cap);
+    }
+
     void _init_seq(I first, I last, I prev_ = ListType::npos, I next_ = ListType::npos)
     {
         C4_XASSERT(last >= first);
@@ -307,6 +319,16 @@ template< class T, class I, class ListType >
 class _fwd_list_crtp : public _list_crtp< T, I, ListType >
 {
 public:
+
+    void _set_seq_head(I cap, I next_cap)
+    {
+        // this differs from the dbl list version. We don't need to set prev
+        // elms on the free lists, so we can just do it from the previous
+        // capacity to the next capacity
+        I capm1 = cap > 0 ? cap-1 : 0;
+        _c4this->_init_seq(capm1, next_cap);
+        _c4this->_adjust_fhead(cap, next_cap);
+    }
 
     void _init_seq(I first, I last, I prev_ = ListType::npos, I next_ = ListType::npos)
     {
@@ -419,8 +441,7 @@ public:
         m_elms._raw_reserve(next_cap);
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
-        this->_init_seq(cap, next_cap);
-        this->_adjust_fhead(cap, next_cap);
+        this->_set_seq_head(cap, next_cap);
     }
 
 public:
@@ -539,8 +560,7 @@ public:
         m_next._raw_reserve(next_cap);
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
-        this->_init_seq(curr_cap, next_cap);
-        this->_adjust_fhead(curr_cap, next_cap);
+        this->_set_seq_head(curr_cap, next_cap);
     }
 
 public:
@@ -650,8 +670,7 @@ public:
         m_elms._raw_reserve(next_cap);
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
-        this->_init_seq(cap, next_cap);
-        this->_adjust_fhead(cap, next_cap);
+        this->_set_seq_head(cap, next_cap);
     }
 
 public:
@@ -766,8 +785,7 @@ public:
         m_next._raw_reserve(next_cap);
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
-        this->_init_seq(curr_cap, next_cap);
-        this->_adjust_fhead(curr_cap, next_cap);
+        this->_set_seq_head(cap, next_cap);
     }
 
 public:
