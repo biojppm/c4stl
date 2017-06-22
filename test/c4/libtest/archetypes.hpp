@@ -471,9 +471,9 @@ struct InsidePtr
 
     InsidePtr(int which = 0) : a(), b(), c(), ptr(&a + (which % 3)) {}
     InsidePtr(InsidePtr const& that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) {}
-    InsidePtr(InsidePtr     && that) : a(that.a), b(that.b), c(that.c), ptr(&a + (that.ptr - &that.a)) { that.ptr = nullptr; }
+    InsidePtr(InsidePtr     && that) : a(std::move(that.a)), b(std::move(that.b)), c(std::move(that.c)), ptr(&a + (that.ptr - &that.a)) { that.ptr = nullptr; }
     InsidePtr& operator= (InsidePtr const& that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); return *this; }
-    InsidePtr& operator= (InsidePtr     && that) { a = (that.a); b = (that.b); c = (that.c); ptr = (&a + (that.ptr - &that.a)); that.ptr = nullptr; return *this; }
+    InsidePtr& operator= (InsidePtr     && that) { a = std::move(that.a); b = std::move(that.b); c = std::move(that.c); ptr = (&a + (that.ptr - &that.a)); that.ptr = nullptr; return *this; }
     ~InsidePtr() { EXPECT_TRUE(ptr == &a || ptr == &b || ptr == &c || ptr == nullptr); }
 
     void check() const
