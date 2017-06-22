@@ -24,6 +24,7 @@ C4_BEGIN_NAMESPACE(c4)
     using iltype = std::initializer_list< T >;                      \
     using ciltype = std::initializer_list< CT >;
 
+//-----------------------------------------------------------------------------
 
 template< class List >
 struct is_dbl_list
@@ -37,6 +38,7 @@ struct is_dbl_list
     >
 {};
 
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_check_free_list(List const& li)
@@ -95,6 +97,7 @@ void list_check_free_list_prev(List const& /*li*/, std::false_type /*is_dbl_list
     // nothing to do - fwd lists have no prev elm
 }
 
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_test0_ctor_empty()
@@ -119,7 +122,7 @@ void list_test0_ctor_empty()
     }
 }
 
-
+//-----------------------------------------------------------------------------
 template< class List >
 void list_test0_ctor_with_capacity()
 {
@@ -136,10 +139,24 @@ void list_test0_ctor_with_capacity()
         list_check_free_list(li);
     }
 }
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_test0_small_reserve_to_long()
 {
+    _do_list_test0_small_reserve_to_long< List >(typename List::storage_traits::tag_type{});
+}
+
+template< class List >
+void _do_list_test0_small_reserve_to_long(stg::fixed_t)
+{
+    // nothing to do
+}
+
+template< class List, class TagType >
+void _do_list_test0_small_reserve_to_long(TagType)
+{
+    auto tn = c4::type_name< List >();
     using I = typename List::size_type;
     List li;
     list_check_free_list(li);
@@ -154,6 +171,8 @@ void list_test0_small_reserve_to_long()
     li.reserve(li.capacity() + I(8));
     list_check_free_list(li);
 }
+
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_test0_ctor_with_initlist()
@@ -196,6 +215,7 @@ void list_test0_ctor_with_initlist()
     }
 }
 
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_test0_push_back_copy()
@@ -242,6 +262,7 @@ void list_test0_push_back_copy()
     }
 }
 
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_test0_push_back_move()
@@ -282,6 +303,7 @@ void list_test0_push_back_move()
     }
 }
 
+//-----------------------------------------------------------------------------
 
 template< class List >
 void list_test0_grow_to_reallocate()
