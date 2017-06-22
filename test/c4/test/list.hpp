@@ -142,12 +142,6 @@ void list_test0_ctor_with_capacity()
 //-----------------------------------------------------------------------------
 
 template< class List >
-void list_test0_small_reserve_to_long()
-{
-    _do_list_test0_small_reserve_to_long< List >(typename List::storage_traits::tag_type{});
-}
-
-template< class List >
 void _do_list_test0_small_reserve_to_long(stg::fixed_t)
 {
     // nothing to do
@@ -169,6 +163,12 @@ void _do_list_test0_small_reserve_to_long(TagType)
     list_check_free_list(li);
     li.reserve(li.capacity() + I(8));
     list_check_free_list(li);
+}
+
+template< class List >
+void list_test0_small_reserve_to_long()
+{
+    _do_list_test0_small_reserve_to_long< List >(typename List::storage_traits::tag_type{});
 }
 
 //-----------------------------------------------------------------------------
