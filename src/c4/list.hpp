@@ -119,9 +119,9 @@ public:
         {
             _c4this->_set_head(0);
             _c4this->_set_tail(sz - 1);
-            _c4this->_set_fhead(sz);
-            _c4this->m_size = sz;
         }
+        _c4this->m_size = sz;
+        _c4this->_set_fhead(slack() ? sz : ListType::npos);
         sz = 0;
         for(auto const& e : il)
         {
@@ -188,6 +188,11 @@ public:
     }
 
 public:
+
+    C4_ALWAYS_INLINE I slack() const
+    {
+        return _c4cthis->capacity() - _c4cthis->size();
+    }
 
     C4_ALWAYS_INLINE static constexpr I max_size() noexcept
     {
@@ -392,17 +397,17 @@ public:
         }
     }
 
-    flat_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    flat_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    flat_list(c4::with_capacity_t, I cap) : m_elms(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    flat_list(c4::with_capacity_t, I cap) : m_elms(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    flat_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    flat_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
         this->_init_initlist(il);
@@ -511,17 +516,17 @@ public:
         }
     }
 
-    split_list() : m_elm(), m_prev(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    split_list() : m_elm(), m_prev(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    split_list(c4::with_capacity_t, I cap) : m_elm(cap), m_prev(cap), m_next(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    split_list(c4::with_capacity_t, I cap) : m_elm(cap), m_prev(cap), m_next(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    split_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_prev(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    split_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_prev(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
         this->_init_initlist(il);
@@ -624,17 +629,17 @@ public:
         }
     }
 
-    flat_fwd_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    flat_fwd_list() : m_elms(), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    flat_fwd_list(c4::with_capacity_t, I cap) : m_elms(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    flat_fwd_list(c4::with_capacity_t, I cap) : m_elms(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    flat_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    flat_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elms(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
         this->_init_initlist(il);
@@ -739,17 +744,17 @@ public:
         }
     }
 
-    split_fwd_list() : m_elm(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    split_fwd_list() : m_elm(), m_next(), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    split_fwd_list(c4::with_capacity_t, I cap) : m_elm(cap), m_next(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    split_fwd_list(c4::with_capacity_t, I cap) : m_elm(cap), m_next(cap), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
     }
 
-    split_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(0)
+    split_fwd_list(c4::aggregate_t, std::initializer_list< T > il) : m_elm(szconv< I >(il.size())), m_next(szconv< I >(il.size())), m_head(npos), m_tail(npos), m_size(0), m_fhead(capacity() ? 0 : npos)
     {
         this->_init_seq(0, capacity());
         this->_init_initlist(il);
