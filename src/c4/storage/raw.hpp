@@ -984,14 +984,21 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
     static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
 
     enum : I {
-        //! id mask: all the bits up to PageSize. Use to extract the position of an index within a page.
-        _raw_idmask = I(PageSize) - I(1),
-        //! page lsb: the number of bits by bits complementary to PageSize. Use to extract the page of an index.
-        _raw_pglsb  = lsb11< I, PageSize >::value
+        /** id mask: all the bits up to PageSize. Use to extract the position
+         * of an index within a page. Despite being an enum value, the name
+         * starts with the m_ prefix to allow for compatibility with code for
+         * raw_paged_rt, the dynamically-sized version of this class. */
+        m_id_mask = I(PageSize) - I(1),
+        /** page lsb: the number of bits complementary to PageSize. Use to
+         * extract the page of an index. Despite being an enum value, the
+         * name starts with the m_ prefix to allow for compatibility with
+         * code for raw_paged_rt, the dynamically-sized version of this
+         * class. */
+        m_page_lsb = lsb11< I, PageSize >::value
     };
 
-    constexpr static I _raw_pg(I const i) { return i >> _raw_pglsb; }
-    constexpr static I _raw_id(I const i) { return i &  _raw_idmask; }
+    constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; }
+    constexpr static I _raw_id(I const i) { return i &  m_id_mask; }
 
     T    **m_pages;      //< array containing the pages
     I      m_num_pages;  //< number of current pages in the array
@@ -1040,8 +1047,8 @@ public:
     C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        const I pg = i >> _raw_pglsb;
-        const I id = i & _raw_idmask;
+        const I pg = i >> m_page_lsb;
+        const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < (I)PageSize);
         return m_pages[pg][id];
@@ -1049,8 +1056,8 @@ public:
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
         C4_XASSERT(i < crtp_base::capacity());
-        const I pg = i >> _raw_pglsb;
-        const I id = i & _raw_idmask;
+        const I pg = i >> m_page_lsb;
+        const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < (I)PageSize);
         return m_pages[pg][id];
