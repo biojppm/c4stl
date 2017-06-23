@@ -16,7 +16,7 @@ struct do_reserve
 {
     static void reserve(L &li, size_t cap)
     {
-        li.reserve(cap);
+        li.reserve(szconv< I >(cap));
     }
 };
 
