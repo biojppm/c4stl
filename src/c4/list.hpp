@@ -53,6 +53,33 @@ class split_fwd_list;
 
 //-----------------------------------------------------------------------------
 
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using flat_list__raw      = flat_list     < T, I, stg::raw< flat_list_elm<T, I>, I, Alignment, Alloc, GrowthPolicy > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using flat_fwd_list__raw  = flat_fwd_list < T, I, stg::raw< flat_fwd_list_elm<T, I>, I, Alignment, Alloc, GrowthPolicy > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using split_list__raw     = split_list    < T, I, stg::raw< T, I, Alignment, Alloc, GrowthPolicy > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using split_fwd_list__raw = split_fwd_list< T, I, stg::raw< T, I, Alignment, Alloc, GrowthPolicy > >;
+
+template< class T, class I=C4_SIZE_TYPE, size_t N=stg::default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using flat_list__small      = flat_list     < T, I, stg::raw_small< flat_list_elm<T, I>, I, N, Alignment, Alloc, GrowthPolicy > >;
+template< class T, class I=C4_SIZE_TYPE, size_t N=stg::default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using flat_fwd_list__small  = flat_fwd_list < T, I, stg::raw_small< flat_fwd_list_elm<T, I>, I, N, Alignment, Alloc, GrowthPolicy > >;
+template< class T, class I=C4_SIZE_TYPE, size_t N=stg::default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using split_list__small     = split_list    < T, I, stg::raw_small< T, I, N, Alignment, Alloc, GrowthPolicy > >;
+template< class T, class I=C4_SIZE_TYPE, size_t N=stg::default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=stg::growth_default > using split_fwd_list__small = split_fwd_list< T, I, stg::raw_small< T, I, N, Alignment, Alloc, GrowthPolicy > >;
+
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) > using flat_list__fixed      = flat_list     < T, I, stg::raw_fixed< flat_list_elm<T, I>, N, I, Alignment > >;
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) > using flat_fwd_list__fixed  = flat_fwd_list < T, I, stg::raw_fixed< flat_fwd_list_elm<T, I>, N, I, Alignment > >;
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) > using split_list__fixed     = split_list    < T, I, stg::raw_fixed< T, N, I, Alignment > >;
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) > using split_fwd_list__fixed = split_fwd_list< T, I, stg::raw_fixed< T, N, I, Alignment > >;
+
+template< class T, class I=C4_SIZE_TYPE, size_t PageSize=stg::default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> > using flat_list__paged      = flat_list     < T, I, stg::raw_paged< flat_list_elm<T, I>, I, PageSize, Alignment, Alloc > >;
+template< class T, class I=C4_SIZE_TYPE, size_t PageSize=stg::default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> > using flat_fwd_list__paged  = flat_fwd_list < T, I, stg::raw_paged< flat_fwd_list_elm<T, I>, I, PageSize, Alignment, Alloc > >;
+template< class T, class I=C4_SIZE_TYPE, size_t PageSize=stg::default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> > using split_list__paged     = split_list    < T, I, stg::raw_paged< T, I, PageSize, Alignment, Alloc > >;
+template< class T, class I=C4_SIZE_TYPE, size_t PageSize=stg::default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> > using split_fwd_list__paged = split_fwd_list< T, I, stg::raw_paged< T, I, PageSize, Alignment, Alloc > >;
+
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> > using flat_list__paged_rt      = flat_list     < T, I, stg::raw_paged_rt< flat_list_elm<T, I>, I, Alignment, Alloc > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> > using flat_fwd_list__paged_rt  = flat_fwd_list < T, I, stg::raw_paged_rt< flat_fwd_list_elm<T, I>, I, Alignment, Alloc > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> > using split_list__paged_rt     = split_list    < T, I, stg::raw_paged_rt< T, I, Alignment, Alloc > >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> > using split_fwd_list__paged_rt = split_fwd_list< T, I, stg::raw_paged_rt< T, I, Alignment, Alloc > >;
+
+//-----------------------------------------------------------------------------
+
 template< class T, class List >
 struct list_iterator : public std::iterator< std::bidirectional_iterator_tag, typename List::value_type >
 {
