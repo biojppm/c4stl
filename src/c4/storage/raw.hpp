@@ -354,8 +354,13 @@ public:
 
     C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
 
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 static I next_capacity(I cap) noexcept { C4_UNUSED(cap); C4_XASSERT(cap <= (I)N); return N; }
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return N; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 static size_t next_capacity(size_t cap) C4_NOEXCEPT_A
+    {
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (I)N);
+        return N;
+    }
 
 public:
 
@@ -467,9 +472,10 @@ public:
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
-    C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
+    C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        size_t n = GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        return n;
     }
 
 public:
@@ -566,8 +572,7 @@ struct raw_small
 {
 
     C4_STATIC_ASSERT(N_ <= (size_t)std::numeric_limits< I >::max());
-    // not sure if this is needed
-    //C4_STATIC_ASSERT(sizeof(T) == alignof(T));
+    //C4_STATIC_ASSERT(sizeof(T) == alignof(T));  // not sure if this is needed
 
 #ifdef __clang__
 #   pragma clang diagnostic push
@@ -641,10 +646,10 @@ public:
     C4_ALWAYS_INLINE bool is_small() const noexcept { return m_capacity <= N; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
-    C4_ALWAYS_INLINE I next_capacity(I desired) const noexcept
+    C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        auto ns = GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
-        return szconv<I>(ns);
+        size_t n = GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        return n;
     }
 
 public:
@@ -770,17 +775,17 @@ struct _raw_paged_crtp
     /** since the page size is a power of two, the max capacity is simply the
      * maximum of the size type */
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
-
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_num_pages; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_num_pages * _c4cthis->page_size(); }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I next_capacity(I desired) const C4_NOEXCEPT_A
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 size_t next_capacity(size_t desired) const C4_NOEXCEPT_A
     {
-        I cap = capacity();
-        I np = desired / _c4cthis->m_num_pages;
-        cap = np * _c4cthis->m_num_pages;
+        const size_t ps = _c4cthis->page_size();
+        const size_t np = (desired + ps - 1) / ps;
+        const size_t cap = np * ps;
         C4_ASSERT(cap >= desired);
         return cap;
     }
+
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_num_pages; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_num_pages * _c4cthis->page_size(); }
 
 public:
 

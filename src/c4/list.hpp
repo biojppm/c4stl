@@ -194,9 +194,10 @@ public:
         return _c4cthis->capacity() - _c4cthis->size();
     }
 
-    C4_ALWAYS_INLINE static constexpr I max_size() noexcept
+    C4_ALWAYS_INLINE static constexpr size_t max_size() noexcept
     {
-        return static_cast< I >(stg::raw_max_size_with_npos< typename ListType::storage_type >());
+
+        return stg::raw_max_size_with_npos< typename ListType::storage_type >();
     }
 
     void reserve(I cap)

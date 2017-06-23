@@ -26,7 +26,7 @@ struct is_narrower_size : std::conditional
            &&
            (std::is_signed< SizeOut >::value && ( ! std::is_signed< SizeIn >::value))
        )
-    ),
+   ),
    std::true_type,
    std::false_type
 >::type
