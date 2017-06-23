@@ -153,41 +153,43 @@ void _do_list_test0_small_reserve_to_long(TagType)
     using I = typename List::size_type;
     List li;
     list_check_free_list(li);
-    /* <jpmag>
-     * g++-6 is erroring inside reserve() when optimizing because reserve()
-     * does a comparison between the current and the asked capacity:
-     *   void reserve(I cap)
-     *   {
-     *       I curr = _c4this->capacity();
-     *       if(cap > curr)
-     *       {
-     *           _c4this->_growto(curr, cap);
-     *       }
-     *   }
-     * The error message from gcc is "error: assuming signed overflow does
-     * not occur when assuming that (X + c) >= X is always true
-     * [-Werror=strict-overflow]". See
-     * https://stackoverflow.com/questions/12984861/
-     *
-     * This probably means g++-6 inlines and elides and sees that cap==curr+8, so the
-     * condition in the if turns to (curr+8 > curr). To prevent gcc from
-     * optimizing, I'm making cap a volatile.
-     */
-    volatile I cap = li.capacity();
-    li.reserve(cap + I(8));  // reserve more than the initial capacity
-    list_check_free_list(li); // the free list should be uninterrupted
-    cap = li.capacity();
-    li.reserve(cap + I(8)); // again
-    list_check_free_list(li);
-    cap = li.capacity();
-    li.reserve(cap + I(8)); // again
-    list_check_free_list(li);
-    cap = li.capacity();
-    li.reserve(cap + I(8)); // again
-    list_check_free_list(li);
-    cap = li.capacity();
-    li.reserve(cap + I(8)); // again
-    list_check_free_list(li);
+    for(size_t i = 0; i < 4; ++i)
+    {
+        if(List::storage_traits::paged && size_t(li.capacity()) == li.max_size())
+        {
+            return;
+        }
+        /* <jpmag>
+         * g++-6 is erroring inside li.reserve() when optimizing because reserve()
+         * does a comparison between the current and the asked capacity:
+         *   void reserve(I cap)
+         *   {
+         *       I curr = _c4this->capacity();
+         *       if(cap > curr)
+         *       {
+         *           _c4this->_growto(curr, cap);
+         *       }
+         *   }
+         * The error message from gcc is "error: assuming signed overflow does
+         * not occur when assuming that (X + c) >= X is always true
+         * [-Werror=strict-overflow]". See
+         * https://stackoverflow.com/questions/12984861/
+         *
+         * This probably means g++-6 inlines and elides and sees that cap==curr+8, so the
+         * condition in the if turns to (curr+8 > curr). To prevent gcc from
+         * optimizing, I'm making cap a volatile.
+         */
+	    volatile size_t cap = li.next_capacity(size_t(li.capacity()) + size_t(8)); // reserve more than the initial capacity
+	    if(cap <= li.max_size())
+	    {
+		    li.reserve(szconv<I>(cap));
+		    list_check_free_list(li); // the free list should be uninterrupted
+	    }
+	    else
+	    {
+		    return;
+	    }
+    }
 }
 
 template< class List >
@@ -364,7 +366,7 @@ void list_test0_grow_to_reallocate()
             }
         }
         C4_ASSERT(target_size > 0);
-        target_size = std::min(target_size, li.max_size());
+        target_size = std::min(target_size, szconv<I>(li.max_size()));
 
         // fill the list
         I pos = 1; // there's one already
