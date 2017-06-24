@@ -167,13 +167,13 @@ function(c4stl_add_test name)
             # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
             # for now we explicitly run it:
             add_test(NAME ${name}-valgrind
-                COMMAND valgrind ${C4STL_VALGRIND_OPTIONS} $<TARGET_FILE:$name>)
+                COMMAND valgrind ${C4STL_VALGRIND_OPTIONS} $<TARGET_FILE:${name}>)
         endif()
         if(UNIX AND (C4STL_VALGRIND_SGCHECK AND NOT COVERAGE_BUILD))
             # stack and global array overrun detector
             # http://valgrind.org/docs/manual/sg-manual.html
             add_test(NAME ${name}-valgrind-sgcheck
-                COMMAND valgrind --tool=exp-sgcheck ${C4STL_VALGRIND_OPTIONS} $<TARGET_FILE:$name>)
+                COMMAND valgrind --tool=exp-sgcheck ${C4STL_VALGRIND_OPTIONS} $<TARGET_FILE:${name}>)
         endif()
     endif()
     foreach(s asan msan tsan ubsan)
