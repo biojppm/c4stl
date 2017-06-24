@@ -376,13 +376,13 @@ public:
 
 public:
 
-    /** assume the curr size is the capacity */
-    void _raw_reserve(I cap) const C4_NOEXCEPT_A
+    /** assume the curr size is zero */
+    void _raw_reserve(I cap)
     {
-        _raw_reserve(capacity(), cap);
+        _raw_reserve(0, cap);
     }
 
-    void _raw_reserve(I currsz, I cap) const C4_NOEXCEPT_A
+    void _raw_reserve(I currsz, I cap) const
     {
         C4_UNUSED(currsz);
         C4_UNUSED(cap);
@@ -491,15 +491,15 @@ public:
 
 public:
 
-    /** assume the curr size is the capacity */
-    void _raw_reserve(I cap) C4_NOEXCEPT_A
+    /** assume the curr size is zero */
+    void _raw_reserve(I cap)
     {
-        _raw_reserve(capacity(), cap);
+        _raw_reserve(0, cap);
     }
 
-    void _raw_reserve(I curr, I cap) C4_NOEXCEPT_A
+    void _raw_reserve(I currsz, I cap)
     {
-        C4_ASSERT(curr <= cap);
+        C4_ASSERT(currsz <= cap);
         T *tmp = nullptr;
         if(cap != m_capacity && cap != 0)
         {
@@ -509,7 +509,7 @@ public:
         {
             if(tmp)
             {
-                c4::move_construct_n(tmp, m_ptr, curr);
+                c4::move_construct_n(tmp, m_ptr, currsz);
             }
             m_allocator.deallocate(m_ptr, m_capacity, Alignment);
         }
@@ -664,13 +664,13 @@ public:
 
 public:
 
-    /** assume the curr size is the capacity */
-    void _raw_reserve(I cap) C4_NOEXCEPT_A
+    /** assume the curr size is zero */
+    void _raw_reserve(I cap)
     {
-        _raw_reserve(capacity(), cap);
+        _raw_reserve(0, cap);
     }
 
-    void _raw_reserve(I curr, I cap) C4_NOEXCEPT_A
+    void _raw_reserve(I curr, I cap)
     {
         C4_ASSERT(curr <= cap);
         T *tmp = nullptr;
@@ -1096,16 +1096,16 @@ public:
 
     raw_paged(I cap) : m_pages(nullptr), m_num_pages(0), m_allocator()
     {
-        crtp_base::_raw_reserve(cap);
+        crtp_base::_raw_reserve(0, cap);
     }
     raw_paged(I cap, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_allocator(a)
     {
-        crtp_base::_raw_reserve(cap);
+        crtp_base::_raw_reserve(0, cap);
     }
 
     ~raw_paged()
     {
-        crtp_base::_raw_reserve(0);
+        crtp_base::_raw_reserve(0, 0);
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
@@ -1186,18 +1186,18 @@ public:
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
-        crtp_base::_raw_reserve(cap);
+        crtp_base::_raw_reserve(0, cap);
     }
     raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
-        crtp_base::_raw_reserve(cap);
+        crtp_base::_raw_reserve(0, cap);
     }
 
     ~raw_paged()
     {
-        crtp_base::_raw_reserve(0);
+        crtp_base::_raw_reserve(0, 0);
     }
 
     // copy and move operations are deleted, and must be implemented by the containers,
