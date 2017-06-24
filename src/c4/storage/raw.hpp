@@ -883,7 +883,7 @@ public:
 
     void _raw_move_construct_n(RawPaged & src, I first_this, I first_that, I n)
     {
-        _process_pages(&_raw_paged_crtp::_raw_move_construct_n_handler, _c4this->m_pages, first, src.m_pages, first_that, n);
+        _process_pages(&_raw_paged_crtp::_raw_move_construct_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
     }
 
     void _raw_move_construct_n(T ** pages, I first_this, T ** that, I first_that, I n)
