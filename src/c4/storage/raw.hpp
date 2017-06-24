@@ -395,9 +395,11 @@ public:
     void _raw_reserve_allocate(I cap, tmp_storage *)
     {
         C4_ASSERT(cap <= (I)N);
+        C4_NOT_IMPLEMENTED();
     }
     void _raw_reserve_replace(tmp_storage *tmp)
     {
+        C4_NOT_IMPLEMENTED();
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
