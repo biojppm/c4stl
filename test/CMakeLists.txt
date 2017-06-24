@@ -18,7 +18,9 @@ add_configuration_type(QuicktestRelease
     )
 
 if(UNIX)
-    option(C4STL_BUILD_TESTS_VALGRIND "enable valgrind tests" ${C4STL_DEV})
+    option(C4STL_VALGRIND "enable valgrind tests" ${C4STL_DEV})
+    option(C4STL_VALGRIND_SGCHECK "enable valgrind tests with the exp-sgcheck tool" ${C4STL_DEV})
+    set(C4STL_VALGRIND_OPTIONS "--gen-suppressions=all --error-exitcode=10101" CACHE STRING "options for valgrind tests")
 endif()
 
 #------------------------------------------------------------------------------
@@ -160,19 +162,25 @@ function(c4stl_add_test name)
         add_dependencies(${name}-all ${name})
         add_test(NAME ${name}-run
             COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${name})
-        if(UNIX AND (C4STL_BUILD_TESTS_VALGRIND AND NOT COVERAGE_BUILD))
+        if(UNIX AND (C4STL_VALGRIND AND NOT COVERAGE_BUILD))
             # @todo: consider doing this for valgrind:
             # http://stackoverflow.com/questions/40325957/how-do-i-add-valgrind-tests-to-my-cmake-test-target
             # for now we explicitly run it:
             add_test(NAME ${name}-valgrind
-                COMMAND valgrind ${CMAKE_CURRENT_BINARY_DIR}/${name})
+                COMMAND valgrind ${C4STL_VALGRIND_OPTIONS} $<TARGET_FILE:$name>)
+        endif()
+        if(UNIX AND (C4STL_VALGRIND_SGCHECK AND NOT COVERAGE_BUILD))
+            # stack and global array overrun detector
+            # http://valgrind.org/docs/manual/sg-manual.html
+            add_test(NAME ${name}-valgrind-sgcheck
+                COMMAND valgrind --tool=exp-sgcheck ${C4STL_VALGRIND_OPTIONS} $<TARGET_FILE:$name>)
         endif()
     endif()
     foreach(s asan msan tsan ubsan)
         set(t ${name}-${s})
         if(TARGET ${t})
             add_dependencies(${name}-all ${t})
-            sanitize_get_target_command(${CMAKE_CURRENT_BINARY_DIR}/${t} C4STL ${s} cmd)
+            sanitize_get_target_command($<TARGET_FILE:${t}> C4STL ${s} cmd)
             add_test(NAME ${t}-run COMMAND ${cmd})
         endif()
     endforeach()
