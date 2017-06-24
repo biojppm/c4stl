@@ -28,7 +28,7 @@ fi
 if [ "$BM" == "ON" ] ; then
     CMFLAGS="$CMFLAGS -DC4STL_BUILD_BENCHMARKS=ON"
 elif [ "$BM" == "OFF" ] || [ "$BM" == "" ] ; then
-    CMFLAGS="$CMFLAGS -DC4STL_BUILD_BENCHMARKS=ON"
+    CMFLAGS="$CMFLAGS -DC4STL_BUILD_BENCHMARKS=OFF"
 fi
 
 if [ ! -z "$CMFLAGS" ] ; then
