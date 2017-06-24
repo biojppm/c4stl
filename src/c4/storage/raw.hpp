@@ -799,7 +799,7 @@ public:
 public:
 
     template< class U >
-    class iterator_impl : public std::iterator< std::bidirectional_iterator_tag, U >
+    class iterator_impl : public std::iterator< std::random_access_iterator_tag, U >
     {
         RawPaged *this_;
         I i;
