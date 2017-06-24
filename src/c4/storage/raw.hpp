@@ -88,17 +88,22 @@ C4_ALWAYS_INLINE constexpr size_t raw_max_capacity() noexcept
 // forward declarations
 template< class Storage, class TagType > struct raw_storage_traits;
 
+/** @todo make the Alignment a size_t */
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed;
 
+/** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw;
 
 /** raw storage with inplace storage of up to N objects, thus saving an
- * allocation when the size is small. @ingroup raw_storage_classes */
+ * allocation when the size is small. @ingroup raw_storage_classes
+ * @todo make N the second parameter (like raw_fixed or std::array)
+ * @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, size_t N=default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw_small;
 
+/** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, size_t PageSize=default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> >
 struct raw_paged;
 
