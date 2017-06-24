@@ -9,6 +9,8 @@
 #include "c4/memory_util.hpp"
 #include "c4/szconv.hpp"
 
+#include "c4/storage/growth.hpp"
+
 #include <limits>
 #include <memory>
 
