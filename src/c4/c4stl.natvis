@@ -268,7 +268,7 @@ See also:
   </Type>
 
   <Type Name="c4::stg::raw_paged&lt;*,*,0,*,*&gt;">
-    <AlternativeType Name="c4::stg::raw_paged_rt&lt;*,*&gt;"/>
+    <AlternativeType Name="c4::stg::raw_paged_rt&lt;*,*,*,*&gt;"/>
     <AlternativeType Name="c4::default_list_storage&lt;*,*&gt;"/>
     <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_num_pages}}}</DisplayString>
     <Expand>

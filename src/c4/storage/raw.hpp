@@ -796,7 +796,11 @@ struct _raw_paged_crtp
 
 public:
 
-    void _raw_reserve(I cap);
+    void _raw_reserve(I cap)
+    {
+        _raw_reserve(0, cap);
+    }
+    void _raw_reserve(I currsz, I cap);
 
 public:
 
@@ -836,23 +840,149 @@ public:
 public:
 
     template< class ...Args >
-    void _raw_construct_n(I first, I n, Args&&... args);
-    void _raw_destroy_n(I first, I n);
+    void _raw_construct_n(I first, I n, Args const&... args)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_construct_n_handler< Args... >, _c4this->m_pages, first, n, args...);
+    }
 
-    void _raw_move_construct_n(RawPaged const& src, I first, I n);
-    void _raw_copy_construct_n(RawPaged const& src, I first, I n);
+    template< class ...Args >
+    void _raw_construct_n(T **pages, I first, I n, Args const&... args)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_construct_n_handler< Args... >, pages, first, n, args...);
+    }
 
-    void _raw_move_assign_n(RawPaged const& src, I first, I n);
-    void _raw_copy_assign_n(RawPaged const& src, I first, I n);
+    template< class ...Args >
+    C4_ALWAYS_INLINE static void _raw_construct_n_handler(T *ptr, I n, Args const&... args)
+    {
+        c4::construct_n(ptr, n, args...);
+    }
+
+public:
+
+    void _raw_destroy_n(I first, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_destroy_n_handler, _c4this->m_pages, first, n);
+    }
+
+    void _raw_destroy_n(T **pages, I first, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_destroy_n_handler, pages, first, n);
+    }
+
+    C4_ALWAYS_INLINE static void _raw_destroy_n_handler(T *ptr, I n)
+    {
+        c4::destroy_n(ptr, n);
+    }
+
+public:
+
+    void _raw_move_construct_n(RawPaged & src, I first, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_move_construct_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+    }
+
+    void _raw_move_construct_n(RawPaged & src, I first_this, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_move_construct_n_handler, _c4this->m_pages, first, src.m_pages, first_that, n);
+    }
+
+    void _raw_move_construct_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_move_construct_n_handler, pages, first_this, that, first_that, n);
+    }
+
+    C4_ALWAYS_INLINE static void _raw_move_construct_n_handler(T *dst, T *src, I n)
+    {
+        c4::move_construct_n(dst, src, n);
+    }
+
+public:
+
+    void _raw_copy_construct_n(RawPaged const& /*src*/, I /*first*/, I /*n*/) { C4_NOT_IMPLEMENTED(); }
+
+public:
+
+    void _raw_move_assign_n(RawPaged      & /*src*/, I /*first*/, I /*n*/) { C4_NOT_IMPLEMENTED(); }
+
+public:
+
+    void _raw_copy_assign_n(RawPaged const& /*src*/, I /*first*/, I /*n*/) { C4_NOT_IMPLEMENTED(); }
+
+public:
+
+    template< class Function, class ...Args >
+    void _process_pages(Function handler, T **pages, I first, I n, Args... args);
+
+    template< class Function, class ...Args >
+    void _process_pages(Function handler, T **pages, I first_this, T **other, I first_that, I n, Args... args);
+
 };
 
 template< class T, class I, I Alignment, class RawPaged >
-void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I cap)
+template< class Function, class ...Args >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::
+_process_pages(Function handler, T **pages, I first_id, I n, Args... args)
+{
+    I pg = _c4cthis->_raw_pg(first_id);
+    const I last_pg = _c4cthis->_raw_pg(first_id + n);
+    first_id = _c4cthis->_raw_id(first_id);
+    I count = 0; // num elms handled so far
+    while(count < n)
+    {
+        C4_ASSERT(pg <= last_pg); C4_UNUSED(last_pg);
+        const I remaining = n - count;
+        I pn = _c4this->page_size() - first_id;
+        pn = pn < remaining ? pn : remaining;  // num elms to handle in this page
+        handler(pages[pg] + first_id, pn, args...);
+        ++pg;
+        first_id = 0;
+        count += pn;
+    }
+}
+
+/** the page size of other is the same! */
+template< class T, class I, I Alignment, class RawPaged >
+template< class Function, class ...Args >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::
+_process_pages(Function handler, T **pages, I first_id_this, T **other, I first_id_that, I n, Args... args)
+{
+    I pg = _c4this->_raw_pg(first_id_this);
+    const I last_pg = _c4cthis->_raw_pg(first_id_this + n);
+    first_id_this = _c4this->_raw_id(first_id_this);
+    first_id_that = _c4this->_raw_id(first_id_that);
+    I count = 0; // num elms handled so far
+    while(count < n)
+    {
+        C4_ASSERT(pg <= last_pg); C4_UNUSED(last_pg);
+        const I remaining = n - count;
+        I pnthis = _c4this->page_size() - first_id_this;
+        I pnthat = _c4this->page_size() - first_id_that;
+        pnthis = pnthis < remaining ? pnthis : remaining;  // num elms to handle in this page
+        pnthat = pnthat < remaining ? pnthat : remaining;  // num elms to handle in this page
+        if(pnthis == pnthat)
+        {
+            handler(pages[pg] + first_id_this, other[pg] + first_id_that, pnthis, args...);
+        }
+        else
+        {
+            // it's complicated, needs to be implemented. merely a placeholder.
+            C4_NOT_IMPLEMENTED();
+        }
+        ++pg;
+        first_id_this = 0;
+        first_id_that = 0;
+        count += pnthis;
+    }
+}
+
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
 {
     auto at = _c4this->m_allocator.template rebound< T* >();
     const I ps = _c4this->page_size();
     if(cap == 0)
     {
+        _c4this->_raw_destroy_n(0, currsz);
         for(I i = 0; i < _c4this->m_num_pages; ++i)
         {
             _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
@@ -865,104 +995,40 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I cap)
 
     // number of pages: round up to the next multiple of ps
     const I np = (cap + ps - 1) / ps;
-
     C4_ASSERT(np * ps >= cap);
-    if(np >= _c4this->m_num_pages)
+
+    if(np == _c4this->m_num_pages)
     {
-        _c4this->m_pages = at.reallocate(_c4this->m_pages, _c4this->m_num_pages, np);
-        for(I i = _c4this->m_num_pages; i < np; ++i)
-        {
-            _c4this->m_pages[i] = _c4this->m_allocator.allocate(ps, Alignment);
-        }
+        return;
     }
-    else
+
+    T ** tmp = at.allocate(np);
+    for(I i = 0; i < np; ++i)
     {
-        for(I i = np; i < _c4this->m_num_pages; ++i)
+        tmp[i] = _c4this->m_allocator.allocate(ps, Alignment);
+    }
+    if(_c4this->m_pages)
+    {
+        if(currsz > 0)
+        {
+            I num_to_move = currsz;
+            if(cap < currsz)
+            {
+                _c4this->_raw_destroy_n(cap, currsz);
+                num_to_move = cap;
+            }
+            _raw_move_construct_n(tmp, 0, _c4this->m_pages, 0, num_to_move);
+        }
+        for(I i = 0; i < _c4this->m_num_pages; ++i)
         {
             _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
         }
-        _c4this->m_pages = at.reallocate(_c4this->m_pages, _c4this->m_num_pages, np);
+        at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
     }
     _c4this->m_num_pages = np;
+    _c4this->m_pages = tmp;
 }
 
-
-template< class T, class I, I Alignment, class RawPaged >
-template< class ...Args >
-C4_ALWAYS_INLINE void
-_raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_construct_n(I first, I n, Args&&... args)
-{
-    const I pg_sz = _c4this->page_size();
-    I first_id = _c4this->_raw_id(first);
-    I count = 0; // num elms handled so far
-    I pg = _c4this->_raw_pg(first);
-    while(count < n)
-    {
-        C4_ASSERT(pg <= _c4this->_raw_pg(first + n));
-        const I missing = n - count;
-        I pn = pg_sz - first_id;
-        pn = pn < missing ? pn : missing;  // num elms to handle in this page
-        c4::construct_n(_c4this->m_pages[pg] + first_id, pn, std::forward< Args >(args)...);
-        pg++;
-        first_id = 0;
-        count += pn;
-    }
-}
-
-template< class T, class I, I Alignment, class RawPaged >
-C4_ALWAYS_INLINE void
-_raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_destroy_n(I first, I n)
-{
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(first);
-    C4_UNUSED(n);
-}
-
-template< class T, class I, I Alignment, class RawPaged >
-C4_ALWAYS_INLINE void
-_raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_move_construct_n(RawPaged const& src, I first, I n)
-{
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(src);
-    C4_UNUSED(first);
-    C4_UNUSED(n);
-}
-
-template< class T, class I, I Alignment, class RawPaged >
-C4_ALWAYS_INLINE void
-_raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_copy_construct_n(RawPaged const& src, I first, I n)
-{
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(src);
-    C4_UNUSED(first);
-    C4_UNUSED(n);
-}
-
-template< class T, class I, I Alignment, class RawPaged >
-C4_ALWAYS_INLINE void
-_raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_move_assign_n(RawPaged const& src, I first, I n)
-{
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(src);
-    C4_UNUSED(first);
-    C4_UNUSED(n);
-}
-
-template< class T, class I, I Alignment, class RawPaged >
-C4_ALWAYS_INLINE void
-_raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_copy_assign_n(RawPaged const& src, I first, I n)
-{
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(src);
-    C4_UNUSED(first);
-    C4_UNUSED(n);
-}
 
 #undef _c4this
 #undef _c4cthis

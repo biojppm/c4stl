@@ -466,7 +466,7 @@ public:
     void _growto(I cap, I next_cap)
     {
         C4_XASSERT(cap != next_cap);
-        m_elms._raw_reserve(next_cap);
+        m_elms._raw_reserve(m_size, next_cap); // this is WRONG.
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
         this->_set_seq_head(cap, next_cap);
@@ -584,9 +584,9 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        m_elm ._raw_reserve(next_cap);
-        m_prev._raw_reserve(next_cap);
-        m_next._raw_reserve(next_cap);
+        m_elm ._raw_reserve(m_size, next_cap); // this is WRONG.
+        m_prev._raw_reserve(m_size, next_cap);
+        m_next._raw_reserve(m_size, next_cap);
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
         this->_set_seq_head(curr_cap, next_cap);
@@ -697,7 +697,7 @@ public:
 
     void _growto(I cap, I next_cap)
     {
-        m_elms._raw_reserve(next_cap);
+        m_elms._raw_reserve(m_size, next_cap); // this is WRONG.
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
         this->_set_seq_head(cap, next_cap);
@@ -812,8 +812,8 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        m_elm ._raw_reserve(next_cap);
-        m_next._raw_reserve(next_cap);
+        m_elm ._raw_reserve(m_size, next_cap); // this is WRONG
+        m_next._raw_reserve(m_size, next_cap); // this is WRONG
         C4_XASSERT(capacity() >= next_cap);
         next_cap = capacity(); // they may be different
         this->_set_seq_head(curr_cap, next_cap);
