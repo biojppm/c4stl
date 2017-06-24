@@ -654,8 +654,7 @@ public:
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        size_t n = GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
-        return n;
+        return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
     }
 
 public:
