@@ -389,6 +389,17 @@ public:
         C4_ASSERT(cap <= (I)N);
     }
 
+    struct tmp_storage
+    {
+    };
+    void _raw_reserve_allocate(I cap, tmp_storage *)
+    {
+        C4_ASSERT(cap <= (I)N);
+    }
+    void _raw_reserve_replace(tmp_storage *tmp)
+    {
+    }
+
     /** Resize the buffer at pos, so that the previous size increases to the
      *  value of next; when growing, ___adds to the right___ of pos; when
      *  shrinking, ___removes to the left___ of pos. If growing, the capacity
@@ -515,6 +526,31 @@ public:
         }
         m_capacity = cap;
         m_ptr = tmp;
+    }
+
+    struct tmp_storage : public raw
+    {
+    };
+    void _raw_reserve_allocate(I cap, tmp_storage *tmp)
+    {
+        T *t = nullptr;
+        if(cap != m_capacity && cap != 0)
+        {
+            t = m_allocator.allocate(cap, Alignment);
+        }
+        tmp->m_capacity = cap;
+        tmp->m_ptr = t;
+    }
+    void _raw_reserve_replace(tmp_storage *tmp)
+    {
+        if(m_ptr)
+        {
+            m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+        }
+        m_capacity = tmp->m_capacity;
+        m_ptr = tmp->m_ptr;
+        tmp->m_ptr = nullptr;
+        tmp->m_capacity = 0;
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
@@ -709,6 +745,18 @@ public:
         m_ptr = tmp;
     }
 
+    struct tmp_storage : public raw_small
+    {
+    };
+    void _raw_reserve_allocate(I cap, tmp_storage *tmp)
+    {
+        C4_NOT_IMPLEMENTED();
+    }
+    void _raw_reserve_replace(tmp_storage *tmp)
+    {
+        C4_NOT_IMPLEMENTED();
+    }
+
     /** Resize the buffer at pos, so that the previous size increases to the
      *  value of next; when growing, ___adds to the right___ of pos; when
      *  shrinking, ___removes to the left___ of pos. If growing, the capacity
@@ -799,6 +847,18 @@ public:
         _raw_reserve(0, cap);
     }
     void _raw_reserve(I currsz, I cap);
+
+    struct tmp_storage : public RawPaged
+    {
+    };
+    void _raw_reserve_allocate(I cap, tmp_storage *tmp)
+    {
+        C4_NOT_IMPLEMENTED();
+    }
+    void _raw_reserve_replace(tmp_storage *tmp)
+    {
+        C4_NOT_IMPLEMENTED();
+    }
 
 public:
 
