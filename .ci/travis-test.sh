@@ -25,6 +25,12 @@ elif [ "$VG" == "OFF" ] ; then
     CMFLAGS="$CMFLAGS -DC4STL_TEST_VALGRIND=OFF"
 fi
 
+if [ "$BM" == "ON" ] ; then
+    CMFLAGS="$CMFLAGS -DC4STL_BUILD_BENCHMARKS=ON"
+elif [ "$BM" == "OFF" ] || [ "$BM" == "" ] ; then
+    CMFLAGS="$CMFLAGS -DC4STL_BUILD_BENCHMARKS=ON"
+fi
+
 if [ ! -z "$CMFLAGS" ] ; then
     echo "additional cmake flags: $CMFLAGS"
 fi
@@ -40,7 +46,8 @@ if [ "$SONARQUBE" != "1" ] ; then
     cmake -DCMAKE_C_COMPILER=$CC_ -DCMAKE_CXX_COMPILER=$CXX_ \
           -DCMAKE_BUILD_TYPE=$BT -DCMAKE_CXX_FLAGS="$XFLAGS" \
           -DC4STL_EXTERN_DIR=`pwd`/extern_install \
-          -DC4STL_DEV=ON $CMFLAGS \
+          -DC4STL_DEV=ON \
+          $CMFLAGS \
           $C4STL_DIR
     make help | sed 1d | sort
     make CTEST_OUTPUT_ON_FAILURE=1 c4stl-test
