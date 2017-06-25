@@ -115,6 +115,38 @@ using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 
+template< class Storage >
+struct tmp_storage : public Storage
+{
+    C4_CONSTEXPR14 C4_ALWAYS_INLINE operator bool() const { return !this->empty(); }
+};
+/** a class for storage policies that do not need transfer when grown or shrinked */
+template< class T, class I >
+struct _NoTmpStorage
+{
+    constexpr C4_ALWAYS_INLINE operator bool () const { return false; }
+    C4_ALWAYS_INLINE T       & operator[] (I i)       { C4_NEVER_REACH(); return *(T*)nullptr; }
+    C4_ALWAYS_INLINE T const & operator[] (I i) const { C4_NEVER_REACH(); return *(T*)nullptr; }
+};
+/** fixed storage cannot be grown or shrinked */
+template< class T, size_t N, class I, I Alignment >
+struct tmp_storage< raw_fixed< T, N, I, Alignment > > : public _NoTmpStorage< T, I >
+{
+};
+/** paged storage does not need copying of the pages when grown or shrinked */
+template< class T, class I, size_t PageSize, I Alignment, class Alloc >
+struct tmp_storage< raw_paged< T, I, PageSize, Alignment, Alloc > > : public _NoTmpStorage< T, I >
+{
+};
+/** small storage always uses a temporary pointer for tmp storage, so it 
+ * is treated just the same as tmp storage for pointer-only. */
+template< class T, class I, size_t N, I Alignment, class Alloc, class GrowthPolicy >
+struct tmp_storage< raw_small< T, I, N, Alignment, Alloc, GrowthPolicy > > : public tmp_storage< raw< T, I, Alignment, Alloc, GrowthPolicy > >
+{
+};
+
+//-----------------------------------------------------------------------------
+
 struct contiguous_t {};
 struct fixed_t {};
 struct small_t {};
@@ -339,6 +371,8 @@ public:
     template< class U >
     using rebind_type = raw_fixed<U, N, I, alignof(U)>;
 
+    using tmp_type = tmp_storage< raw_fixed >;
+
 public:
 
     C4_ALWAYS_INLINE raw_fixed() {}
@@ -360,6 +394,7 @@ public:
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_arr; }
 
     C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
+    C4_ALWAYS_INLINE constexpr bool empty() const noexcept { return false; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return N; }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 static size_t next_capacity(size_t cap) C4_NOEXCEPT_A
@@ -389,17 +424,14 @@ public:
         C4_ASSERT(cap <= (I)N);
     }
 
-    struct tmp_storage
+    void _raw_reserve_allocate(I cap, tmp_type * /*tmp*/)
     {
-    };
-    void _raw_reserve_allocate(I cap, tmp_storage *)
-    {
+        C4_UNUSED(cap);
         C4_ASSERT(cap <= (I)N);
-        C4_NOT_IMPLEMENTED();
     }
-    void _raw_reserve_replace(tmp_storage *tmp)
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type * /*tmp*/)
     {
-        C4_NOT_IMPLEMENTED();
+        C4_NEVER_REACH();
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
@@ -461,6 +493,8 @@ public:
     template< class U >
     using rebind_type = raw<U, I, alignof(U), rebind_alloc<U>, GrowthPolicy>;
 
+    using tmp_type = tmp_storage< raw >;
+
 public:
 
     raw() : raw(0) {}
@@ -490,6 +524,7 @@ public:
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_ptr; }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
@@ -530,10 +565,7 @@ public:
         m_ptr = tmp;
     }
 
-    struct tmp_storage : public raw
-    {
-    };
-    void _raw_reserve_allocate(I cap, tmp_storage *tmp)
+    void _raw_reserve_allocate(I cap, tmp_type *tmp)
     {
         T *t = nullptr;
         if(cap != m_capacity && cap != 0)
@@ -543,7 +575,7 @@ public:
         tmp->m_capacity = cap;
         tmp->m_ptr = t;
     }
-    void _raw_reserve_replace(tmp_storage *tmp)
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
     {
         if(m_ptr)
         {
@@ -654,6 +686,8 @@ public:
     template< class U >
     using rebind_type = raw_small<U, I, N_, alignof(U), rebind_alloc<U>, GrowthPolicy>;
 
+    using tmp_type = tmp_storage< raw_small >;
+
     enum : I { array_size = (I)N_, N = (I)N_ };
 
 public:
@@ -687,6 +721,7 @@ public:
     C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? m_arr : m_ptr; }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
     C4_ALWAYS_INLINE bool is_small() const noexcept { return m_capacity <= N; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
@@ -708,9 +743,9 @@ public:
         _raw_reserve(0, cap);
     }
 
-    void _raw_reserve(I curr, I cap)
+    void _raw_reserve(I currsz, I cap)
     {
-        C4_ASSERT(curr <= cap);
+        C4_ASSERT(currsz <= cap);
         T *tmp = nullptr;
         if(cap == m_capacity) return;
         if(cap <= N)
@@ -735,11 +770,11 @@ public:
             if(m_capacity <= N)
             {
                 C4_ASSERT(tmp != m_arr);
-                c4::move_construct_n(tmp, m_arr, curr);
+                c4::move_construct_n(tmp, m_arr, currsz);
             }
             else
             {
-                c4::move_construct_n(tmp, m_ptr, curr);
+                c4::move_construct_n(tmp, m_ptr, currsz);
                 m_allocator.deallocate(m_ptr, m_capacity, Alignment);
             }
         }
@@ -747,16 +782,49 @@ public:
         m_ptr = tmp;
     }
 
-    struct tmp_storage : public raw_small
+    void _raw_reserve_allocate(I cap, tmp_type *tmp)
     {
-    };
-    void _raw_reserve_allocate(I cap, tmp_storage *tmp)
-    {
-        C4_NOT_IMPLEMENTED();
+        tmp->m_capacity = 0;
+        tmp->m_ptr = 0;
+        if(cap == m_capacity)
+        {
+            return;
+        }
+        else if(cap < N)
+        {
+            if(m_capacity <= N)
+            {
+                return;
+            }
+            else
+            {
+                // move the storage to the array - this requires a temporary buffer
+                tmp->m_capacity = cap;
+                tmp->m_ptr = m_allocator.allocate(cap, Alignment);
+            }
+        }
+        else
+        {
+            tmp->m_capacity = cap;
+            tmp->m_ptr = m_allocator.allocate(cap, Alignment);
+        }
     }
-    void _raw_reserve_replace(tmp_storage *tmp)
+    void _raw_reserve_replace(I tmpsz, tmp_type *tmp)
     {
-        C4_NOT_IMPLEMENTED();
+        C4_ASSERT(*tmp);
+        if(tmp->m_capacity <= N)
+        {
+            // moving the storage to the array requires a temporary buffer.
+            c4::move_construct_n(m_arr, tmp->m_ptr, tmpsz);
+            m_allocator.deallocate(tmp->m_ptr, tmp->m_capacity);
+        }
+        else
+        {
+            m_ptr = tmp->m_ptr;
+        }
+        m_capacity = tmp->m_capacity;
+        tmp->m_ptr = nullptr;
+        tmp->m_capacity = 0;
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
@@ -826,6 +894,13 @@ public:
 template< class T, class I, I Alignment, class RawPaged >
 struct _raw_paged_crtp
 {
+public:
+
+    using tmp_type = tmp_storage< RawPaged >;
+
+public:
+
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
 
     /** since the page size is a power of two, the max capacity is simply the
      * maximum of the size type */
@@ -850,17 +925,8 @@ public:
     }
     void _raw_reserve(I currsz, I cap);
 
-    struct tmp_storage : public RawPaged
-    {
-    };
-    void _raw_reserve_allocate(I cap, tmp_storage *tmp)
-    {
-        C4_NOT_IMPLEMENTED();
-    }
-    void _raw_reserve_replace(tmp_storage *tmp)
-    {
-        C4_NOT_IMPLEMENTED();
-    }
+    void _raw_reserve_allocate(I cap, tmp_type *tmp);
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp) { C4_XASSERT(!(*tmp)); /* nothing to do */ }
 
 public:
 
@@ -877,8 +943,8 @@ public:
 
         iterator_impl(RawPaged *rp, I i_) : this_(rp), i(i_) {}
 
-        U& operator*  () const C4_NOEXCEPT_X { return  (*this_)[i]; }
-        U* operator-> () const C4_NOEXCEPT_X { return &(*this_)[i]; }
+        U& operator*  () const noexcept { return  (*this_)[i]; }
+        U* operator-> () const noexcept { return &(*this_)[i]; }
 
         iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
         iterator_impl  operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
@@ -1033,6 +1099,44 @@ _process_pages(Function handler, T **pages, I first_id_this, T **other, I first_
         first_id_that = 0;
         count += pnthis;
     }
+}
+
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, tmp_type *tmp)
+{
+    C4_XASSERT(!(*tmp));
+    const I ps = _c4cthis->page_size();
+    const I np = szconv<I>(size_t(cap + ps - 1) / size_t(ps));
+
+    if(np == _c4this->m_num_pages) return;
+
+    auto at = _c4this->m_allocator.template rebound< T* >();
+    T** tmp_pages = at.allocate(np);
+    if(np > _c4this->m_num_pages) // more pages (grow)
+    {
+        for(I i = 0; i < _c4this->m_num_pages; ++i)
+        {
+            tmp_pages[i] = _c4this->m_pages[i];
+        }
+        for(I i = _c4this->m_num_pages; i < np; ++i)
+        {
+            tmp_pages[i] = _c4this->m_allocator.allocate(ps, Alignment);
+        }
+    }
+    else // less pages (shrink)
+    {
+        for(I i = 0; i < np; ++i)
+        {
+            tmp_pages[i] = _c4this->m_pages[i];
+        }
+        for(I i = np; i < _c4this->m_num_pages; ++i)
+        {
+            _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
+        }
+    }
+    at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
+    _c4this->m_pages = tmp_pages;
+    _c4this->m_num_pages = np;
 }
 
 template< class T, class I, I Alignment, class RawPaged >
