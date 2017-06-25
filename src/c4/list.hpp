@@ -465,11 +465,35 @@ public:
 
     void _growto(I cap, I next_cap)
     {
-        C4_XASSERT(cap != next_cap);
-        m_elms._raw_reserve(cap, next_cap); // need to copy everything b/c of the free list
+        C4_XASSERT(next_cap > cap);
+        typename storage_type::tmp_type tmp;
+        // some storage types require copying everything to a different storage.
+        m_elms._raw_reserve_allocate(next_cap, &tmp);
+        if(tmp) // evaluates to true iff a copy is needed
+        {
+            // take the opportunity and write the elements in order
+            // ie copy from logical order into memory order
+            I pos = 0;
+            for(I i = m_head; i != npos; i = m_elms[i].next, ++pos)
+            {
+                c4::move_construct(&tmp[pos].elm, &m_elms[i].elm);
+                tmp[pos].prev = pos > 0      ? pos-1 : npos;
+                tmp[pos].next = pos < m_size ? pos+1 : npos;
+            }
+            C4_XASSERT(pos == m_size);
+            m_elms._raw_reserve_replace(m_size, &tmp);
+            this->_set_seq_head(m_size, capacity());
+        }
+        else
+        {
+            this->_set_seq_head(cap, capacity());
+        }
         C4_XASSERT(capacity() >= next_cap);
-        next_cap = capacity(); // they may be different
-        this->_set_seq_head(cap, next_cap);
+    }
+
+    void _grow_at_end(I cap, I next_cap)
+    {
+        m_elms._raw_reserve(cap, next_cap); // need to copy everything b/c of the free list
     }
 
 public:
@@ -584,12 +608,37 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        m_elm ._raw_reserve(curr_cap, next_cap); // need to copy everything b/c of the free list
-        m_prev._raw_reserve(curr_cap, next_cap);
-        m_next._raw_reserve(curr_cap, next_cap);
+        C4_XASSERT(next_cap > curr_cap);
+        typename storage_type::tmp_type tmp_elm;
+        typename index_storage_type::tmp_type tmp_prev, tmp_next;
+        m_elm ._raw_reserve_allocate(next_cap, &tmp_elm);
+        m_prev._raw_reserve_allocate(next_cap, &tmp_prev);
+        m_next._raw_reserve_allocate(next_cap, &tmp_next);
+        // some storage types require copying everything to a different storage.
+        if(tmp_elm) // evaluates to true iff a copy is needed
+        {
+            C4_XASSERT(tmp_prev); // these must also be true
+            C4_XASSERT(tmp_next); // these must also be true
+            // take the opportunity and write the elements in order
+            // ie copy from logical order into memory order
+            I pos = 0;
+            for(I i = m_head; i != npos; i = m_next[i], ++pos)
+            {
+                c4::move_construct(&tmp_elm[pos], &m_elm[i]);
+                tmp_prev[pos] = pos > 0      ? pos-1 : npos;
+                tmp_next[pos] = pos < m_size ? pos+1 : npos;
+            }
+            C4_ASSERT(pos == m_size);
+            m_elm ._raw_reserve_replace(m_size, &tmp_elm);
+            m_prev._raw_reserve_replace(m_size, &tmp_prev);
+            m_next._raw_reserve_replace(m_size, &tmp_next);
+            this->_set_seq_head(m_size, capacity());
+        }
+        else
+        {
+            this->_set_seq_head(curr_cap, capacity());
+        }
         C4_XASSERT(capacity() >= next_cap);
-        next_cap = capacity(); // they may be different
-        this->_set_seq_head(curr_cap, next_cap);
     }
 
 public:
@@ -697,10 +746,29 @@ public:
 
     void _growto(I cap, I next_cap)
     {
-        m_elms._raw_reserve(cap, next_cap); // need to copy everything b/c of the free list
+        C4_XASSERT(next_cap > cap);
+        typename storage_type::tmp_type tmp;
+        // some storage types require copying everything to a different storage.
+        m_elms._raw_reserve_allocate(next_cap, &tmp);
+        if(tmp) // evaluates to true iff a copy is needed
+        {
+            // take the opportunity and write the elements in order
+            // ie copy from logical order into memory order
+            I pos = 0;
+            for(I i = m_head; i != npos; i = m_elms[i].next, ++pos)
+            {
+                c4::move_construct(&tmp[pos].elm, &m_elms[i].elm);
+                tmp[pos].next = pos < m_size ? pos+1 : npos;
+            }
+            C4_ASSERT(pos == m_size);
+            m_elms._raw_reserve_replace(m_size, &tmp);
+            this->_set_seq_head(m_size, capacity());
+        }
+        else
+        {
+            this->_set_seq_head(cap, capacity());
+        }
         C4_XASSERT(capacity() >= next_cap);
-        next_cap = capacity(); // they may be different
-        this->_set_seq_head(cap, next_cap);
     }
 
 public:
@@ -812,11 +880,33 @@ public:
 
     void _growto(I curr_cap, I next_cap)
     {
-        m_elm ._raw_reserve(curr_cap, next_cap); // need to copy everything b/c of the free list
-        m_next._raw_reserve(curr_cap, next_cap);
+        C4_XASSERT(next_cap > curr_cap);
+        typename storage_type::tmp_type tmp_elm;
+        typename index_storage_type::tmp_type tmp_next;
+        m_elm ._raw_reserve_allocate(next_cap, &tmp_elm);
+        m_next._raw_reserve_allocate(next_cap, &tmp_next);
+        // some storage types require copying everything to a different storage.
+        if(tmp_elm) // evaluates to true iff a copy is needed
+        {
+            C4_XASSERT(tmp_next); // this must also be true
+            // take the opportunity and write the elements in order
+            // ie copy from logical order into memory order
+            I pos = 0;
+            for(I i = m_head; i != npos; i = m_next[i], ++pos)
+            {
+                c4::move_construct(&tmp_elm[pos], &m_elm[i]);
+                tmp_next[pos] = pos < m_size ? pos+1 : npos;
+            }
+            C4_XASSERT(pos == m_size);
+            m_elm ._raw_reserve_replace(m_size, &tmp_elm);
+            m_next._raw_reserve_replace(m_size, &tmp_next);
+            this->_set_seq_head(m_size, capacity());
+        }
+        else
+        {
+            this->_set_seq_head(curr_cap, capacity());
+        }
         C4_XASSERT(capacity() >= next_cap);
-        next_cap = capacity(); // they may be different
-        this->_set_seq_head(curr_cap, next_cap);
     }
 
 public:
