@@ -125,8 +125,8 @@ template< class T, class I >
 struct _NoTmpStorage
 {
     constexpr C4_ALWAYS_INLINE operator bool () const { return false; }
-    C4_ALWAYS_INLINE T       & operator[] (I i)       { C4_NEVER_REACH(); return *(T*)nullptr; }
-    C4_ALWAYS_INLINE T const & operator[] (I i) const { C4_NEVER_REACH(); return *(T*)nullptr; }
+    C4_ALWAYS_INLINE T       & operator[] (I /*i*/)       { C4_NEVER_REACH(); return *(T*)nullptr; }
+    C4_ALWAYS_INLINE T const & operator[] (I /*i*/) const { C4_NEVER_REACH(); return *(T*)nullptr; }
 };
 /** fixed storage cannot be grown or shrinked */
 template< class T, size_t N, class I, I Alignment >
@@ -900,7 +900,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
+    C4_ALWAYS_INLINE bool empty() const noexcept { return _c4cthis->m_capacity == 0; }
 
     /** since the page size is a power of two, the max capacity is simply the
      * maximum of the size type */
