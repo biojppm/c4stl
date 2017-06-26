@@ -115,6 +115,81 @@ using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 
+/** value and allocator. Makes use of the empty base class optimization to
+ * compress the allocator when it has no members */
+template< class I, class Alloc >
+struct valnalloc : public Alloc
+{
+    I m_value;
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I      & value()       { return m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I const& value() const { return m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I      & alloc()       { return static_cast< Alloc      & >(*this); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I const& alloc() const { return static_cast< Alloc const& >(*this); }
+};
+
+//-----------------------------------------------------------------------------
+
+/** for instantiating raw storage with structure of arrays */
+template< class... SoaTypes >
+struct soa
+{
+};
+
+template< class T, size_t N, size_t Alignment=alignof(T) >
+struct mem_fixed
+{
+    static_assert(Alignment >= alignof(T), "bad alignment value");
+    /** the union with the char buffer is needed to prevent auto-construction
+     * of the elements in m_arr */
+    union {
+        alignas(Alignment) char _m_buf[N * sizeof(T)];
+        alignas(Alignment) T     m_arr[N];
+    };
+};
+
+template< class U >
+struct mem_raw
+{
+    U *m_ptr;
+    mem_raw() : m_ptr(nullptr) {}
+};
+
+template< class T, size_t N_, size_t Alignment >
+struct mem_small
+{
+    static_assert(Alignment >= alignof(T), "bad alignment value");
+
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
+#endif
+
+    union {
+        /** the union with the char buffer is needed to prevent
+         * auto-construction of the elements in m_arr */
+        union {
+            alignas(Alignment) T    m_arr[N_];
+            alignas(Alignment) char m_buf[N_ * sizeof(T)];
+        };
+        T * m_ptr;
+    };
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
+#endif
+};
+
+template< class U >
+struct mem_paged
+{
+    U **m_pages;
+    mem_paged() : m_pages(nullptr) {}
+};
+
+
+//-----------------------------------------------------------------------------
+
 template< class Storage >
 struct tmp_storage : public Storage
 {
@@ -373,6 +448,8 @@ public:
 
     using tmp_type = tmp_storage< raw_fixed >;
 
+    enum : I { arr_size = szconv<I>(N) };
+
 public:
 
     C4_ALWAYS_INLINE raw_fixed() {}
@@ -464,6 +541,14 @@ public:
 
 };
 
+/** raw fixed storage for structure-of-arrays. this is a work in progress */
+template< class... SoaTypes, size_t N, class I, I Alignment >
+struct raw_fixed< soa< SoaTypes... >, N, I, Alignment >
+{
+    template< class U > using arr_type = mem_fixed< U, N, (Alignment > alignof(U) ? Alignment : alignof(U)) >;
+
+    std::tuple< arr_type<SoaTypes>... > m_soa;
+};
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -635,6 +720,13 @@ public:
 
 };
 
+/** raw pointer storage for structure-of-arrays. this is a work in progress */
+template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy >
+struct raw< soa< SoaTypes... >, I, Alignment, Alloc, GrowthPolicy >
+{
+    std::tuple< mem_raw<SoaTypes>... > m_soa;
+    valnalloc< I, Alloc >              m_cap_n_alloc;
+};
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -882,6 +974,17 @@ public:
         }
     }
 
+};
+
+
+/** raw small storage for structure-of-arrays. this is a work in progress */
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+struct raw_small< soa< SoaTypes... >, I, N_, Alignment, Alloc, GrowthPolicy >
+{
+    template< class U > using arr_type = mem_small< U, N_, (Alignment > alignof(U) ? Alignment : alignof(U)) >;
+
+    std::tuple< arr_type<SoaTypes>... > m_soa;
+    valnalloc< I, Alloc >               m_cap_n_alloc;
 };
 
 //-----------------------------------------------------------------------------
@@ -1234,8 +1337,8 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
         m_page_lsb = lsb11< I, PageSize >::value
     };
 
-    constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; }
-    constexpr static I _raw_id(I const i) { return i &  m_id_mask; }
+    constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; } ///< get the page index
+    constexpr static I _raw_id(I const i) { return i &  m_id_mask; }  ///< get the index within the page
 
     T    **m_pages;      //< array containing the pages
     I      m_num_pages;  //< number of current pages in the array
@@ -1397,6 +1500,23 @@ public:
     template< class RawPagedContainer >
     friend void test_raw_page_addressing(RawPagedContainer const& rp);
 
+};
+
+
+/** raw paged storage for structure-of-arrays. This is a work-in-progress. */
+template< class... SoaTypes, class I, size_t PageSize, I Alignment, class Alloc >
+struct raw_paged< soa< SoaTypes... >, I, PageSize, Alignment, Alloc >
+{
+    std::tuple< mem_paged<SoaTypes>... > m_soa;
+    valnalloc< I, Alloc >                m_numpages_n_alloc;
+};
+template< class... SoaTypes, class I, I Alignment, class Alloc >
+struct raw_paged< soa< SoaTypes... >, I, 0, Alignment, Alloc >
+{
+    std::tuple< mem_paged<SoaTypes>... > m_soa;
+    valnalloc< I, Alloc >                m_numpages_n_alloc;
+    I m_id_mask;     ///< page size - 1: cannot be changed after construction.
+    I m_page_lsb;    ///< least significant bit of the page size: cannot be changed after construction.
 };
 
 C4_END_NAMESPACE(stg)
