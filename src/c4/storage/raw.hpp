@@ -680,10 +680,10 @@ public:
         {
             m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
         }
-        m_cap_n_alloc.m_value = tmp->m_capacity;
+        m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
         this->m_ptr = tmp->m_ptr;
         tmp->m_ptr = nullptr;
-        tmp->m_capacity = 0;
+        tmp->m_cap_n_alloc.m_value = 0;
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
