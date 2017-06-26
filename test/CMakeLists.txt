@@ -19,7 +19,7 @@ add_configuration_type(QuicktestRelease
 
 if(UNIX)
     option(C4STL_VALGRIND "enable valgrind tests" ${C4STL_DEV})
-    option(C4STL_VALGRIND_SGCHECK "enable valgrind tests with the exp-sgcheck tool" ${C4STL_DEV})
+    option(C4STL_VALGRIND_SGCHECK "enable valgrind tests with the exp-sgcheck tool" OFF)
     set(C4STL_VALGRIND_OPTIONS "--gen-suppressions=all --error-exitcode=10101" CACHE STRING "options for valgrind tests")
 endif()
 
