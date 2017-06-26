@@ -213,17 +213,65 @@ See also:
   </Type>
 
   <!-- =========================================================================================== -->
+  <!-- fixed storage -->
+
+  <Type Name="c4::stg::mem_fixed&lt;*,*,*&gt;">
+    <DisplayString>{{cap={$T2}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T2</Item>
+      <ArrayItems><Size>$T2</Size><ValuePointer>m_arr</ValuePointer></ArrayItems>
+    </Expand>
+  </Type>
   <Type Name="c4::stg::raw_fixed&lt;*,*,*,*&gt;">
     <DisplayString>{{cap={$T2}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T2</Item>
-      <ArrayItems>
-        <Size>$T3</Size>
-        <ValuePointer>m_arr</ValuePointer>
-      </ArrayItems>
+      <ArrayItems><Size>$T2</Size><ValuePointer>m_arr</ValuePointer></ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*&gt;,*,*,*&gt;"> <!-- soa, 1 type -->
+    <DisplayString>{{cap={N}, soa&lt;$T1&gt;}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T2</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*&gt;,*,*,*&gt;"> <!-- soa, 2 types -->
+    <DisplayString>{{cap={$T3}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T3</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*&gt;"> <!-- soa, 3 types -->
+    <DisplayString>{{cap={$T4}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T4</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*&gt;"> <!-- soa, 4 types -->
+    <DisplayString>{{cap={$T5}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T5</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*,*,*,*&gt;,*,*,*&gt;"> <!-- soa, 5 types -->
+    <DisplayString>{{cap={$T6}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T6</Item>
+      <Item Name="[soa]">m_soa</Item>
     </Expand>
   </Type>
 
+  <!-- =========================================================================================== -->
+
+  <Type Name="c4::stg::mem_raw&lt;*&gt;">
+    <DisplayString>{{cap=?}}</DisplayString>
+    <Expand>
+      <Item Name="[ptr]">m_ptr</Item>
+    </Expand>
+  </Type>
   <Type Name="c4::stg::raw&lt;*,*,*,*,*&gt;">
     <DisplayString>{{cap={m_capacity}}}</DisplayString>
     <Expand>
@@ -234,6 +282,39 @@ See also:
       </ArrayItems>
     </Expand>
   </Type>
+  <Type Name="c4::stg::raw&lt;c4::stg::soa&lt;*&gt;,*,*,*,*&gt;"> <!-- soa, 1 type -->
+    <DisplayString>{{cap={m_cap_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">m_cap_n_alloc.m_value</Item>
+      <ArrayItems>
+        <Size>m_cap_n_alloc.m_value</Size>
+        <ValuePointer>($T1)m_soa</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw&lt;c4::stg::soa&lt;*,*&gt;,*,*,*,*&gt;"> <!-- soa, 2 types -->
+    <DisplayString>{{cap={m_cap_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">m_cap_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*,*&gt;"> <!-- soa, 3 types -->
+    <DisplayString>{{cap={m_cap_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">m_cap_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*,*&gt;"> <!-- soa, 3 types -->
+    <DisplayString>{{cap={m_cap_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">m_cap_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+
+  <!-- =========================================================================================== -->
 
   <Type Name="c4::stg::raw_small&lt;*,*,*,*,*,*&gt;">
     <DisplayString Condition="m_capacity &lt;= $T3">{{cap={m_capacity}}} [SHORT]</DisplayString>
@@ -248,6 +329,36 @@ See also:
       </ArrayItems>
     </Expand>
   </Type>
+  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*&gt;,*,*,*,*,*&gt;">
+    <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T3">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T3">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
+    <Expand>
+      <Item Name="Arrays">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*,*&gt;,*,*,*,*,*&gt;">
+    <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T4">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T4">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
+    <Expand>
+      <Item Name="Arrays">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*,*,*&gt;">
+    <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T5">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T5">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
+    <Expand>
+      <Item Name="Arrays">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*,*,*&gt;">
+    <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T6">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T6">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
+    <Expand>
+      <Item Name="Arrays">m_soa</Item>
+    </Expand>
+  </Type>
+
+  <!-- =========================================================================================== -->
 
   <Type Name="c4::stg::raw_paged&lt;*,*,*,*,*&gt;">
     <DisplayString>{{pg_sz={$T3} #pgs={m_num_pages}}}</DisplayString>
@@ -266,6 +377,44 @@ See also:
       <Synthetic Name="[......]" Condition="m_num_pages >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
     </Expand>
   </Type>
+  <Type Name="c4::stg::raw_paged&lt;c4::stg::soa&lt;*&gt;,*,*,*,*&gt;">
+    <DisplayString>{{pg_sz={$T3} #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T3 * m_numpages_n_alloc.m_value</Item>
+      <Item Name="[page size]">$T3</Item>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_paged&lt;c4::stg::soa&lt;*,*&gt;,*,*,*,*&gt;">
+    <DisplayString>{{pg_sz={$T4} #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T4 * m_numpages_n_alloc.m_value</Item>
+      <Item Name="[page size]">$T4</Item>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_paged&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*,*&gt;">
+    <DisplayString>{{pg_sz={$T5} #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T5 * m_numpages_n_alloc.m_value</Item>
+      <Item Name="[page size]">$T5</Item>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_paged&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*,*&gt;">
+    <DisplayString>{{pg_sz={$T6} #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">$T6 * m_numpages_n_alloc.m_value</Item>
+      <Item Name="[page size]">$T6</Item>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
+      <Item Name="[soa]">m_soa</Item>
+    </Expand>
+  </Type>
+
+  <!-- =========================================================================================== -->
 
   <Type Name="c4::stg::raw_paged&lt;*,*,0,*,*&gt;">
     <AlternativeType Name="c4::stg::raw_paged_rt&lt;*,*,*,*&gt;"/>
@@ -284,6 +433,17 @@ See also:
       <Synthetic Name="[page 6]" Condition="m_num_pages >= 7"><Expand><ArrayItems Condition="m_num_pages > 6"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
       <Synthetic Name="[page 7]" Condition="m_num_pages >= 8"><Expand><ArrayItems Condition="m_num_pages > 7"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
       <Synthetic Name="[......]" Condition="m_num_pages >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="c4::stg::raw_paged&lt;c4::stg::soa&lt;*&gt;*,*,0,*,*&gt;">
+    <AlternativeType Name="c4::stg::raw_paged_rt&lt;c4::stg::soa&lt;*&gt;,*,*,*&gt;"/>
+    <AlternativeType Name="c4::default_list_storage&lt;c4::stg::soa&lt;*&gt;,*&gt;"/>
+    <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">(m_id_mask+1) * m_num_pages</Item>
+      <Item Name="[page size]">(m_id_mask+1)</Item>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
     </Expand>
   </Type>
 
