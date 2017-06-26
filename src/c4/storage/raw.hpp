@@ -142,19 +142,14 @@ struct mem_fixed
     /** the union with the char buffer is needed to prevent auto-construction
      * of the elements in m_arr */
     union {
-        alignas(Alignment) char _m_buf[N * sizeof(T)];
         alignas(Alignment) T     m_arr[N];
+        alignas(Alignment) char  m_buf[N * sizeof(T)];
     };
+
+    mem_fixed() {}
 };
 
-template< class U >
-struct mem_raw
-{
-    U *m_ptr;
-    mem_raw() : m_ptr(nullptr) {}
-};
-
-template< class T, size_t N_, size_t Alignment >
+template< class T, size_t N, size_t Alignment >
 struct mem_small
 {
     static_assert(Alignment >= alignof(T), "bad alignment value");
@@ -168,8 +163,8 @@ struct mem_small
         /** the union with the char buffer is needed to prevent
          * auto-construction of the elements in m_arr */
         union {
-            alignas(Alignment) T    m_arr[N_];
-            alignas(Alignment) char m_buf[N_ * sizeof(T)];
+            alignas(Alignment) T    m_arr[N];
+            alignas(Alignment) char m_buf[N * sizeof(T)];
         };
         T * m_ptr;
     };
@@ -178,15 +173,27 @@ struct mem_small
 #   pragma clang diagnostic pop
 #   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
 #endif
+
+    mem_small() : m_ptr(nullptr) {}
 };
 
-template< class U >
+template< class T >
+struct mem_raw
+{
+    T *m_ptr;
+    mem_raw() : m_ptr(nullptr) {}
+};
+
+template< class T >
 struct mem_paged
 {
-    U **m_pages;
+    T **m_pages;
     mem_paged() : m_pages(nullptr) {}
 };
 
+
+template< class T, size_t Cap >                struct ___natvis_util       { T*  p; };
+template< class T, size_t PgSz, size_t NumPg > struct ___natvis_util_paged { T** p; };
 
 //-----------------------------------------------------------------------------
 
