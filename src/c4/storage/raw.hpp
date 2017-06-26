@@ -121,10 +121,15 @@ template< class I, class Alloc >
 struct valnalloc : public Alloc
 {
     I m_value;
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I      & value()       { return m_value; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I const& value() const { return m_value; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I      & alloc()       { return static_cast< Alloc      & >(*this); }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I const& alloc() const { return static_cast< Alloc const& >(*this); }
+
+    valnalloc(I v) : Alloc(), m_value(v) {}
+    valnalloc(I v, Alloc const& a) : Alloc(a), m_value(v) {}
+    valnalloc(Alloc const& a) : Alloc(a), m_value(0) {}
+
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I          & value()       { return m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I     const& value() const { return m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc      & alloc()       { return static_cast< Alloc      & >(*this); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc const& alloc() const { return static_cast< Alloc const& >(*this); }
 };
 
 //-----------------------------------------------------------------------------
@@ -345,12 +350,12 @@ struct _common_contiguous_traits
     template< class ...Args >
     C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
     {
-        dest.m_allocator.construct_n(dest.data() + first, n, std::forward< Args >(args)...);
+        dest.m_cap_n_alloc.alloc().construct_n(dest.data() + first, n, std::forward< Args >(args)...);
     }
 
     C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
     {
-        dest.m_allocator.destroy_n(dest.data() + first, n);
+        dest.m_cap_n_alloc.alloc().destroy_n(dest.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage const& src, I first, I n)
@@ -571,8 +576,7 @@ struct raw : public mem_raw< T >
 
     // m_ptr is brought in by the base class
 
-    I     m_capacity;
-    Alloc m_allocator;
+    valnalloc<I, Alloc> m_cap_n_alloc;
 
 public:
 
@@ -595,8 +599,8 @@ public:
     raw() : raw(0) {}
     raw(Alloc const& a) : raw(0, a) {}
 
-    raw(I cap) : mem_raw<T>(nullptr), m_capacity(0), m_allocator() { _raw_reserve(0, cap); }
-    raw(I cap, Alloc const& a) : mem_raw<T>(nullptr), m_capacity(0), m_allocator(a) { _raw_reserve(0, cap); }
+    raw(I cap) : mem_raw<T>(nullptr), m_cap_n_alloc(0) { _raw_reserve(0, cap); }
+    raw(I cap, Alloc const& a) : mem_raw<T>(nullptr), m_cap_n_alloc(0, a) { _raw_reserve(0, cap); }
 
     ~raw()
     {
@@ -612,19 +616,19 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return this->m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return this->m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return this->m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return this->m_ptr[i]; }
 
     C4_ALWAYS_INLINE T      * data()       noexcept { return this->m_ptr; }
     C4_ALWAYS_INLINE T const* data() const noexcept { return this->m_ptr; }
 
-    C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
-    C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
+    C4_ALWAYS_INLINE I capacity() const noexcept { return m_cap_n_alloc.m_value; }
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_cap_n_alloc.m_value == 0; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        return GrowthPolicy::next_size(sizeof(T), m_cap_n_alloc.m_value, desired);
     }
 
 public:
@@ -644,9 +648,9 @@ public:
     {
         C4_ASSERT(currsz <= cap);
         T *tmp = nullptr;
-        if(cap != m_capacity && cap != 0)
+        if(cap != m_cap_n_alloc.m_value && cap != 0)
         {
-            tmp = m_allocator.allocate(cap, Alignment);
+            tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
         }
         if(this->m_ptr)
         {
@@ -654,29 +658,29 @@ public:
             {
                 c4::move_construct_n(tmp, this->m_ptr, currsz);
             }
-            m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
+            m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
         }
-        m_capacity = cap;
+        m_cap_n_alloc.m_value = cap;
         this->m_ptr = tmp;
     }
 
     void _raw_reserve_allocate(I cap, tmp_type *tmp)
     {
         T *t = nullptr;
-        if(cap != m_capacity && cap != 0)
+        if(cap != m_cap_n_alloc.m_value && cap != 0)
         {
-            t = m_allocator.allocate(cap, Alignment);
+            t = m_cap_n_alloc.alloc().allocate(cap, Alignment);
         }
-        tmp->m_capacity = cap;
+        tmp->m_cap_n_alloc.m_value = cap;
         tmp->m_ptr = t;
     }
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
     {
         if(this->m_ptr)
         {
-            m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
+            m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
         }
-        m_capacity = tmp->m_capacity;
+        m_cap_n_alloc.m_value = tmp->m_capacity;
         this->m_ptr = tmp->m_ptr;
         tmp->m_ptr = nullptr;
         tmp->m_capacity = 0;
@@ -695,23 +699,23 @@ public:
      *  @param next the next size */
     void _raw_resize(I pos, I prev, I next)
     {
-        C4_ASSERT(next >= 0 && next < m_capacity);
-        C4_ASSERT(prev >= 0 && prev < m_capacity);
-        C4_ASSERT(pos  >= 0 && pos  < m_capacity);
+        C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
+        C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
+        C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
         if(next > prev)
         {
-            if(next <= m_capacity)
+            if(next <= m_cap_n_alloc.m_value)
             {
                 c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
             }
             else
             {
-                m_capacity = next_capacity(next);
-                T* tmp = m_allocator.allocate(m_capacity, Alignment);
+                m_cap_n_alloc.m_value = next_capacity(next);
+                T* tmp = m_cap_n_alloc.alloc().allocate(m_cap_n_alloc.m_value, Alignment);
                 if(this->m_ptr)
                 {
                     c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
-                    m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
+                    m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
                 }
                 else
                 {
@@ -755,8 +759,7 @@ struct raw_small : public mem_small< T, N_, Alignment >
     // the data members are brought by the base class
     using mem_type = mem_small< T, N_, Alignment >;
 
-    I     m_capacity;
-    Alloc m_allocator;
+    valnalloc<I,Alloc> m_cap_n_alloc;
 
 public:
 
@@ -781,8 +784,8 @@ public:
     raw_small() : raw_small(0) {}
     raw_small(Alloc const& a) : raw_small(0, a) {}
 
-    raw_small(I cap) : mem_type(nullptr), m_capacity(N), m_allocator() { _raw_reserve(0, cap); }
-    raw_small(I cap, Alloc const& a) : mem_type(nullptr), m_capacity(N), m_allocator(a) { _raw_reserve(0, cap); }
+    raw_small(I cap) : mem_type(nullptr), m_cap_n_alloc(N) { _raw_reserve(0, cap); }
+    raw_small(I cap, Alloc const& a) : mem_type(nullptr), m_cap_n_alloc(N, a) { _raw_reserve(0, cap); }
 
     ~raw_small()
     {
@@ -800,26 +803,26 @@ public:
     // error: array subscript is below array bounds [-Werror=array-bounds].
     // probably this is due to moving a return branch into the assert.
     // see https://gcc.gnu.org/ml/gcc/2009-09/msg00270.html for a similar example
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? this->m_arr[i] : this->m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? this->m_arr[i] : this->m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? this->m_arr[i] : this->m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? this->m_arr[i] : this->m_ptr[i]; }
 
-    C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity <= N ? this->m_arr : this->m_ptr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? this->m_arr : this->m_ptr; }
+    C4_ALWAYS_INLINE T      * data()       noexcept { return m_cap_n_alloc.m_value <= N ? this->m_arr : this->m_ptr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return m_cap_n_alloc.m_value <= N ? this->m_arr : this->m_ptr; }
 
-    C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
-    C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
-    C4_ALWAYS_INLINE bool is_small() const noexcept { return m_capacity <= N; }
+    C4_ALWAYS_INLINE I capacity() const noexcept { return m_cap_n_alloc.m_value; }
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_cap_n_alloc.m_value == 0; }
+    C4_ALWAYS_INLINE bool is_small() const noexcept { return m_cap_n_alloc.m_value <= N; }
 
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        return GrowthPolicy::next_size(sizeof(T), m_capacity, desired);
+        return GrowthPolicy::next_size(sizeof(T), m_cap_n_alloc.m_value, desired);
     }
 
 public:
 
-    iterator       _raw_iterator(I id)       noexcept { return m_capacity <= N ? this->m_arr + id : this->m_ptr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return m_capacity <= N ? this->m_arr + id : this->m_ptr + id; }
+    iterator       _raw_iterator(I id)       noexcept { return m_cap_n_alloc.m_value <= N ? this->m_arr + id : this->m_ptr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return m_cap_n_alloc.m_value <= N ? this->m_arr + id : this->m_ptr + id; }
 
 public:
 
@@ -833,10 +836,10 @@ public:
     {
         C4_ASSERT(currsz <= cap);
         T *tmp = nullptr;
-        if(cap == m_capacity) return;
+        if(cap == m_cap_n_alloc.m_value) return;
         if(cap <= N)
         {
-            if(m_capacity <= N)
+            if(m_cap_n_alloc.m_value <= N)
             {
                 return; // nothing to do
             }
@@ -847,13 +850,13 @@ public:
         }
         else
         {
-            // since here we know that cap != m_capacity and that cap
+            // since here we know that cap != m_cap_n_alloc.m_value and that cap
             // is larger than the array, we'll always need a new buffer
-            tmp = m_allocator.allocate(cap, Alignment);
+            tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
         }
-        if(m_capacity)
+        if(m_cap_n_alloc.m_value)
         {
-            if(m_capacity <= N)
+            if(m_cap_n_alloc.m_value <= N)
             {
                 C4_ASSERT(tmp != this->m_arr);
                 c4::move_construct_n(tmp, this->m_arr, currsz);
@@ -861,56 +864,56 @@ public:
             else
             {
                 c4::move_construct_n(tmp, this->m_ptr, currsz);
-                m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
+                m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
             }
         }
-        m_capacity = cap;
+        m_cap_n_alloc.m_value = cap;
         this->m_ptr = tmp;
     }
 
     void _raw_reserve_allocate(I cap, tmp_type *tmp)
     {
-        tmp->m_capacity = 0;
+        tmp->m_cap_n_alloc.m_value = 0;
         tmp->m_ptr = 0;
-        if(cap == m_capacity)
+        if(cap == m_cap_n_alloc.m_value)
         {
             return;
         }
         else if(cap < N)
         {
-            if(m_capacity <= N)
+            if(m_cap_n_alloc.m_value <= N)
             {
                 return;
             }
             else
             {
                 // move the storage to the array - this requires a temporary buffer
-                tmp->m_capacity = cap;
-                tmp->m_ptr = m_allocator.allocate(cap, Alignment);
+                tmp->m_cap_n_alloc.m_value = cap;
+                tmp->m_ptr = m_cap_n_alloc.alloc().allocate(cap, Alignment);
             }
         }
         else
         {
-            tmp->m_capacity = cap;
-            tmp->m_ptr = m_allocator.allocate(cap, Alignment);
+            tmp->m_cap_n_alloc.m_value = cap;
+            tmp->m_ptr = m_cap_n_alloc.alloc().allocate(cap, Alignment);
         }
     }
     void _raw_reserve_replace(I tmpsz, tmp_type *tmp)
     {
         C4_ASSERT(*tmp);
-        if(tmp->m_capacity <= N)
+        if(tmp->m_cap_n_alloc.m_value <= N)
         {
             // moving the storage to the array requires a temporary buffer.
             c4::move_construct_n(this->m_arr, tmp->m_ptr, tmpsz);
-            m_allocator.deallocate(tmp->m_ptr, tmp->m_capacity);
+            m_cap_n_alloc.alloc().deallocate(tmp->m_ptr, tmp->m_cap_n_alloc.m_value);
         }
         else
         {
             this->m_ptr = tmp->m_ptr;
         }
-        m_capacity = tmp->m_capacity;
+        m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
         tmp->m_ptr = nullptr;
-        tmp->m_capacity = 0;
+        tmp->m_cap_n_alloc.m_value = 0;
     }
 
     /** Resize the buffer at pos, so that the previous size increases to the
@@ -926,37 +929,37 @@ public:
      *  @param next the next size */
     void _raw_resize(I pos, I prev, I next)
     {
-        C4_ASSERT(next >= 0 && next < m_capacity);
-        C4_ASSERT(prev >= 0 && prev < m_capacity);
-        C4_ASSERT(pos  >= 0 && pos  < m_capacity);
+        C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
+        C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
+        C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
         if(next > prev)
         {
-            if(m_capacity <= N && next <= N)
+            if(m_cap_n_alloc.m_value <= N && next <= N)
             {
                 c4::make_room(this->m_arr + pos, prev - pos, next - prev);
             }
             else
             {
                 C4_ASSERT(next > N);
-                if(next <= m_capacity)
+                if(next <= m_cap_n_alloc.m_value)
                 {
                     c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
                 }
                 else
                 {
                     I cap = next_capacity(next);
-                    T* tmp = m_allocator.allocate(cap, Alignment);
-                    if(m_capacity <= N)
+                    T* tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+                    if(m_cap_n_alloc.m_value <= N)
                     {
                         c4::make_room(tmp, this->m_arr, prev, next - prev, pos);
                     }
-                    else if(m_capacity > N)
+                    else if(m_cap_n_alloc.m_value > N)
                     {
                         c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
-                        m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
+                        m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
                     }
                     this->m_ptr = tmp;
-                    m_capacity = cap;
+                    m_cap_n_alloc.m_value = cap;
                 }
             }
         }
@@ -1013,8 +1016,8 @@ public:
         return cap;
     }
 
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_num_pages; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_num_pages * _c4cthis->page_size(); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value * _c4cthis->page_size(); }
 
 public:
 
@@ -1207,19 +1210,19 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
     const I ps = _c4cthis->page_size();
     const I np = szconv<I>(size_t(cap + ps - 1) / size_t(ps));
 
-    if(np == _c4this->m_num_pages) return;
+    if(np == _c4this->m_numpages_n_alloc.m_value) return;
 
-    auto at = _c4this->m_allocator.template rebound< T* >();
+    auto at = _c4this->m_numpages_n_alloc.alloc().template rebound< T* >();
     T** tmp_pages = at.allocate(np);
-    if(np > _c4this->m_num_pages) // more pages (grow)
+    if(np > _c4this->m_numpages_n_alloc.m_value) // more pages (grow)
     {
-        for(I i = 0; i < _c4this->m_num_pages; ++i)
+        for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
         {
             tmp_pages[i] = _c4this->m_pages[i];
         }
-        for(I i = _c4this->m_num_pages; i < np; ++i)
+        for(I i = _c4this->m_numpages_n_alloc.m_value; i < np; ++i)
         {
-            tmp_pages[i] = _c4this->m_allocator.allocate(ps, Alignment);
+            tmp_pages[i] = _c4this->m_numpages_n_alloc.alloc().allocate(ps, Alignment);
         }
     }
     else // less pages (shrink)
@@ -1228,31 +1231,31 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
         {
             tmp_pages[i] = _c4this->m_pages[i];
         }
-        for(I i = np; i < _c4this->m_num_pages; ++i)
+        for(I i = np; i < _c4this->m_numpages_n_alloc.m_value; ++i)
         {
-            _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
+            _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
         }
     }
-    at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
+    at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
     _c4this->m_pages = tmp_pages;
-    _c4this->m_num_pages = np;
+    _c4this->m_numpages_n_alloc.m_value = np;
 }
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
 {
-    auto at = _c4this->m_allocator.template rebound< T* >();
+    auto at = _c4this->m_numpages_n_alloc.alloc().template rebound< T* >();
     const I ps = _c4this->page_size();
     if(cap == 0)
     {
         _c4this->_raw_destroy_n(0, currsz);
-        for(I i = 0; i < _c4this->m_num_pages; ++i)
+        for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
         {
-            _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
+            _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
         }
-        at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
+        at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
         _c4this->m_pages = nullptr;
-        _c4this->m_num_pages = 0;
+        _c4this->m_numpages_n_alloc.m_value = 0;
         return;
     }
 
@@ -1260,7 +1263,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
     const I np = (cap + ps - 1) / ps;
     C4_ASSERT(np * ps >= cap);
 
-    if(np == _c4this->m_num_pages)
+    if(np == _c4this->m_numpages_n_alloc.m_value)
     {
         return;
     }
@@ -1268,7 +1271,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
     T ** tmp = at.allocate(np);
     for(I i = 0; i < np; ++i)
     {
-        tmp[i] = _c4this->m_allocator.allocate(ps, Alignment);
+        tmp[i] = _c4this->m_numpages_n_alloc.alloc().allocate(ps, Alignment);
     }
     if(_c4this->m_pages)
     {
@@ -1282,13 +1285,13 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
             }
             _raw_move_construct_n(tmp, 0, _c4this->m_pages, 0, num_to_move);
         }
-        for(I i = 0; i < _c4this->m_num_pages; ++i)
+        for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
         {
-            _c4this->m_allocator.deallocate(_c4this->m_pages[i], ps, Alignment);
+            _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
         }
-        at.deallocate(_c4this->m_pages, _c4this->m_num_pages);
+        at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
     }
-    _c4this->m_num_pages = np;
+    _c4this->m_numpages_n_alloc.m_value = np;
     _c4this->m_pages = tmp;
 }
 
@@ -1337,8 +1340,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
     constexpr static I _raw_id(I const i) { return i &  m_id_mask; }  ///< get the index within the page
 
     // the pages array is brought by the base class
-    I      m_num_pages;  //< number of current pages in the array
-    Alloc  m_allocator;
+    valnalloc<I, Alloc> m_numpages_n_alloc;  ///< number of current pages in the array + allocator (for empty base class optimization)
 
 public:
 
@@ -1359,11 +1361,11 @@ public:
     raw_paged() : raw_paged(0) {}
     raw_paged(Alloc const& a) : raw_paged(0, a) {}
 
-    raw_paged(I cap) : crtp_base(nullptr), m_num_pages(0), m_allocator()
+    raw_paged(I cap) : crtp_base(nullptr), m_numpages_n_alloc(0)
     {
         crtp_base::_raw_reserve(0, cap);
     }
-    raw_paged(I cap, Alloc const& a) : crtp_base(nullptr), m_num_pages(0), m_allocator(a)
+    raw_paged(I cap, Alloc const& a) : crtp_base(nullptr), m_numpages_n_alloc(0, a)
     {
         crtp_base::_raw_reserve(0, cap);
     }
@@ -1385,7 +1387,7 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         const I pg = i >> m_page_lsb;
         const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
         C4_XASSERT(id >= 0 && id < (I)PageSize);
         return this->m_pages[pg][id];
     }
@@ -1394,7 +1396,7 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         const I pg = i >> m_page_lsb;
         const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
         C4_XASSERT(id >= 0 && id < (I)PageSize);
         return this->m_pages[pg][id];
     }
@@ -1419,10 +1421,9 @@ struct raw_paged< T, I, 0, Alignment, Alloc > : public _raw_paged_crtp< T, I, Al
     C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
     C4_CONSTEXPR14 I _raw_id(const I i) const { return i &  m_id_mask; }
 
-    I      m_num_pages;   ///< number of current pages in the array
+    valnalloc<I, Alloc> m_numpages_n_alloc;  ///< number of current pages in the array + allocator (for empty base class optimization)
     I      m_id_mask;     ///< page size - 1: cannot be changed after construction.
     I      m_page_lsb;    ///< least significant bit of the page size: cannot be changed after construction.
-    Alloc  m_allocator;
 
 public:
 
@@ -1446,13 +1447,13 @@ public:
     raw_paged(I cap) : raw_paged(cap, default_page_size<T,I>::value) {}
     raw_paged(I cap, Alloc const& a) : raw_paged(cap, default_page_size<T,I>::value, a) {}
 
-    raw_paged(I cap, I page_sz) : crtp_base(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator()
+    raw_paged(I cap, I page_sz) : crtp_base(nullptr), m_numpages_n_alloc(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
         crtp_base::_raw_reserve(0, cap);
     }
-    raw_paged(I cap, I page_sz, Alloc const& a) : crtp_base(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
+    raw_paged(I cap, I page_sz, Alloc const& a) : crtp_base(nullptr), m_numpages_n_alloc(0, a), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
@@ -1476,7 +1477,7 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         const I pg = i >> m_page_lsb;
         const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
         C4_XASSERT(id >= 0 && id < m_id_mask + 1);
         return this->m_pages[pg][id];
     }
@@ -1485,7 +1486,7 @@ public:
         C4_XASSERT(i < crtp_base::capacity());
         const I pg = i >> m_page_lsb;
         const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_num_pages);
+        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
         C4_XASSERT(id >= 0 && id < m_id_mask + 1);
         return this->m_pages[pg][id];
     }
