@@ -176,6 +176,7 @@ struct mem_small
 #endif
 
     C4_ALWAYS_INLINE mem_small() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE mem_small(T *p) : m_ptr(p) {}
     C4_ALWAYS_INLINE ~mem_small() {}
 };
 
@@ -185,6 +186,7 @@ struct mem_raw
     T *m_ptr;
 
     C4_ALWAYS_INLINE mem_raw() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE mem_raw(T *p) : m_ptr(p) {}
     C4_ALWAYS_INLINE ~mem_raw() {}
 };
 
@@ -194,6 +196,7 @@ struct mem_paged
     T **m_pages;
 
     C4_ALWAYS_INLINE mem_paged() : m_pages(nullptr) {}
+    C4_ALWAYS_INLINE mem_paged(T **p) : m_pages(p) {}
     C4_ALWAYS_INLINE ~mem_paged() {}
 };
 
@@ -563,10 +566,11 @@ struct raw_fixed< soa< SoaTypes... >, N, I, Alignment >
 /** raw contiguous storage with variable capacity
  * @ingroup raw_storage_classes */
 template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
-struct raw
+struct raw : public mem_raw< T >
 {
 
-    T*    m_ptr;
+    // m_ptr is brought in by the base class
+
     I     m_capacity;
     Alloc m_allocator;
 
@@ -591,8 +595,8 @@ public:
     raw() : raw(0) {}
     raw(Alloc const& a) : raw(0, a) {}
 
-    raw(I cap) : m_ptr(nullptr), m_capacity(0), m_allocator() { _raw_reserve(0, cap); }
-    raw(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(0), m_allocator(a) { _raw_reserve(0, cap); }
+    raw(I cap) : mem_raw<T>(nullptr), m_capacity(0), m_allocator() { _raw_reserve(0, cap); }
+    raw(I cap, Alloc const& a) : mem_raw<T>(nullptr), m_capacity(0), m_allocator(a) { _raw_reserve(0, cap); }
 
     ~raw()
     {
@@ -608,11 +612,11 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return this->m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return this->m_ptr[i]; }
 
-    C4_ALWAYS_INLINE T      * data()       noexcept { return m_ptr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return m_ptr; }
+    C4_ALWAYS_INLINE T      * data()       noexcept { return this->m_ptr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return this->m_ptr; }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
     C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
@@ -625,8 +629,8 @@ public:
 
 public:
 
-    iterator       _raw_iterator(I id)       noexcept { return m_ptr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return m_ptr + id; }
+    iterator       _raw_iterator(I id)       noexcept { return this->m_ptr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return this->m_ptr + id; }
 
 public:
 
@@ -644,16 +648,16 @@ public:
         {
             tmp = m_allocator.allocate(cap, Alignment);
         }
-        if(m_ptr)
+        if(this->m_ptr)
         {
             if(tmp)
             {
-                c4::move_construct_n(tmp, m_ptr, currsz);
+                c4::move_construct_n(tmp, this->m_ptr, currsz);
             }
-            m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+            m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
         }
         m_capacity = cap;
-        m_ptr = tmp;
+        this->m_ptr = tmp;
     }
 
     void _raw_reserve_allocate(I cap, tmp_type *tmp)
@@ -668,12 +672,12 @@ public:
     }
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
     {
-        if(m_ptr)
+        if(this->m_ptr)
         {
-            m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+            m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
         }
         m_capacity = tmp->m_capacity;
-        m_ptr = tmp->m_ptr;
+        this->m_ptr = tmp->m_ptr;
         tmp->m_ptr = nullptr;
         tmp->m_capacity = 0;
     }
@@ -698,29 +702,29 @@ public:
         {
             if(next <= m_capacity)
             {
-                c4::make_room(m_ptr + pos, prev - pos, next - prev);
+                c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
             }
             else
             {
                 m_capacity = next_capacity(next);
                 T* tmp = m_allocator.allocate(m_capacity, Alignment);
-                if(m_ptr)
+                if(this->m_ptr)
                 {
-                    c4::make_room(tmp, m_ptr, prev, next - prev, pos);
-                    m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+                    c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
+                    m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
                 }
                 else
                 {
                     C4_ASSERT(prev == 0);
                 }
-                m_ptr = tmp;
+                this->m_ptr = tmp;
             }
         }
         else if(next < prev)
         {
             I delta = prev - next;
             C4_ASSERT(pos > delta);
-            c4::destroy_room(m_ptr + pos - delta, prev - pos, delta);
+            c4::destroy_room(this->m_ptr + pos - delta, prev - pos, delta);
         }
     }
 
