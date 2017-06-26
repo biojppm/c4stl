@@ -989,11 +989,13 @@ struct raw_small< soa< SoaTypes... >, I, N_, Alignment, Alloc, GrowthPolicy >
 
 /* a crtp base for paged storage */
 template< class T, class I, I Alignment, class RawPaged >
-struct _raw_paged_crtp
+struct _raw_paged_crtp : public mem_paged< T >
 {
 public:
 
     using tmp_type = tmp_storage< RawPaged >;
+
+    _raw_paged_crtp(T **p) : mem_paged< T >(p) {}
 
 public:
 
@@ -1334,7 +1336,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
     constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; } ///< get the page index
     constexpr static I _raw_id(I const i) { return i &  m_id_mask; }  ///< get the index within the page
 
-    T    **m_pages;      //< array containing the pages
+    // the pages array is brought by the base class
     I      m_num_pages;  //< number of current pages in the array
     Alloc  m_allocator;
 
@@ -1357,11 +1359,11 @@ public:
     raw_paged() : raw_paged(0) {}
     raw_paged(Alloc const& a) : raw_paged(0, a) {}
 
-    raw_paged(I cap) : m_pages(nullptr), m_num_pages(0), m_allocator()
+    raw_paged(I cap) : crtp_base(nullptr), m_num_pages(0), m_allocator()
     {
         crtp_base::_raw_reserve(0, cap);
     }
-    raw_paged(I cap, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_allocator(a)
+    raw_paged(I cap, Alloc const& a) : crtp_base(nullptr), m_num_pages(0), m_allocator(a)
     {
         crtp_base::_raw_reserve(0, cap);
     }
@@ -1385,7 +1387,7 @@ public:
         const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < (I)PageSize);
-        return m_pages[pg][id];
+        return this->m_pages[pg][id];
     }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
@@ -1394,7 +1396,7 @@ public:
         const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < (I)PageSize);
-        return m_pages[pg][id];
+        return this->m_pages[pg][id];
     }
 
     C4_ALWAYS_INLINE static constexpr I page_size() noexcept { return PageSize; }
@@ -1417,7 +1419,6 @@ struct raw_paged< T, I, 0, Alignment, Alloc > : public _raw_paged_crtp< T, I, Al
     C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
     C4_CONSTEXPR14 I _raw_id(const I i) const { return i &  m_id_mask; }
 
-    T    **m_pages;       ///< array containing the pages
     I      m_num_pages;   ///< number of current pages in the array
     I      m_id_mask;     ///< page size - 1: cannot be changed after construction.
     I      m_page_lsb;    ///< least significant bit of the page size: cannot be changed after construction.
@@ -1445,13 +1446,13 @@ public:
     raw_paged(I cap) : raw_paged(cap, default_page_size<T,I>::value) {}
     raw_paged(I cap, Alloc const& a) : raw_paged(cap, default_page_size<T,I>::value, a) {}
 
-    raw_paged(I cap, I page_sz) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator()
+    raw_paged(I cap, I page_sz) : crtp_base(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator()
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
         crtp_base::_raw_reserve(0, cap);
     }
-    raw_paged(I cap, I page_sz, Alloc const& a) : m_pages(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
+    raw_paged(I cap, I page_sz, Alloc const& a) : crtp_base(nullptr), m_num_pages(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz)), m_allocator(a)
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
@@ -1477,7 +1478,7 @@ public:
         const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < m_id_mask + 1);
-        return m_pages[pg][id];
+        return this->m_pages[pg][id];
     }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
@@ -1486,7 +1487,7 @@ public:
         const I id = i & m_id_mask;
         C4_XASSERT(pg >= 0 && pg < m_num_pages);
         C4_XASSERT(id >= 0 && id < m_id_mask + 1);
-        return m_pages[pg][id];
+        return this->m_pages[pg][id];
     }
 
     C4_ALWAYS_INLINE I page_size() const noexcept { return m_id_mask + 1; }
