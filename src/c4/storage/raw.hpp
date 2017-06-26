@@ -455,7 +455,7 @@ public:
 
     using tmp_type = tmp_storage< raw_fixed >;
 
-    enum : I { arr_size = szconv<I>(N) };
+    enum : I { arr_size = static_cast<I>(N) };
 
 public:
 
