@@ -746,33 +746,17 @@ struct raw< soa< SoaTypes... >, I, Alignment, Alloc, GrowthPolicy >
  * @tparam N the number of objects
  * @ingroup raw_storage_classes */
 template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
-struct raw_small
+struct raw_small : public mem_small< T, N_, Alignment >
 {
 
     C4_STATIC_ASSERT(N_ <= (size_t)std::numeric_limits< I >::max());
     //C4_STATIC_ASSERT(sizeof(T) == alignof(T));  // not sure if this is needed
 
-#ifdef __clang__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
-#endif
-
-    union {
-        /** the union with the char buffer is needed to prevent
-         * auto-construction of the elements in m_arr */
-        union {
-            alignas(Alignment) T    m_arr[N_];
-            alignas(Alignment) char m_buf[N_ * sizeof(T)];
-        };
-        T * m_ptr;
-    };
+    // the data members are brought by the base class
+    using mem_type = mem_small< T, N_, Alignment >;
 
     I     m_capacity;
     Alloc m_allocator;
-
-#ifdef __clang__
-#   pragma clang diagnostic pop
-#endif
 
 public:
 
@@ -797,8 +781,8 @@ public:
     raw_small() : raw_small(0) {}
     raw_small(Alloc const& a) : raw_small(0, a) {}
 
-    raw_small(I cap) : m_ptr(nullptr), m_capacity(N), m_allocator() { _raw_reserve(0, cap); }
-    raw_small(I cap, Alloc const& a) : m_ptr(nullptr), m_capacity(N), m_allocator(a) { _raw_reserve(0, cap); }
+    raw_small(I cap) : mem_type(nullptr), m_capacity(N), m_allocator() { _raw_reserve(0, cap); }
+    raw_small(I cap, Alloc const& a) : mem_type(nullptr), m_capacity(N), m_allocator(a) { _raw_reserve(0, cap); }
 
     ~raw_small()
     {
@@ -816,11 +800,11 @@ public:
     // error: array subscript is below array bounds [-Werror=array-bounds].
     // probably this is due to moving a return branch into the assert.
     // see https://gcc.gnu.org/ml/gcc/2009-09/msg00270.html for a similar example
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? m_arr[i] : m_ptr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? m_arr[i] : m_ptr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? this->m_arr[i] : this->m_ptr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_capacity); return C4_LIKELY(i >= 0 && m_capacity <= N) ? this->m_arr[i] : this->m_ptr[i]; }
 
-    C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity <= N ? m_arr : m_ptr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? m_arr : m_ptr; }
+    C4_ALWAYS_INLINE T      * data()       noexcept { return m_capacity <= N ? this->m_arr : this->m_ptr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return m_capacity <= N ? this->m_arr : this->m_ptr; }
 
     C4_ALWAYS_INLINE I capacity() const noexcept { return m_capacity; }
     C4_ALWAYS_INLINE bool empty() const noexcept { return m_capacity == 0; }
@@ -834,8 +818,8 @@ public:
 
 public:
 
-    iterator       _raw_iterator(I id)       noexcept { return m_capacity <= N ? m_arr + id : m_ptr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return m_capacity <= N ? m_arr + id : m_ptr + id; }
+    iterator       _raw_iterator(I id)       noexcept { return m_capacity <= N ? this->m_arr + id : this->m_ptr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return m_capacity <= N ? this->m_arr + id : this->m_ptr + id; }
 
 public:
 
@@ -858,7 +842,7 @@ public:
             }
             else
             {
-                tmp = m_arr; // move the storage to the array
+                tmp = this->m_arr; // move the storage to the array
             }
         }
         else
@@ -871,17 +855,17 @@ public:
         {
             if(m_capacity <= N)
             {
-                C4_ASSERT(tmp != m_arr);
-                c4::move_construct_n(tmp, m_arr, currsz);
+                C4_ASSERT(tmp != this->m_arr);
+                c4::move_construct_n(tmp, this->m_arr, currsz);
             }
             else
             {
-                c4::move_construct_n(tmp, m_ptr, currsz);
-                m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+                c4::move_construct_n(tmp, this->m_ptr, currsz);
+                m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
             }
         }
         m_capacity = cap;
-        m_ptr = tmp;
+        this->m_ptr = tmp;
     }
 
     void _raw_reserve_allocate(I cap, tmp_type *tmp)
@@ -917,12 +901,12 @@ public:
         if(tmp->m_capacity <= N)
         {
             // moving the storage to the array requires a temporary buffer.
-            c4::move_construct_n(m_arr, tmp->m_ptr, tmpsz);
+            c4::move_construct_n(this->m_arr, tmp->m_ptr, tmpsz);
             m_allocator.deallocate(tmp->m_ptr, tmp->m_capacity);
         }
         else
         {
-            m_ptr = tmp->m_ptr;
+            this->m_ptr = tmp->m_ptr;
         }
         m_capacity = tmp->m_capacity;
         tmp->m_ptr = nullptr;
@@ -949,14 +933,14 @@ public:
         {
             if(m_capacity <= N && next <= N)
             {
-                c4::make_room(m_arr + pos, prev - pos, next - prev);
+                c4::make_room(this->m_arr + pos, prev - pos, next - prev);
             }
             else
             {
                 C4_ASSERT(next > N);
                 if(next <= m_capacity)
                 {
-                    c4::make_room(m_ptr + pos, prev - pos, next - prev);
+                    c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
                 }
                 else
                 {
@@ -964,14 +948,14 @@ public:
                     T* tmp = m_allocator.allocate(cap, Alignment);
                     if(m_capacity <= N)
                     {
-                        c4::make_room(tmp, m_arr, prev, next - prev, pos);
+                        c4::make_room(tmp, this->m_arr, prev, next - prev, pos);
                     }
                     else if(m_capacity > N)
                     {
-                        c4::make_room(tmp, m_ptr, prev, next - prev, pos);
-                        m_allocator.deallocate(m_ptr, m_capacity, Alignment);
+                        c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
+                        m_allocator.deallocate(this->m_ptr, m_capacity, Alignment);
                     }
-                    m_ptr = tmp;
+                    this->m_ptr = tmp;
                     m_capacity = cap;
                 }
             }
