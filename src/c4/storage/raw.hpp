@@ -146,7 +146,8 @@ struct mem_fixed
         alignas(Alignment) char  m_buf[N * sizeof(T)];
     };
 
-    mem_fixed() {}
+    C4_ALWAYS_INLINE mem_fixed() {}
+    C4_ALWAYS_INLINE ~mem_fixed() {}
 };
 
 template< class T, size_t N, size_t Alignment >
@@ -174,21 +175,26 @@ struct mem_small
 #   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
 #endif
 
-    mem_small() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE mem_small() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE ~mem_small() {}
 };
 
 template< class T >
 struct mem_raw
 {
     T *m_ptr;
-    mem_raw() : m_ptr(nullptr) {}
+
+    C4_ALWAYS_INLINE mem_raw() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE ~mem_raw() {}
 };
 
 template< class T >
 struct mem_paged
 {
     T **m_pages;
-    mem_paged() : m_pages(nullptr) {}
+
+    C4_ALWAYS_INLINE mem_paged() : m_pages(nullptr) {}
+    C4_ALWAYS_INLINE ~mem_paged() {}
 };
 
 
@@ -431,17 +437,10 @@ struct _raw_storage_traits< Storage, paged_t >
 /** raw contiguous storage with fixed (at compile time) capacity
  * @ingroup raw_storage_classes */
 template< class T, size_t N, class I, I Alignment >
-struct raw_fixed
+struct raw_fixed : public mem_fixed< T, N, Alignment >
 {
 
     C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
-
-    /** the union with the char buffer is needed to prevent auto-construction
-     * of the elements in m_arr */
-    union {
-        alignas(Alignment) char _m_buf[N * sizeof(T)];
-        alignas(Alignment) T m_arr[N];
-    };
 
 public:
 
@@ -471,11 +470,11 @@ public:
     raw_fixed& operator=(raw_fixed const& that) = delete;
     raw_fixed& operator=(raw_fixed     && that) = delete;
 
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return m_arr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return m_arr[i]; }
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return this->m_arr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return this->m_arr[i]; }
 
-    C4_ALWAYS_INLINE T      * data()       noexcept { return m_arr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return m_arr; }
+    C4_ALWAYS_INLINE T      * data()       noexcept { return this->m_arr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return this->m_arr; }
 
     C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
     C4_ALWAYS_INLINE constexpr bool empty() const noexcept { return false; }
@@ -484,14 +483,14 @@ public:
     C4_ALWAYS_INLINE C4_CONSTEXPR14 static size_t next_capacity(size_t cap) C4_NOEXCEPT_A
     {
         C4_UNUSED(cap);
-        C4_ASSERT(cap <= (I)N);
+        C4_ASSERT(cap <= (size_t)N);
         return N;
     }
 
 public:
 
-    iterator       _raw_iterator(I id)       noexcept { return m_arr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return m_arr + id; }
+    iterator       _raw_iterator(I id)       noexcept { return this->m_arr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return this->m_arr + id; }
 
 public:
 
@@ -536,13 +535,13 @@ public:
         C4_ASSERT(pos  >= 0 && pos  < N);
         if(next > prev)
         {
-            c4::make_room(m_arr + pos, prev - pos, next - prev);
+            c4::make_room(this->m_arr + pos, prev - pos, next - prev);
         }
         else if(next < prev)
         {
             I delta = prev - next;
             C4_ASSERT(pos > delta);
-            c4::destroy_room(m_arr + pos - delta, prev - pos, delta);
+            c4::destroy_room(this->m_arr + pos - delta, prev - pos, delta);
         }
     }
 
