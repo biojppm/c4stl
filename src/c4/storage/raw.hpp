@@ -13,6 +13,7 @@
 
 #include <limits>
 #include <memory>
+#include <tuple>
 
 C4_BEGIN_NAMESPACE(c4)
 
@@ -85,14 +86,34 @@ C4_ALWAYS_INLINE constexpr size_t raw_max_capacity() noexcept
     return size_t(std::numeric_limits< I >::max());
 }
 
+#define _C4_FOREACH_ARR(member, macro)                                  \
+{                                                                       \
+    size_t _foreach_dummy[] = {                                         \
+        (                                                               \
+         macro(std::get<Indices>(m_soa).member, Indices)                \
+         C4_COMMA                                                       \
+         size_t(0)                                                      \
+        )...                                                            \
+    };                                                                  \
+    C4_UNUSED(_foreach_dummy);                                          \
+}
+
 //-----------------------------------------------------------------------------
 
 // forward declarations
 template< class Storage, class TagType > struct raw_storage_traits;
 
-/** @todo make the Alignment a size_t */
+/** raw contiguous storage with fixed (at compile time) capacity
+ * @ingroup raw_storage_classes
+ * @todo make the Alignment a size_t */
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed;
+
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class... IndexSequence >
+struct raw_fixed_soa_impl;
+
+template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
+struct raw_fixed_soa;
 
 /** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
@@ -115,7 +136,7 @@ using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 
-/** value and allocator. Makes use of the empty base class optimization to
+/** pair of value and allocator. Makes use of the empty base class optimization to
  * compress the allocator when it has no members */
 template< class I, class Alloc >
 struct valnalloc : public Alloc
@@ -130,115 +151,6 @@ struct valnalloc : public Alloc
     C4_ALWAYS_INLINE C4_CONSTEXPR14 I     const& value() const { return m_value; }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc      & alloc()       { return static_cast< Alloc      & >(*this); }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc const& alloc() const { return static_cast< Alloc const& >(*this); }
-};
-
-//-----------------------------------------------------------------------------
-
-/** for instantiating raw storage with structure of arrays */
-template< class... SoaTypes >
-struct soa
-{
-};
-
-template< class T, size_t N, size_t Alignment=alignof(T) >
-struct mem_fixed
-{
-    static_assert(Alignment >= alignof(T), "bad alignment value");
-    /** the union with the char buffer is needed to prevent auto-construction
-     * of the elements in m_arr */
-    union {
-        alignas(Alignment) T     m_arr[N];
-        alignas(Alignment) char  m_buf[N * sizeof(T)];
-    };
-
-    C4_ALWAYS_INLINE mem_fixed() {}
-    C4_ALWAYS_INLINE ~mem_fixed() {}
-};
-
-template< class T, size_t N, size_t Alignment >
-struct mem_small
-{
-    static_assert(Alignment >= alignof(T), "bad alignment value");
-
-#ifdef __clang__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
-#endif
-
-    union {
-        /** the union with the char buffer is needed to prevent
-         * auto-construction of the elements in m_arr */
-        union {
-            alignas(Alignment) T    m_arr[N];
-            alignas(Alignment) char m_buf[N * sizeof(T)];
-        };
-        T * m_ptr;
-    };
-
-#ifdef __clang__
-#   pragma clang diagnostic pop
-#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
-#endif
-
-    C4_ALWAYS_INLINE mem_small() : m_ptr(nullptr) {}
-    C4_ALWAYS_INLINE mem_small(T *p) : m_ptr(p) {}
-    C4_ALWAYS_INLINE ~mem_small() {}
-};
-
-template< class T >
-struct mem_raw
-{
-    T *m_ptr;
-
-    C4_ALWAYS_INLINE mem_raw() : m_ptr(nullptr) {}
-    C4_ALWAYS_INLINE mem_raw(T *p) : m_ptr(p) {}
-    C4_ALWAYS_INLINE ~mem_raw() {}
-};
-
-template< class T >
-struct mem_paged
-{
-    T **m_pages;
-
-    C4_ALWAYS_INLINE mem_paged() : m_pages(nullptr) {}
-    C4_ALWAYS_INLINE mem_paged(T **p) : m_pages(p) {}
-    C4_ALWAYS_INLINE ~mem_paged() {}
-};
-
-
-template< class T, size_t Cap >                struct ___natvis_util       { T*  p; };
-template< class T, size_t PgSz, size_t NumPg > struct ___natvis_util_paged { T** p; };
-
-//-----------------------------------------------------------------------------
-
-template< class Storage >
-struct tmp_storage : public Storage
-{
-    C4_CONSTEXPR14 C4_ALWAYS_INLINE operator bool() const { return !this->empty(); }
-};
-/** a class for storage policies that do not need transfer when grown or shrinked */
-template< class T, class I >
-struct _NoTmpStorage
-{
-    constexpr C4_ALWAYS_INLINE operator bool () const { return false; }
-    C4_ALWAYS_INLINE T       & operator[] (I /*i*/)       { C4_NEVER_REACH(); return *(T*)nullptr; }
-    C4_ALWAYS_INLINE T const & operator[] (I /*i*/) const { C4_NEVER_REACH(); return *(T*)nullptr; }
-};
-/** fixed storage cannot be grown or shrinked */
-template< class T, size_t N, class I, I Alignment >
-struct tmp_storage< raw_fixed< T, N, I, Alignment > > : public _NoTmpStorage< T, I >
-{
-};
-/** paged storage does not need copying of the pages when grown or shrinked */
-template< class T, class I, size_t PageSize, I Alignment, class Alloc >
-struct tmp_storage< raw_paged< T, I, PageSize, Alignment, Alloc > > : public _NoTmpStorage< T, I >
-{
-};
-/** small storage always uses a temporary pointer for tmp storage, so it 
- * is treated just the same as tmp storage for pointer-only. */
-template< class T, class I, size_t N, I Alignment, class Alloc, class GrowthPolicy >
-struct tmp_storage< raw_small< T, I, N, Alignment, Alloc, GrowthPolicy > > : public tmp_storage< raw< T, I, Alignment, Alloc, GrowthPolicy > >
-{
 };
 
 //-----------------------------------------------------------------------------
@@ -437,13 +349,275 @@ struct _raw_storage_traits< Storage, paged_t >
     }
 };
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template< class Storage >
+struct tmp_storage : public Storage
+{
+    C4_CONSTEXPR14 C4_ALWAYS_INLINE operator bool() const { return !this->empty(); }
+};
+/** a class for storage policies that do not need transfer when grown or shrinked */
+template< class T, class I >
+struct _NoTmpStorage
+{
+    constexpr C4_ALWAYS_INLINE operator bool () const { return false; }
+    C4_ALWAYS_INLINE T       & operator[] (I /*i*/)       { C4_NEVER_REACH(); return *(T*)nullptr; }
+    C4_ALWAYS_INLINE T const & operator[] (I /*i*/) const { C4_NEVER_REACH(); return *(T*)nullptr; }
+};
+/** fixed storage cannot be grown or shrinked */
+template< class T, size_t N, class I, I Alignment >
+struct tmp_storage< raw_fixed< T, N, I, Alignment > > : public _NoTmpStorage< T, I >
+{
+};
+template< class T, size_t N, class I, I Alignment >
+struct tmp_storage< raw_fixed_soa_impl< T, N, I, Alignment > > : public _NoTmpStorage< T, I >
+{
+};
+/** paged storage does not need copying of the pages when grown or shrinked */
+template< class T, class I, size_t PageSize, I Alignment, class Alloc >
+struct tmp_storage< raw_paged< T, I, PageSize, Alignment, Alloc > > : public _NoTmpStorage< T, I >
+{
+};
+/** small storage always uses a temporary pointer for tmp storage, so it
+ * is treated just the same as tmp storage for pointer-only. */
+template< class T, class I, size_t N, I Alignment, class Alloc, class GrowthPolicy >
+struct tmp_storage< raw_small< T, I, N, Alignment, Alloc, GrowthPolicy > > : public tmp_storage< raw< T, I, Alignment, Alloc, GrowthPolicy > >
+{
+};
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** raw contiguous storage with fixed (at compile time) capacity
- * @ingroup raw_storage_classes */
+/** for instantiating raw storage with structure of arrays */
+template< class... SoaTypes >
+struct soa
+{
+};
+
+template< class T, size_t N, size_t Alignment=alignof(T) >
+struct mem_fixed
+{
+    static_assert(Alignment >= alignof(T), "bad alignment value");
+    /** the union with the char buffer is needed to prevent auto-construction
+     * of the elements in m_arr */
+    union {
+        alignas(Alignment) T     m_arr[N];
+        alignas(Alignment) char  m_buf[N * sizeof(T)];
+    };
+
+    C4_ALWAYS_INLINE mem_fixed() {}
+    C4_ALWAYS_INLINE ~mem_fixed() {}
+};
+
+template< class T, size_t N, size_t Alignment >
+struct mem_small
+{
+    static_assert(Alignment >= alignof(T), "bad alignment value");
+
+#ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
+#endif
+
+    union {
+        /** the union with the char buffer is needed to prevent
+         * auto-construction of the elements in m_arr */
+        union {
+            alignas(Alignment) T    m_arr[N];
+            alignas(Alignment) char m_buf[N * sizeof(T)];
+        };
+        T * m_ptr;
+    };
+
+#ifdef __clang__
+#   pragma clang diagnostic pop
+#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
+#endif
+
+    C4_ALWAYS_INLINE mem_small() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE mem_small(T *p) : m_ptr(p) {}
+    C4_ALWAYS_INLINE ~mem_small() {}
+};
+
+template< class T >
+struct mem_raw
+{
+    T *m_ptr;
+
+    C4_ALWAYS_INLINE mem_raw() : m_ptr(nullptr) {}
+    C4_ALWAYS_INLINE mem_raw(T *p) : m_ptr(p) {}
+    C4_ALWAYS_INLINE ~mem_raw() {}
+};
+
+template< class T >
+struct mem_paged
+{
+    T **m_pages;
+
+    C4_ALWAYS_INLINE mem_paged() : m_pages(nullptr) {}
+    C4_ALWAYS_INLINE mem_paged(T **p) : m_pages(p) {}
+    C4_ALWAYS_INLINE ~mem_paged() {}
+};
+
+
+template< class T, size_t Cap >                struct ___natvis_util       { T*  p; };
+template< class T, size_t PgSz, size_t NumPg > struct ___natvis_util_paged { T** p; };
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** raw fixed storage for structure-of-arrays. this is a work in progress */
+template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
+struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >
+{
+    template< class U > using arr_type = mem_fixed< U, N, (Alignment > alignof(U) ? Alignment : alignof(U)) >;
+
+    std::tuple< arr_type<SoaTypes>... > m_soa;
+
+    C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
+
+public:
+
+    _c4_DEFINE_TUPLE_ARRAY_TYPES(SoaTypes, I);
+    using allocator_type = void;
+
+    using storage_traits = raw_storage_traits< raw_fixed_soa_impl, fixed_t >;
+
+    template< class U >
+    using rebind_type = raw_fixed<U, N, I, alignof(U)>;
+
+    template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
+    using tuple_type = std::tuple< arr_type<SoaTypes>... >;
+
+    using tmp_type = tmp_storage< raw_fixed_soa_impl >;
+
+    enum : I {
+        arr_size = static_cast<I>(N),
+        num_arrays = static_cast<I>(sizeof...(SoaTypes))
+    };
+
+public:
+
+    C4_ALWAYS_INLINE ~raw_fixed_soa_impl() {}
+    C4_ALWAYS_INLINE raw_fixed_soa_impl() {}
+    C4_ALWAYS_INLINE raw_fixed_soa_impl(I cap) { C4_UNUSED(cap); C4_ASSERT(cap <= (I)N); }
+
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
+    raw_fixed_soa_impl(raw_fixed_soa_impl const& that) = delete;
+    raw_fixed_soa_impl(raw_fixed_soa_impl     && that) = delete;
+    raw_fixed_soa_impl& operator=(raw_fixed_soa_impl const& that) = delete;
+    raw_fixed_soa_impl& operator=(raw_fixed_soa_impl     && that) = delete;
+
+public:
+
+    C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
+    C4_ALWAYS_INLINE constexpr bool empty() const noexcept { return false; }
+
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return N; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 static size_t next_capacity(size_t cap) C4_NOEXCEPT_A
+    {
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (size_t)N);
+        return N;
+    }
+
+public:
+
+    // n defaults to 0 so that one-typed tuples can be used without an explicit index
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      * data()       { C4_STATIC_ASSERT(n < num_arrays); return std::get<n>(m_soa).m_arr; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const* data() const { C4_STATIC_ASSERT(n < num_arrays); return std::get<n>(m_soa).m_arr; }
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & operator[] (I i)       C4_NOEXCEPT_X { C4_STATIC_ASSERT(n < num_arrays); C4_XASSERT(i >= 0 && i < (I)N); return std::get<n>(m_soa).m_arr[i]; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& operator[] (I i) const C4_NOEXCEPT_X { C4_STATIC_ASSERT(n < num_arrays); C4_XASSERT(i >= 0 && i < (I)N); return std::get<n>(m_soa).m_arr[i]; }
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      * _raw_iterator(I id)       noexcept { C4_STATIC_ASSERT(n < num_arrays); return std::get<n>(m_soa).m_arr + id; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const* _raw_iterator(I id) const noexcept { C4_STATIC_ASSERT(n < num_arrays); return std::get<n>(m_soa).m_arr + id; }
+
+public:
+
+    /** assume the curr size is zero */
+    void _raw_reserve(I cap)
+    {
+        _raw_reserve(0, cap);
+    }
+
+    void _raw_reserve(I currsz, I cap) const
+    {
+        C4_UNUSED(currsz);
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (I)N);
+    }
+
+    void _raw_reserve_allocate(I cap, tmp_type * /*tmp*/)
+    {
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (I)N);
+    }
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type * /*tmp*/)
+    {
+        C4_NEVER_REACH();
+    }
+
+    /** Resize the buffer at pos, so that prevsz increases to nextsz;
+     *  when growing, ___adds to the right___ of pos; when
+     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+     *  will increase to the value obtained with the growth policy; if shrinking,
+     *  the capacity will stay the same. Use _raw_reserve() to diminish the
+     *  capacity.
+     *
+     *  @param pos the position from which room is to be created (to the right)
+     *         or destroyed (to the left)
+     *  @param prevsz the previous size
+     *  @param nextsz the next size */
+    void _raw_resize(I pos, I prevsz, I nextsz)
+    {
+        C4_ASSERT(nextsz >= 0 && nextsz < N);
+        C4_ASSERT(prevsz >= 0 && prevsz < N);
+        C4_ASSERT(pos    >= 0 && pos    < N);
+        C4_ASSERT(pos <= prevsz);
+        if(nextsz > prevsz) // grow to the right of pos
+        {
+            I prevmpos = prevsz - pos;
+            I delta = nextsz - prevsz;
+            #define _c4mcr(arr, i) c4::make_room(arr + pos, prevmpos, delta)
+            _C4_FOREACH_ARR(m_arr, _c4mcr)
+            #undef _c4mcr
+        }
+        else if(nextsz < prevsz) // shrink to the left of pos
+        {
+            I delta = prevsz - nextsz;
+            C4_ASSERT(pos >= delta);
+            #define _c4mcr(arr, i) c4::destroy_room(arr + pos - delta, prevsz, delta)
+            _C4_FOREACH_ARR(m_arr, _c4mcr)
+            #undef _c4mcr
+        }
+    }
+
+};
+
+template< class T0, size_t N, class I, I Alignment >
+struct raw_fixed_soa
+    :
+        public raw_fixed_soa_impl< soa<T0>, N, I, Alignment, std::index_sequence<0>() >
+{
+    using _base_type = raw_fixed_soa_impl< soa<T0>, N, I, Alignment, std::index_sequence<0>() >;
+    using _base_type::_base_type;
+};
+template< class... SoaTypes, size_t N, class I, I Alignment >
+struct raw_fixed_soa< soa<SoaTypes...>, N, I, Alignment >
+    :
+        public raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >
+{
+    using _base_type = raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >;
+    using _base_type::_base_type;
+};
+
+
 template< class T, size_t N, class I, I Alignment >
 struct raw_fixed : public mem_fixed< T, N, Alignment >
 {
@@ -553,15 +727,6 @@ public:
         }
     }
 
-};
-
-/** raw fixed storage for structure-of-arrays. this is a work in progress */
-template< class... SoaTypes, size_t N, class I, I Alignment >
-struct raw_fixed< soa< SoaTypes... >, N, I, Alignment >
-{
-    template< class U > using arr_type = mem_fixed< U, N, (Alignment > alignof(U) ? Alignment : alignof(U)) >;
-
-    std::tuple< arr_type<SoaTypes>... > m_soa;
 };
 
 //-----------------------------------------------------------------------------
@@ -1002,6 +1167,25 @@ public:
 
 public:
 
+    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
+    {
+        C4_XASSERT(i < capacity());
+        const I pg = i >> _c4cthis->m_page_lsb;
+        const I id = i & _c4cthis->m_id_mask;
+        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
+        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
+        return this->m_pages[pg][id];
+    }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
+    {
+        C4_XASSERT(i < capacity());
+        const I pg = i >> _c4cthis->m_page_lsb;
+        const I id = i & _c4cthis->m_id_mask;
+        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
+        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
+        return this->m_pages[pg][id];
+    }
+
     C4_ALWAYS_INLINE bool empty() const noexcept { return _c4cthis->m_capacity == 0; }
 
     /** since the page size is a power of two, the max capacity is simply the
@@ -1382,25 +1566,6 @@ public:
     raw_paged& operator=(raw_paged const& that) = delete;
     raw_paged& operator=(raw_paged     && that) = delete;
 
-    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
-    {
-        C4_XASSERT(i < crtp_base::capacity());
-        const I pg = i >> m_page_lsb;
-        const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
-        C4_XASSERT(id >= 0 && id < (I)PageSize);
-        return this->m_pages[pg][id];
-    }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
-    {
-        C4_XASSERT(i < crtp_base::capacity());
-        const I pg = i >> m_page_lsb;
-        const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
-        C4_XASSERT(id >= 0 && id < (I)PageSize);
-        return this->m_pages[pg][id];
-    }
-
     C4_ALWAYS_INLINE static constexpr I page_size() noexcept { return PageSize; }
 
     template< class RawPagedContainer >
@@ -1471,25 +1636,6 @@ public:
     raw_paged(raw_paged     && that) = delete;
     raw_paged& operator=(raw_paged const& that) = delete;
     raw_paged& operator=(raw_paged     && that) = delete;
-
-    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
-    {
-        C4_XASSERT(i < crtp_base::capacity());
-        const I pg = i >> m_page_lsb;
-        const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
-        C4_XASSERT(id >= 0 && id < m_id_mask + 1);
-        return this->m_pages[pg][id];
-    }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
-    {
-        C4_XASSERT(i < crtp_base::capacity());
-        const I pg = i >> m_page_lsb;
-        const I id = i & m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < m_numpages_n_alloc.m_value);
-        C4_XASSERT(id >= 0 && id < m_id_mask + 1);
-        return this->m_pages[pg][id];
-    }
 
     C4_ALWAYS_INLINE I page_size() const noexcept { return m_id_mask + 1; }
 

@@ -236,17 +236,27 @@ public:                                                                 \
 //-----------------------------------------------------------------------------
 #define _c4_DEFINE_ARRAY_TYPES_WITHOUT_ITERATOR(T, I)       \
                                                             \
-    using value_type = T;                                   \
     using size_type = I;                                    \
     using ssize_type = typename std::make_signed<I>::type;  \
+    using difference_type = typename std::make_signed<I>::type; \
                                                             \
+    using value_type = T;                                   \
     using pointer = T*;                                     \
     using const_pointer = T const*;                         \
-                                                            \
     using reference = T&;                                   \
-    using const_reference = T const&;                       \
-                                                            \
-    using difference_type = typename std::make_signed<I>::type
+    using const_reference = T const&
+
+#define _c4_DEFINE_TUPLE_ARRAY_TYPES_WITHOUT_ITERATOR(interior_types, I) \
+                                                                        \
+    using size_type = I;                                                \
+    using ssize_type = typename std::make_signed<I>::type;              \
+    using difference_type = typename std::make_signed<I>::type;         \
+                                                                        \
+    template< I n > using value_type = typename std::tuple_element< n, std::tuple<interior_types...> >::type; \
+    template< I n > using pointer = value_type<n>*;                     \
+    template< I n > using const_pointer = value_type<n> const*;         \
+    template< I n > using reference = value_type<n>&;                   \
+    template< I n > using const_reference = value_type<n> const&        \
 
 
 #define _c4_DEFINE_ARRAY_TYPES(T, I)                                    \
@@ -255,15 +265,115 @@ public:                                                                 \
                                                                         \
     using iterator = T*;                                                \
     using const_iterator = T const*;                                    \
-                                                                        \
     using reverse_iterator = std::reverse_iterator< T* >;               \
     using const_reverse_iterator = std::reverse_iterator< T const* >
+
+
+#define _c4_DEFINE_TUPLE_ARRAY_TYPES(interior_types, I)                 \
+                                                                        \
+    _c4_DEFINE_TUPLE_ARRAY_TYPES_WITHOUT_ITERATOR(interior_types, I);   \
+                                                                        \
+    template< I n > using iterator = value_type<n>*;                    \
+    template< I n > using const_iterator = value_type<n> const*;        \
+    template< I n > using reverse_iterator = std::reverse_iterator< value_type<n>* >; \
+    template< I n > using const_reverse_iterator = std::reverse_iterator< value_type<n> const* >
 
 
 //-----------------------------------------------------------------------------
 // http://stackoverflow.com/questions/10821380/is-t-an-instance-of-a-template-in-c
 template< template < typename... > class X, typename    T > struct is_instance_of_tpl             : std::false_type {};
 template< template < typename... > class X, typename... Y > struct is_instance_of_tpl<X, X<Y...>> : std::true_type {};
+
+
+//-----------------------------------------------------------------------------
+// index_sequence and friends are available only for C++14 and later.
+// provide here an implementation for C++11.
+// This implementation was copied over from clang.
+// see http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687
+
+#if __cplusplus == 201103L
+} // end namespace c4
+namespace std {
+template<class _Tp, _Tp... _Ip>
+struct integer_sequence
+{
+    typedef _Tp value_type;
+    static_assert( std::is_integral<_Tp>::value,
+                  "std::integer_sequence can only be instantiated with an integral type" );
+    static constexpr size_t size() noexcept { return sizeof...(_Ip); }
+};
+
+template<size_t... _Ip>
+    using index_sequence = integer_sequence<size_t, _Ip...>;
+
+namespace __detail {
+
+template<typename _Tp, size_t ..._Extra> struct __repeat;
+template<typename _Tp, _Tp ..._Np, size_t ..._Extra> struct __repeat<integer_sequence<_Tp, _Np...>, _Extra...> {
+  typedef integer_sequence<_Tp,
+                           _Np...,
+                           sizeof...(_Np) + _Np...,
+                           2 * sizeof...(_Np) + _Np...,
+                           3 * sizeof...(_Np) + _Np...,
+                           4 * sizeof...(_Np) + _Np...,
+                           5 * sizeof...(_Np) + _Np...,
+                           6 * sizeof...(_Np) + _Np...,
+                           7 * sizeof...(_Np) + _Np...,
+                           _Extra...> type;
+};
+
+template<size_t _Np> struct __parity;
+template<size_t _Np> struct __make : __parity<_Np % 8>::template __pmake<_Np> {};
+
+template<> struct __make<0> { typedef integer_sequence<size_t> type; };
+template<> struct __make<1> { typedef integer_sequence<size_t, 0> type; };
+template<> struct __make<2> { typedef integer_sequence<size_t, 0, 1> type; };
+template<> struct __make<3> { typedef integer_sequence<size_t, 0, 1, 2> type; };
+template<> struct __make<4> { typedef integer_sequence<size_t, 0, 1, 2, 3> type; };
+template<> struct __make<5> { typedef integer_sequence<size_t, 0, 1, 2, 3, 4> type; };
+template<> struct __make<6> { typedef integer_sequence<size_t, 0, 1, 2, 3, 4, 5> type; };
+template<> struct __make<7> { typedef integer_sequence<size_t, 0, 1, 2, 3, 4, 5, 6> type; };
+
+template<> struct __parity<0> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type> {}; };
+template<> struct __parity<1> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 1> {}; };
+template<> struct __parity<2> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 2, _Np - 1> {}; };
+template<> struct __parity<3> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 3, _Np - 2, _Np - 1> {}; };
+template<> struct __parity<4> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 4, _Np - 3, _Np - 2, _Np - 1> {}; };
+template<> struct __parity<5> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 5, _Np - 4, _Np - 3, _Np - 2, _Np - 1> {}; };
+template<> struct __parity<6> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 6, _Np - 5, _Np - 4, _Np - 3, _Np - 2, _Np - 1> {}; };
+template<> struct __parity<7> { template<size_t _Np> struct __pmake : __repeat<typename __make<_Np / 8>::type, _Np - 7, _Np - 6, _Np - 5, _Np - 4, _Np - 3, _Np - 2, _Np - 1> {}; };
+
+template<typename _Tp, typename _Up> struct __convert {
+  template<typename> struct __result;
+  template<_Tp ..._Np> struct __result<integer_sequence<_Tp, _Np...> > { typedef integer_sequence<_Up, _Np...> type; };
+};
+template<typename _Tp> struct __convert<_Tp, _Tp> { template<typename _Up> struct __result { typedef _Up type; }; };
+
+}
+
+template<typename _Tp, _Tp _Np> using __make_integer_sequence_unchecked =
+  typename __detail::__convert<size_t, _Tp>::template __result<typename __detail::__make<_Np>::type>::type;
+
+template <class _Tp, _Tp _Ep>
+struct __make_integer_sequence
+{
+    static_assert(std::is_integral<_Tp>::value,
+                  "std::make_integer_sequence can only be instantiated with an integral type" );
+    static_assert(0 <= _Ep, "std::make_integer_sequence input shall not be negative");
+    typedef __make_integer_sequence_unchecked<_Tp, _Ep> type;
+};
+
+template<class _Tp, _Tp _Np>
+    using make_integer_sequence = typename __make_integer_sequence<_Tp, _Np>::type;
+
+template<size_t _Np>
+    using make_index_sequence = make_integer_sequence<size_t, _Np>;
+
+template<class... _Tp>
+    using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
+} // namespace std
+namespace c4 {
+#endif
 
 //-----------------------------------------------------------------------------
 // A template parameter pack is mass-forwardable if
