@@ -264,7 +264,7 @@ public:
             buf->clear();
         }
         template <class T>
-        Proxy& operator<< (fastcref<T> v)
+        Proxy& operator<< (T const& v)
         {
             if(C4_LIKELY(!buf)) return *this;
             *buf << v;
@@ -287,7 +287,7 @@ public:
     /** create a temporary proxy object to handle all the calls to <<.
      * It will accumulate the calls and output once after the last call. */
     template <class T>
-    Proxy operator<< (fastcref<T> v)
+    Proxy operator<< (T const& v)
     {
         Proxy s(*main_channel(), INFO);
         s << v;
