@@ -578,45 +578,56 @@ public:
      *  @param nextsz the next size */
     void _raw_resize(I pos, I prevsz, I nextsz)
     {
-        C4_ASSERT(nextsz >= 0 && nextsz < N);
-        C4_ASSERT(prevsz >= 0 && prevsz < N);
-        C4_ASSERT(pos    >= 0 && pos    < N);
-        C4_ASSERT(pos <= prevsz);
         if(nextsz > prevsz) // grow to the right of pos
         {
-            I prevmpos = prevsz - pos;
-            I delta = nextsz - prevsz;
-            #define _c4mcr(arr, i) c4::make_room(arr + pos, prevmpos, delta)
-            _C4_FOREACH_ARR(m_arr, _c4mcr)
-            #undef _c4mcr
+            _raw_make_room(pos, prevsz, nextsz-prevsz);
         }
         else if(nextsz < prevsz) // shrink to the left of pos
         {
-            I delta = prevsz - nextsz;
-            C4_ASSERT(pos >= delta);
-            #define _c4mcr(arr, i) c4::destroy_room(arr + pos - delta, prevsz, delta)
-            _C4_FOREACH_ARR(m_arr, _c4mcr)
-            #undef _c4mcr
+            _raw_destroy_room(pos, prevsz, prevsz-nextsz);
         }
+    }
+
+    void _raw_make_room(I pos, I prevsz, I more) ///< grow to the right of pos
+    {
+        C4_ASSERT(prevsz >= 0 && prevsz < N);
+        C4_ASSERT(more   >= 0 && more   < N);
+        C4_ASSERT(pos    >= 0 && pos    < N);
+        C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
+        C4_ASSERT(pos <= prevsz);
+        I prevmpos = prevsz - pos;
+        #define _c4mcr(arr, i) c4::make_room(arr + pos, prevmpos, more)
+        _C4_FOREACH_ARR(m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+    void _raw_destroy_room(I pos, I prevsz, I less) ///< shrink to the left of pos
+    {
+        C4_ASSERT(prevsz >= 0 && prevsz < N);
+        C4_ASSERT(pos    >= 0 && pos    < N);
+        C4_ASSERT(pos <= prevsz);
+        C4_ASSERT(pos >= less);
+        #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz, less)
+        _C4_FOREACH_ARR(m_arr, _c4mcr)
+        #undef _c4mcr
     }
 
 };
 
-template< class T0, size_t N, class I, I Alignment >
+template< class T, size_t N, class I, I Alignment >
 struct raw_fixed_soa
     :
-        public raw_fixed_soa_impl< soa<T0>, N, I, Alignment, std::index_sequence<0>() >
+        public raw_fixed_soa_impl< soa<T>, N, I, Alignment, std::index_sequence<0>() >
 {
-    using _base_type = raw_fixed_soa_impl< soa<T0>, N, I, Alignment, std::index_sequence<0>() >;
-    using _base_type::_base_type;
+    using _impl_type = raw_fixed_soa_impl< soa<T>, N, I, Alignment, std::index_sequence<0>() >;
+    using _impl_type::_impl_type;
 };
 template< class... SoaTypes, size_t N, class I, I Alignment >
 struct raw_fixed_soa< soa<SoaTypes...>, N, I, Alignment >
     :
         public raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >
 {
-    using _base_type = raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >;
-    using _base_type::_base_type;
+    using _impl_type = raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >;
+    using _impl_type::_impl_type;
 };
 
 
