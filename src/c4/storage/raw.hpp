@@ -595,8 +595,7 @@ public:
         C4_ASSERT(pos    >= 0 && pos    < N);
         C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
         C4_ASSERT(pos <= prevsz);
-        I prevmpos = prevsz - pos;
-        #define _c4mcr(arr, i) c4::make_room(arr + pos, prevmpos, more)
+        #define _c4mcr(arr, i) c4::make_room(arr + pos, prevsz - pos, more)
         _C4_FOREACH_ARR(m_arr, _c4mcr)
         #undef _c4mcr
     }
@@ -606,7 +605,7 @@ public:
         C4_ASSERT(pos    >= 0 && pos    < N);
         C4_ASSERT(pos <= prevsz);
         C4_ASSERT(pos >= less);
-        #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz, less)
+        #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz - (pos - less), less)
         _C4_FOREACH_ARR(m_arr, _c4mcr)
         #undef _c4mcr
     }
