@@ -534,6 +534,8 @@ public:
 
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & operator[] (I i)       C4_NOEXCEPT_X { C4_STATIC_ASSERT(n < num_arrays); C4_XASSERT(i >= 0 && i < (I)N); return std::get<n>(m_soa).m_arr[i]; }
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& operator[] (I i) const C4_NOEXCEPT_X { C4_STATIC_ASSERT(n < num_arrays); C4_XASSERT(i >= 0 && i < (I)N); return std::get<n>(m_soa).m_arr[i]; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & get        (I i)       C4_NOEXCEPT_X { C4_STATIC_ASSERT(n < num_arrays); C4_XASSERT(i >= 0 && i < (I)N); return std::get<n>(m_soa).m_arr[i]; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& get        (I i) const C4_NOEXCEPT_X { C4_STATIC_ASSERT(n < num_arrays); C4_XASSERT(i >= 0 && i < (I)N); return std::get<n>(m_soa).m_arr[i]; }
 
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      * _raw_iterator(I id)       noexcept { C4_STATIC_ASSERT(n < num_arrays); return std::get<n>(m_soa).m_arr + id; }
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const* _raw_iterator(I id) const noexcept { C4_STATIC_ASSERT(n < num_arrays); return std::get<n>(m_soa).m_arr + id; }

@@ -562,45 +562,44 @@ void test_raw_soa_resize_1_type()
     C4_STATIC_ASSERT(RawStorage::num_arrays == 1);
     static_assert(std::is_same< typename RawStorage::template value_type<0>, int >::value, "must be int");
     RawStorage r(10);
-    int *i;
-    i = r.template data<0>();
-    EXPECT_EQ(i, r.data());
+    EXPECT_EQ(r.template data<0>(), r.data());
     EXPECT_NE(r.data(), nullptr);
-    i = r.data(); // FIXME for paged
-    r._raw_resize(0, 0, 3);
-    i[0] = 0;
-    i[1] = 1;
-    i[2] = 2;
-    r._raw_resize(0, 3, 6);
-    i[0] = 20;
-    i[1] = 21;
-    i[2] = 22;
-    EXPECT_EQ(i[0], 20);
-    EXPECT_EQ(i[1], 21);
-    EXPECT_EQ(i[2], 22);
-    EXPECT_EQ(i[3], 0);
-    EXPECT_EQ(i[4], 1);
-    EXPECT_EQ(i[5], 2);
-    r._raw_resize(3, 6, 9);
-    i[3] = 3;
-    i[4] = 4;
-    i[5] = 5;
-    EXPECT_EQ(i[0], 20);
-    EXPECT_EQ(i[1], 21);
-    EXPECT_EQ(i[2], 22);
-    EXPECT_EQ(i[3], 3);
-    EXPECT_EQ(i[4], 4);
-    EXPECT_EQ(i[5], 5);
-    EXPECT_EQ(i[6], 0);
-    EXPECT_EQ(i[7], 1);
-    EXPECT_EQ(i[8], 2);
-    r._raw_resize(3, 9, 6);
-    EXPECT_EQ(i[0], 3);
-    EXPECT_EQ(i[1], 4);
-    EXPECT_EQ(i[2], 5);
-    EXPECT_EQ(i[3], 0);
-    EXPECT_EQ(i[4], 1);
-    EXPECT_EQ(i[5], 2);
+#define i r.template get<0>
+    r._raw_make_room(0, 0, 3);
+    i(0) = 0;
+    i(1) = 1;
+    i(2) = 2;
+    r._raw_make_room(0, 3, 3);
+    i(0) = 20;
+    i(1) = 21;
+    i(2) = 22;
+    EXPECT_EQ(i(0), 20);
+    EXPECT_EQ(i(1), 21);
+    EXPECT_EQ(i(2), 22);
+    EXPECT_EQ(i(3), 0);
+    EXPECT_EQ(i(4), 1);
+    EXPECT_EQ(i(5), 2);
+    r._raw_make_room(3, 6, 3);
+    i(3) = 3;
+    i(4) = 4;
+    i(5) = 5;
+    EXPECT_EQ(i(0), 20);
+    EXPECT_EQ(i(1), 21);
+    EXPECT_EQ(i(2), 22);
+    EXPECT_EQ(i(3), 3);
+    EXPECT_EQ(i(4), 4);
+    EXPECT_EQ(i(5), 5);
+    EXPECT_EQ(i(6), 0);
+    EXPECT_EQ(i(7), 1);
+    EXPECT_EQ(i(8), 2);
+    r._raw_destroy_room(3, 9, 3);
+    EXPECT_EQ(i(0), 3);
+    EXPECT_EQ(i(1), 4);
+    EXPECT_EQ(i(2), 5);
+    EXPECT_EQ(i(3), 0);
+    EXPECT_EQ(i(4), 1);
+    EXPECT_EQ(i(5), 2);
+#undef i
 }
 
 template< class RawStorage >
@@ -609,46 +608,46 @@ void test_raw_soa_resize_2_types()
     C4_STATIC_ASSERT(RawStorage::num_arrays == 2);
     static_assert(std::is_same< typename RawStorage::template value_type<0>, int >::value, "must be int");
     RawStorage r(10);
-    int *i;
-    float *j;
     EXPECT_EQ(r.template data<0>(), r.data());
     EXPECT_NE(r.data(), nullptr);
-    i = r.template data<0>(); // FIXME for paged
-    j = r.template data<1>(); // FIXME for paged
-    r._raw_resize(0, 0, 3);
-    i[0] = 0; j[0] = 10.f;
-    i[1] = 1; j[1] = 11.f;
-    i[2] = 2; j[2] = 12.f;
-    r._raw_resize(0, 3, 6);
-    i[0] = 20; j[0] = 210.f;
-    i[1] = 21; j[1] = 211.f;
-    i[2] = 22; j[2] = 212.f;
-    EXPECT_EQ(i[0], 20); EXPECT_FLOAT_EQ(j[0], 210.f);
-    EXPECT_EQ(i[1], 21); EXPECT_FLOAT_EQ(j[1], 211.f);
-    EXPECT_EQ(i[2], 22); EXPECT_FLOAT_EQ(j[2], 212.f);
-    EXPECT_EQ(i[3], 0);  EXPECT_FLOAT_EQ(j[3], 10.f);
-    EXPECT_EQ(i[4], 1);  EXPECT_FLOAT_EQ(j[4], 11.f);
-    EXPECT_EQ(i[5], 2);  EXPECT_FLOAT_EQ(j[5], 12.f);
-    r._raw_resize(3, 6, 9);
-    i[3] = 3; j[3] = 13.f;
-    i[4] = 4; j[4] = 14.f;
-    i[5] = 5; j[5] = 15.f;
-    EXPECT_EQ(i[0], 20); EXPECT_FLOAT_EQ(j[0], 210.f);
-    EXPECT_EQ(i[1], 21); EXPECT_FLOAT_EQ(j[1], 211.f);
-    EXPECT_EQ(i[2], 22); EXPECT_FLOAT_EQ(j[2], 212.f);
-    EXPECT_EQ(i[3], 3);  EXPECT_FLOAT_EQ(j[3], 13.f);
-    EXPECT_EQ(i[4], 4);  EXPECT_FLOAT_EQ(j[4], 14.f);
-    EXPECT_EQ(i[5], 5);  EXPECT_FLOAT_EQ(j[5], 15.f);
-    EXPECT_EQ(i[6], 0);  EXPECT_FLOAT_EQ(j[6], 10.f);
-    EXPECT_EQ(i[7], 1);  EXPECT_FLOAT_EQ(j[7], 11.f);
-    EXPECT_EQ(i[8], 2);  EXPECT_FLOAT_EQ(j[8], 12.f);
-    r._raw_resize(3, 9, 6);
-    EXPECT_EQ(i[0], 3); EXPECT_FLOAT_EQ(j[0], 13.f);
-    EXPECT_EQ(i[1], 4); EXPECT_FLOAT_EQ(j[1], 14.f);
-    EXPECT_EQ(i[2], 5); EXPECT_FLOAT_EQ(j[2], 15.f);
-    EXPECT_EQ(i[3], 0); EXPECT_FLOAT_EQ(j[3], 10.f);
-    EXPECT_EQ(i[4], 1); EXPECT_FLOAT_EQ(j[4], 11.f);
-    EXPECT_EQ(i[5], 2); EXPECT_FLOAT_EQ(j[5], 12.f);
+#define i r.template get<0>
+#define j r.template get<1>
+    r._raw_make_room(0, 0, 3);
+    i(0) = 0; j(0) = 10.f;
+    i(1) = 1; j(1) = 11.f;
+    i(2) = 2; j(2) = 12.f;
+    r._raw_make_room(0, 3, 3);
+    i(0) = 20; j(0) = 210.f;
+    i(1) = 21; j(1) = 211.f;
+    i(2) = 22; j(2) = 212.f;
+    EXPECT_EQ(i(0), 20); EXPECT_FLOAT_EQ(j(0), 210.f);
+    EXPECT_EQ(i(1), 21); EXPECT_FLOAT_EQ(j(1), 211.f);
+    EXPECT_EQ(i(2), 22); EXPECT_FLOAT_EQ(j(2), 212.f);
+    EXPECT_EQ(i(3), 0);  EXPECT_FLOAT_EQ(j(3), 10.f);
+    EXPECT_EQ(i(4), 1);  EXPECT_FLOAT_EQ(j(4), 11.f);
+    EXPECT_EQ(i(5), 2);  EXPECT_FLOAT_EQ(j(5), 12.f);
+    r._raw_make_room(3, 6, 3);
+    i(3) = 3; j(3) = 13.f;
+    i(4) = 4; j(4) = 14.f;
+    i(5) = 5; j(5) = 15.f;
+    EXPECT_EQ(i(0), 20); EXPECT_FLOAT_EQ(j(0), 210.f);
+    EXPECT_EQ(i(1), 21); EXPECT_FLOAT_EQ(j(1), 211.f);
+    EXPECT_EQ(i(2), 22); EXPECT_FLOAT_EQ(j(2), 212.f);
+    EXPECT_EQ(i(3), 3);  EXPECT_FLOAT_EQ(j(3), 13.f);
+    EXPECT_EQ(i(4), 4);  EXPECT_FLOAT_EQ(j(4), 14.f);
+    EXPECT_EQ(i(5), 5);  EXPECT_FLOAT_EQ(j(5), 15.f);
+    EXPECT_EQ(i(6), 0);  EXPECT_FLOAT_EQ(j(6), 10.f);
+    EXPECT_EQ(i(7), 1);  EXPECT_FLOAT_EQ(j(7), 11.f);
+    EXPECT_EQ(i(8), 2);  EXPECT_FLOAT_EQ(j(8), 12.f);
+    r._raw_destroy_room(3, 9, 3);
+    EXPECT_EQ(i(0), 3); EXPECT_FLOAT_EQ(j(0), 13.f);
+    EXPECT_EQ(i(1), 4); EXPECT_FLOAT_EQ(j(1), 14.f);
+    EXPECT_EQ(i(2), 5); EXPECT_FLOAT_EQ(j(2), 15.f);
+    EXPECT_EQ(i(3), 0); EXPECT_FLOAT_EQ(j(3), 10.f);
+    EXPECT_EQ(i(4), 1); EXPECT_FLOAT_EQ(j(4), 11.f);
+    EXPECT_EQ(i(5), 2); EXPECT_FLOAT_EQ(j(5), 12.f);
+#undef i
+#undef j
 }
 
 TEST(raw_fixed, soa_resize_1_bare)
