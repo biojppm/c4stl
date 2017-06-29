@@ -580,71 +580,9 @@ public:
         C4_NEVER_REACH();
     }
 
-    /** Resize the buffer at pos, so that prevsz increases to nextsz;
-     *  when growing, ___adds to the right___ of pos; when
-     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
-     *  will increase to the value obtained with the growth policy; if shrinking,
-     *  the capacity will stay the same. Use _raw_reserve() to diminish the
-     *  capacity.
-     *
-     *  @param pos the position from which room is to be created (to the right)
-     *         or destroyed (to the left)
-     *  @param prevsz the previous size
-     *  @param nextsz the next size
-     *  @see _raw_make_room
-     *  @see _raw_destroy_room
-     */
-    void _raw_resize(I pos, I prevsz, I nextsz)
-    {
-        if(nextsz > prevsz) // grow to the right of pos
-        {
-            _raw_make_room(pos, prevsz, nextsz-prevsz);
-        }
-        else if(nextsz < prevsz) // shrink to the left of pos
-        {
-            _raw_destroy_room(pos, prevsz, prevsz-nextsz);
-        }
-    }
-
-    /** grow to the right of pos 
-     @code
-     pos: 0 1 2 3 4 5
-     val: A B C D E F
-
-     _raw_make_room(3, 6, 3)
-
-     pos: 0 1 2 3 4 5 6 7 8
-     val: A B C . . . D E F
-     @endcode
-     */
-    void _raw_make_room(I pos, I prevsz, I more)
-    {
-        C4_ASSERT(prevsz >= 0 && prevsz < N);
-        C4_ASSERT(more   >= 0 && more   < N);
-        C4_ASSERT(pos    >= 0 && pos    < N);
-        C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
-        C4_ASSERT(pos <= prevsz);
-        c4::make_room(this->m_arr + pos, prevsz - pos, more);
-    }
-    /** shrink to the left of pos 
-     @code
-     pos: 0 1 2 3 4 5 6 7 8
-     val: A B C D E F G H I
-
-     _raw_destroy_room(6, 9, 3)
-
-     pos: 0 1 2 3 4 5
-     val: A B C G H I
-     @endcode
-     */
-    void _raw_destroy_room(I pos, I prevsz, I less)
-    {
-        C4_ASSERT(prevsz >= 0 && prevsz < N);
-        C4_ASSERT(pos    >= 0 && pos    < N);
-        C4_ASSERT(pos <= prevsz);
-        C4_ASSERT(pos >= less);
-        c4::destroy_room(this->m_arr + pos - less, prevsz - (pos - less), less);
-    }
+    C4_ALWAYS_INLINE void _raw_resize(I pos, I prevsz, I nextsz);
+    C4_ALWAYS_INLINE void _raw_make_room(I pos, I prevsz, I more);
+    C4_ALWAYS_INLINE void _raw_destroy_room(I pos, I prevsz, I less);
 
 };
 
@@ -745,75 +683,9 @@ public:
         C4_NEVER_REACH();
     }
 
-    /** Resize the buffer at pos, so that prevsz increases to nextsz;
-     *  when growing, ___adds to the right___ of pos; when
-     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
-     *  will increase to the value obtained with the growth policy; if shrinking,
-     *  the capacity will stay the same. Use _raw_reserve() to diminish the
-     *  capacity.
-     *
-     *  @param pos the position from which room is to be created (to the right)
-     *         or destroyed (to the left)
-     *  @param prevsz the previous size
-     *  @param nextsz the next size
-     *  @see _raw_make_room
-     *  @see _raw_destroy_room
-     */
-    void _raw_resize(I pos, I prevsz, I nextsz)
-    {
-        if(nextsz > prevsz) // grow to the right of pos
-        {
-            _raw_make_room(pos, prevsz, nextsz-prevsz);
-        }
-        else if(nextsz < prevsz) // shrink to the left of pos
-        {
-            _raw_destroy_room(pos, prevsz, prevsz-nextsz);
-        }
-    }
-
-    /** grow to the right of pos 
-     @code
-     pos: 0 1 2 3 4 5
-     val: A B C D E F
-
-     _raw_make_room(3, 6, 3)
-
-     pos: 0 1 2 3 4 5 6 7 8
-     val: A B C . . . D E F
-     @endcode
-     */
-    void _raw_make_room(I pos, I prevsz, I more)
-    {
-        C4_ASSERT(prevsz >= 0 && prevsz < N);
-        C4_ASSERT(more   >= 0 && more   < N);
-        C4_ASSERT(pos    >= 0 && pos    < N);
-        C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
-        C4_ASSERT(pos <= prevsz);
-        #define _c4mcr(arr, i) c4::make_room(arr + pos, prevsz - pos, more)
-        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
-        #undef _c4mcr
-    }
-    /** shrink to the left of pos 
-     @code
-     pos: 0 1 2 3 4 5 6 7 8
-     val: A B C D E F G H I
-
-     _raw_destroy_room(6, 9, 3)
-
-     pos: 0 1 2 3 4 5
-     val: A B C G H I
-     @endcode
-     */
-    void _raw_destroy_room(I pos, I prevsz, I less)
-    {
-        C4_ASSERT(prevsz >= 0 && prevsz < N);
-        C4_ASSERT(pos    >= 0 && pos    < N);
-        C4_ASSERT(pos <= prevsz);
-        C4_ASSERT(pos >= less);
-        #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz - (pos - less), less)
-        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
-        #undef _c4mcr
-    }
+    C4_ALWAYS_INLINE void _raw_resize(I pos, I prevsz, I nextsz);
+    C4_ALWAYS_INLINE void _raw_make_room(I pos, I prevsz, I more);
+    C4_ALWAYS_INLINE void _raw_destroy_room(I pos, I prevsz, I less);
 
 public:
 
@@ -873,7 +745,7 @@ public:
 
 };
 
-/** implement raw_fixed_soa for a single type */
+/** implement raw_fixed_soa for a single array */
 template< class T, size_t N, class I, I Alignment >
 struct raw_fixed_soa
     :
@@ -883,7 +755,7 @@ struct raw_fixed_soa
     using _impl_type::_impl_type;
 };
 
-/** implement raw_fixed_soa for a collection of types */
+/** implement raw_fixed_soa for multiple arrays */
 template< class... SoaTypes, size_t N, class I, I Alignment >
 struct raw_fixed_soa< soa<SoaTypes...>, N, I, Alignment >
     :
@@ -892,6 +764,157 @@ struct raw_fixed_soa< soa<SoaTypes...>, N, I, Alignment >
     using _impl_type = raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence_for<SoaTypes...>() >;
     using _impl_type::_impl_type;
 };
+
+//-----------------------------------------------------------------------------
+
+/** Resize the buffer at pos, so that prevsz increases to nextsz;
+ *  when growing, ___adds to the right___ of pos; when
+ *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+ *  will increase to the value obtained with the growth policy; if shrinking,
+ *  the capacity will stay the same. Use _raw_reserve() to diminish the
+ *  capacity.
+ *
+ *  @param pos the position from which room is to be created (to the right)
+ *         or destroyed (to the left)
+ *  @param prevsz the previous size
+ *  @param nextsz the next size
+ *  @see _raw_make_room
+ *  @see _raw_destroy_room
+ */
+template< class T, size_t N, class I, I Alignment >
+void raw_fixed< T, N, I, Alignment >::_raw_resize(I pos, I prevsz, I nextsz)
+{
+    if(nextsz > prevsz) // grow to the right of pos
+    {
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
+    }
+    else if(nextsz < prevsz) // shrink to the left of pos
+    {
+        _raw_destroy_room(pos, prevsz, prevsz-nextsz);
+    }
+}
+
+/** Resize the buffer at pos, so that prevsz increases to nextsz;
+ *  when growing, ___adds to the right___ of pos; when
+ *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+ *  will increase to the value obtained with the growth policy; if shrinking,
+ *  the capacity will stay the same. Use _raw_reserve() to diminish the
+ *  capacity.
+ *
+ *  @param pos the position from which room is to be created (to the right)
+ *         or destroyed (to the left)
+ *  @param prevsz the previous size
+ *  @param nextsz the next size
+ *  @see _raw_make_room
+ *  @see _raw_destroy_room
+ */
+template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
+void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >::
+_raw_resize(I pos, I prevsz, I nextsz)
+{
+    if(nextsz > prevsz) // grow to the right of pos
+    {
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
+    }
+    else if(nextsz < prevsz) // shrink to the left of pos
+    {
+        _raw_destroy_room(pos, prevsz, prevsz-nextsz);
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** grow to the right of pos
+ @code
+ pos: 0 1 2 3 4 5
+ val: A B C D E F
+
+ _raw_make_room(3, 6, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C . . . D E F
+ @endcode
+ */
+template< class T, size_t N, class I, I Alignment >
+void raw_fixed< T, N, I, Alignment >::_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < N);
+    C4_ASSERT(more   >= 0 && more   < N);
+    C4_ASSERT(pos    >= 0 && pos    < N);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
+    C4_ASSERT(pos <= prevsz);
+    c4::make_room(this->m_arr + pos, prevsz - pos, more);
+}
+
+/** grow to the right of pos
+ @code
+ pos: 0 1 2 3 4 5
+ val: A B C D E F
+
+ _raw_make_room(3, 6, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C . . . D E F
+ @endcode
+ */
+template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
+void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >::
+_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < N);
+    C4_ASSERT(more   >= 0 && more   < N);
+    C4_ASSERT(pos    >= 0 && pos    < N);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
+    C4_ASSERT(pos <= prevsz);
+    #define _c4mcr(arr, i) c4::make_room(arr + pos, prevsz - pos, more)
+    _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+    #undef _c4mcr
+}
+
+//-----------------------------------------------------------------------------
+/** shrink to the left of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F G H I
+
+ _raw_destroy_room(6, 9, 3)
+
+ pos: 0 1 2 3 4 5
+ val: A B C G H I
+ @endcode
+ */
+template< class T, size_t N, class I, I Alignment >
+void raw_fixed< T, N, I, Alignment >::_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < N);
+    C4_ASSERT(pos    >= 0 && pos    < N);
+    C4_ASSERT(pos <= prevsz);
+    C4_ASSERT(pos >= less);
+    c4::destroy_room(this->m_arr + pos - less, prevsz - (pos - less), less);
+}
+
+/** shrink to the left of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F G H I
+
+ _raw_destroy_room(6, 9, 3)
+
+ pos: 0 1 2 3 4 5
+ val: A B C G H I
+ @endcode
+ */
+template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
+void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >::
+_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < N);
+    C4_ASSERT(pos    >= 0 && pos    < N);
+    C4_ASSERT(pos <= prevsz);
+    C4_ASSERT(pos >= less);
+    #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz - (pos - less), less)
+    _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+    #undef _c4mcr
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -969,109 +992,119 @@ public:
     C4_ALWAYS_INLINE Alloc      & allocator()       { return m_cap_n_alloc.alloc(); }
     C4_ALWAYS_INLINE Alloc const& allocator() const { return m_cap_n_alloc.alloc(); }
 
-    /** assume the curr size is zero */
-    void _raw_reserve(I cap)
-    {
-        _raw_reserve(0, cap);
-    }
+    void _raw_reserve(I cap);
+    void _raw_reserve(I currsz, I cap);
 
-    void _raw_reserve(I currsz, I cap)
+    void _raw_reserve_allocate(I cap, tmp_type *tmp);
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp);
+
+    void _raw_resize(I pos, I prev, I next);
+
+};
+
+/** assume the curr size is zero */
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve(I cap)
+{
+    _raw_reserve(0, cap);
+}
+
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve(I currsz, I cap)
+{
+    C4_ASSERT(currsz <= cap);
+    T *tmp = nullptr;
+    if(cap != m_cap_n_alloc.m_value && cap != 0)
     {
-        C4_ASSERT(currsz <= cap);
-        T *tmp = nullptr;
-        if(cap != m_cap_n_alloc.m_value && cap != 0)
+        tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+    }
+    if(this->m_ptr)
+    {
+        if(tmp)
         {
-            tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+            c4::move_construct_n(tmp, this->m_ptr, currsz);
         }
-        if(this->m_ptr)
+        m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
+    }
+    m_cap_n_alloc.m_value = cap;
+    this->m_ptr = tmp;
+}
+
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve_allocate(I cap, tmp_type *tmp)
+{
+    T *t = nullptr;
+    if(cap != m_cap_n_alloc.m_value && cap != 0)
+    {
+        t = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+    }
+    tmp->m_cap_n_alloc.m_value = cap;
+    tmp->m_ptr = t;
+}
+
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
+{
+    if(this->m_ptr)
+    {
+        m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
+    }
+    m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
+    this->m_ptr = tmp->m_ptr;
+    tmp->m_ptr = nullptr;
+    tmp->m_cap_n_alloc.m_value = 0;
+}
+
+/** Resize the buffer at pos, so that prevsz increases to nextsz;
+ *  when growing, ___adds to the right___ of pos; when
+ *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+ *  will increase to the value obtained with the growth policy; if shrinking,
+ *  the capacity will stay the same. Use _raw_reserve() to diminish the
+ *  capacity.
+ *
+ *  @param pos the position from which room is to be created (to the right)
+ *         or destroyed (to the left)
+ *  @param prevsz the previous size
+ *  @param nextsz the next size
+ *  @see _raw_make_room
+ *  @see _raw_destroy_room
+ */
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_resize(I pos, I prev, I next)
+{
+    C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
+    C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
+    if(next > prev)
+    {
+        if(next <= m_cap_n_alloc.m_value)
         {
-            if(tmp)
+            c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
+        }
+        else
+        {
+            m_cap_n_alloc.m_value = next_capacity(next);
+            T* tmp = m_cap_n_alloc.alloc().allocate(m_cap_n_alloc.m_value, Alignment);
+            if(this->m_ptr)
             {
-                c4::move_construct_n(tmp, this->m_ptr, currsz);
-            }
-            m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-        }
-        m_cap_n_alloc.m_value = cap;
-        this->m_ptr = tmp;
-    }
-
-    void _raw_reserve_allocate(I cap, tmp_type *tmp)
-    {
-        T *t = nullptr;
-        if(cap != m_cap_n_alloc.m_value && cap != 0)
-        {
-            t = m_cap_n_alloc.alloc().allocate(cap, Alignment);
-        }
-        tmp->m_cap_n_alloc.m_value = cap;
-        tmp->m_ptr = t;
-    }
-    void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
-    {
-        if(this->m_ptr)
-        {
-            m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-        }
-        m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
-        this->m_ptr = tmp->m_ptr;
-        tmp->m_ptr = nullptr;
-        tmp->m_cap_n_alloc.m_value = 0;
-    }
-
-    /** Resize the buffer at pos, so that the previous size increases to the
-     *  value of next; when growing, ___adds to the right___ of pos; when
-     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
-     *  will increase to the value obtained with the growth policy; if shrinking,
-     *  the capacity will stay the same. Use _raw_reserve() to diminish the
-     *  capacity.
-     *
-     *  @param pos the position from which room is to be created (to the right)
-     *         or destroyed (to the left)
-     *  @param prev the previous size
-     *  @param next the next size */
-    void _raw_resize(I pos, I prev, I next)
-    {
-        C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
-        C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
-        C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
-        if(next > prev)
-        {
-            if(next <= m_cap_n_alloc.m_value)
-            {
-                c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
+                c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
+                m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
             }
             else
             {
-                m_cap_n_alloc.m_value = next_capacity(next);
-                T* tmp = m_cap_n_alloc.alloc().allocate(m_cap_n_alloc.m_value, Alignment);
-                if(this->m_ptr)
-                {
-                    c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
-                    m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-                }
-                else
-                {
-                    C4_ASSERT(prev == 0);
-                }
-                this->m_ptr = tmp;
+                C4_ASSERT(prev == 0);
             }
-        }
-        else if(next < prev)
-        {
-            I delta = prev - next;
-            C4_ASSERT(pos > delta);
-            c4::destroy_room(this->m_ptr + pos - delta, prev - pos, delta);
+            this->m_ptr = tmp;
         }
     }
+    else if(next < prev)
+    {
+        I delta = prev - next;
+        C4_ASSERT(pos > delta);
+        c4::destroy_room(this->m_ptr + pos - delta, prev - pos, delta);
+    }
+}
 
-};
-
-/** raw pointer storage for structure-of-arrays. this is a work in progress */
-template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy >
-struct raw< soa< SoaTypes... >, I, Alignment, Alloc, GrowthPolicy >
-{
-    std::tuple< mem_raw<SoaTypes>... > m_soa;
-    valnalloc< I, Alloc >              m_cap_n_alloc;
-};
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
