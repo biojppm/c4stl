@@ -1085,7 +1085,7 @@ public:
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        return GrowthPolicy::next_size(sizeof(T), m_cap_n_alloc.m_value, desired);
+        return GrowthPolicy::next_size(sizeof(nth_type<0>), m_cap_n_alloc.m_value, desired);
     }
 
 public:
@@ -1209,6 +1209,7 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve(I cap)
 {
     _raw_reserve(0, cap);
 }
+
 /** assume the curr size is zero */
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
@@ -1238,6 +1239,7 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve(I currsz, I cap)
     this->m_ptr = tmp;
     m_cap_n_alloc.m_value = cap;
 }
+
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 template< I n >
 void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
@@ -1284,6 +1286,7 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve_allocate(I cap, t
     tmp->m_ptr = t;
     tmp->m_cap_n_alloc.m_value = cap;
 }
+
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 template< I n >
 void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
@@ -1320,6 +1323,7 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve_replace(I /*tmpsz
     tmp->m_ptr = nullptr;
     tmp->m_cap_n_alloc.m_value = 0;
 }
+
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 template< I n >
 void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
@@ -1375,6 +1379,7 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_resize(I pos, I prevsz, I
         _raw_destroy_room(pos, prevsz, prevsz-nextsz);
     }
 }
+
 /** Resize the buffer at pos, so that prevsz increases to nextsz;
  *  when growing, ___adds to the right___ of pos; when
  *  shrinking, ___removes to the left___ of pos. If growing, the capacity
@@ -1437,17 +1442,18 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_make_room(I pos, I prevsz
         T* tmp = m_cap_n_alloc.alloc().allocate(real_next, Alignment);
         if(this->m_ptr)
         {
-            c4::make_room(tmp, this->m_ptr, prev, more, pos);
+            c4::make_room(tmp, this->m_ptr, prevsz, more, pos);
             m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
         }
         else
         {
-            C4_ASSERT(prev == 0);
+            C4_ASSERT(prevsz == 0);
         }
         this->m_ptr = tmp;
         m_cap_n_alloc.m_value = real_next;
     }
 }
+
 /** grow to the right of pos
  @code
  pos: 0 1 2 3 4 5 6 7 8
@@ -1473,17 +1479,17 @@ _do_raw_make_room(I pos, I prevsz, I more)
     else
     {
         I real_next = next_capacity(nextsz);
-        T* tmp = nth_allocator<n>().allocate(real_next, nth_alignment<n>::value);
+        nth_type<n>* tmp = nth_allocator<n>().allocate(real_next, nth_alignment<n>::value);
         if(ptr)
         {
-            c4::make_room(tmp, ptr, prev, more, pos);
+            c4::make_room(tmp, ptr, prevsz, more, pos);
             nth_allocator<n>().deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>::value);
         }
         else
         {
-            C4_ASSERT(prev == 0);
+            C4_ASSERT(prevsz == 0);
         }
-        this->m_ptr = tmp;
+        ptr = tmp;
     }
 }
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
@@ -1502,37 +1508,36 @@ _raw_make_room(I pos, I prevsz, I more)
 }
 
 //-----------------------------------------------------------------------------
-/** grow to the right of pos
+/** shrink to the left of pos
  @code
  pos: 0 1 2 3 4 5 6 7 8
- val: A B C D E F . . .
+ val: A B C D E F G H I
 
- _raw_make_room(3, 6, 3)
+ _raw_destroy_room(6, 9, 3)
 
  pos: 0 1 2 3 4 5 6 7 8
- val: A B C . . . D E F
+ val: A B C G H I . . .
  @endcode
  */
 template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
 void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_destroy_room(I pos, I prevsz, I less)
 {
     C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
-    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
     C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
-    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
-    C4_ASSERT(pos <= prevsz);
+    C4_ASSERT(pos    <= prevsz);
+    C4_ASSERT(pos    >= less);
     I delta = pos - less;
-    c4::destroy_room(this->m_ptr + delta, prev - delta, delta);
+    c4::destroy_room(this->m_ptr + delta, prevsz - delta, less);
 }
-/** grow to the right of pos
+/** shrink to the left of pos
  @code
  pos: 0 1 2 3 4 5 6 7 8
- val: A B C D E F . . .
+ val: A B C D E F G H I
 
- _raw_make_room(3, 6, 3)
+ _raw_destroy_room(6, 9, 3)
 
  pos: 0 1 2 3 4 5 6 7 8
- val: A B C . . . D E F
+ val: A B C G H I . . .
  @endcode
  */
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
@@ -1540,12 +1545,11 @@ void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_se
 _raw_destroy_room(I pos, I prevsz, I less)
 {
     C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
-    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
     C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
-    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
-    C4_ASSERT(pos <= prevsz);
+    C4_ASSERT(pos    <= prevsz);
+    C4_ASSERT(pos    >= less);
     I delta = pos - less;
-    #define _c4mcr(arr, i) c4::destroy_room(arr + delta, prevsz - delta, delta)
+    #define _c4mcr(arr, i) c4::destroy_room(arr + delta, prevsz - delta, less)
     _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
     #undef _c4mcr
 }

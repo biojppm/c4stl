@@ -706,6 +706,7 @@ template< class RawStorage >
 void test_raw_resize()
 {
     RawStorage r(10);
+    EXPECT_GE(r.capacity(), 10);
 #define i(pos) r[pos]
     r._raw_make_room(0, 0, 3);
     i(0) = 0;
@@ -749,6 +750,7 @@ void test_raw_soa_resize_1_type()
 {
     C4_STATIC_ASSERT(RawStorage::num_arrays == 1);
     RawStorage r(10);
+    EXPECT_GE(r.capacity(), 10);
 #define i r.template get<0>
     r._raw_make_room(0, 0, 3);
     i(0) = 0;
@@ -793,6 +795,7 @@ void test_raw_soa_resize_2_types()
     C4_STATIC_ASSERT(RawStorage::num_arrays == 2);
     static_assert(std::is_same< typename RawStorage::template value_type<0>, int >::value, "must be int");
     RawStorage r(10);
+    EXPECT_GE(r.capacity(), 10);
     EXPECT_EQ(r.template data<0>(), r.data());
     EXPECT_NE(r.data(), nullptr);
 #define i r.template get<0>
@@ -858,6 +861,23 @@ TEST(raw_fixed_soa, soa_resize_1_soa)
 TEST(raw_fixed_soa, soa_resize_2)
 {
     test_raw_soa_resize_2_types< raw_fixed_soa< soa<int,float>, 10 > >();
+}
+
+TEST(raw, resize)
+{
+    test_raw_resize< raw< int > >();
+}
+TEST(raw_soa, soa_resize_1_bare)
+{
+    test_raw_soa_resize_1_type< raw_soa< int > >();
+}
+TEST(raw_soa, soa_resize_1_soa)
+{
+    test_raw_soa_resize_1_type< raw_soa< soa<int> > >();
+}
+TEST(raw_soa, soa_resize_2)
+{
+    test_raw_soa_resize_2_types< raw_soa< soa<int,float> > >();
 }
 
 C4_END_NAMESPACE(stg)
