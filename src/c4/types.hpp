@@ -401,6 +401,24 @@ struct is_mass_forwardable<T> : public std::conditional<
     >::type
 {};
 
+//-----------------------------------------------------------------------------
+
+#define C4_NO_COPY_CTOR(ty) ty(ty const&) = delete
+#define C4_NO_MOVE_CTOR(ty) ty(ty     &&) = delete
+#define C4_NO_COPY_OR_MOVE_CTOR(ty) \
+    C4_NO_COPY_CTOR(ty); \
+    C4_NO_MOVE_CTOR(ty)
+
+#define C4_NO_COPY_ASSIGN(ty) ty& operator=(ty const&) = delete;
+#define C4_NO_MOVE_ASSIGN(ty) ty& operator=(ty     &&) = delete;
+#define C4_NO_COPY_OR_MOVE_ASSIGN(ty) \
+    C4_NO_COPY_ASSIGN(ty); \
+    C4_NO_MOVE_ASSIGN(ty)
+
+#define C4_NO_COPY_OR_MOVE(ty) \
+    C4_NO_COPY_OR_MOVE_CTOR(ty); \
+    C4_NO_COPY_OR_MOVE_ASSIGN(ty)
+
 C4_END_NAMESPACE(c4)
 
 #endif /* _C4_TYPES_HPP_ */
