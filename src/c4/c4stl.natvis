@@ -229,13 +229,14 @@ See also:
       <ArrayItems><Size>$T2</Size><ValuePointer>m_arr</ValuePointer></ArrayItems>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*&gt;,*,*,*&gt;"> <!-- soa, 1 type -->
-    <DisplayString>{{cap={N}, soa&lt;$T1&gt;}}</DisplayString>
+  <Type Name="c4::stg::raw_fixed_soa&lt;c4::stg::soa&lt;*&gt;,*,*,*&gt;"> <!-- soa, 1 type -->
+    <DisplayString>{{cap={$T2}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T2</Item>
+      <Item Name="[soa]">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*&gt;,*,*,*&gt;"> <!-- soa, 2 types -->
+  <Type Name="c4::stg::raw_fixed_soa&lt;c4::stg::soa&lt;*,*&gt;,*,*,*&gt;"> <!-- soa, 2 types -->
     <DisplayString>{{cap={$T3}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T3</Item>
