@@ -666,6 +666,13 @@ TEST(raw, construction)
     raw< ci > rp(1000);
     test_raw_construction(rp);
 }
+TEST(raw_soa, construction)
+{
+    using ci = Counting< int >;
+    using ch = Counting< uint16_t >;
+    raw_soa< soa<ci,ch> > rp(1000);
+    test_raw_soa_construction(rp);
+}
 TEST(raw_small, construction)
 {
     using ci = Counting< int >;

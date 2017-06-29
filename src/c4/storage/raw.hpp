@@ -388,6 +388,10 @@ template< class Storage >
 struct _raw_storage_traits< Storage, contiguous_t > : public _raw_storage_calls_use_allocator_and_data< Storage >
 {
 };
+template< class Storage >
+struct _raw_storage_traits< Storage, contiguous_soa_t > : public _raw_storage_calls_forward_to_storage< Storage >
+{
+};
 
 /** specialization of _raw_storage_traits for small contiguous containers.
  * @ingroup raw_storage_classes */
@@ -1057,8 +1061,8 @@ public:
     raw_soa_impl() : raw_soa_impl(0) {}
     raw_soa_impl(Alloc const& a) : raw_soa_impl(0, a) {}
 
-    raw_soa_impl(I cap) : m_soa(nullptr), m_cap_n_alloc(0) { _raw_reserve(0, cap); }
-    raw_soa_impl(I cap, Alloc const& a) : m_soa(nullptr), m_cap_n_alloc(0, a) { _raw_reserve(0, cap); }
+    raw_soa_impl(I cap) : m_soa(), m_cap_n_alloc(0) { C4_ASSERT(std::get<0>(m_soa).m_ptr == nullptr); _raw_reserve(0, cap); }
+    raw_soa_impl(I cap, Alloc const& a) : m_soa(), m_cap_n_alloc(0, a) { C4_ASSERT(std::get<0>(m_soa).m_ptr == nullptr); _raw_reserve(0, cap); }
 
     ~raw_soa_impl()
     {
@@ -1118,6 +1122,83 @@ public:
     template< I n > void _do_raw_resize(I pos, I prev, I next);
     template< I n > void _do_raw_make_room(I pos, I prevsz, I more);
     template< I n > void _do_raw_destroy_room(I pos, I prevsz, I less);
+
+public:
+
+    /** passes args to all arrays */
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, Args const&... args)
+    {
+        #define _c4mcr(arr, i) c4::construct_n(arr + first, n, args...)
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    /** passes each tuple element to the elements of its corresponding array */
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, std::tuple< Args... > const& args)
+    {
+        static_assert(sizeof...(args) == sizeof...(SoaTypes), "incompatible number of arguments");
+        #define _c4mcr(arr, i) c4::construct_n(arr + first, n, std::forward(std::get< i >(args)))
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_destroy_n(I first, I n)
+    {
+        #define _c4mcr(arr, i) c4::destroy_n(arr + first, n)
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_construct_n(raw_soa_impl& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::move_construct_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_assign_n(raw_soa_impl& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::move_assign_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_construct_n(raw_soa_impl const& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::copy_construct_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_assign_n(raw_soa_impl const& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::copy_assign_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+};
+
+
+/** implement raw_fixed_soa for a single array */
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+struct raw_soa
+    :
+        public raw_soa_impl< soa<T>, I, Alignment, Alloc, GrowthPolicy, index_sequence<0>() >
+{
+    using _impl_type = raw_soa_impl< soa<T>, I, Alignment, Alloc, GrowthPolicy, index_sequence<0>() >;
+    using _impl_type::_impl_type;
+};
+
+/** implement raw_fixed_soa for multiple arrays */
+template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy >
+struct raw_soa< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy >
+    :
+        public raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence_for<SoaTypes...>() >
+{
+    using _impl_type = raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence_for<SoaTypes...>() >;
+    using _impl_type::_impl_type;
 };
 
 
@@ -1167,7 +1248,7 @@ _do_raw_reserve(I currsz, I cap)
     auto al = nth_allocator<n>();
     if(cap != m_cap_n_alloc.m_value && cap != 0)
     {
-        tmp = al.allocate(cap, nth_alignment<n>);
+        tmp = al.allocate(cap, nth_alignment<n>::value);
     }
     if(ptr)
     {
@@ -1175,7 +1256,7 @@ _do_raw_reserve(I currsz, I cap)
         {
             c4::move_construct_n(tmp, ptr, currsz);
         }
-        al.deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>);
+        al.deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>::value);
     }
     ptr = tmp;
 }
@@ -1211,7 +1292,7 @@ _do_raw_reserve_allocate(I cap, tmp_type *tmp)
     nth_type<n> *t = nullptr;
     if(cap != m_cap_n_alloc.m_value && cap != 0)
     {
-        t = nth_allocator<n>().allocate(cap, nth_alignment<n>);
+        t = nth_allocator<n>().allocate(cap, nth_alignment<n>::value);
     }
     std::get<n>(tmp->m_soa).m_ptr = t;
 }
@@ -1248,7 +1329,7 @@ _do_raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
     nth_type<n> *& ptr = std::get<n>(m_soa).m_ptr;
     if(ptr)
     {
-        nth_allocator<n>().deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>);
+        nth_allocator<n>().deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>::value);
     }
     ptr = tmpptr;
     tmpptr = nullptr;
@@ -1392,11 +1473,11 @@ _do_raw_make_room(I pos, I prevsz, I more)
     else
     {
         I real_next = next_capacity(nextsz);
-        T* tmp = nth_allocator<n>().allocate(real_next, nth_alignment<n>);
+        T* tmp = nth_allocator<n>().allocate(real_next, nth_alignment<n>::value);
         if(ptr)
         {
             c4::make_room(tmp, ptr, prev, more, pos);
-            nth_allocator<n>().deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>);
+            nth_allocator<n>().deallocate(ptr, m_cap_n_alloc.m_value, nth_alignment<n>::value);
         }
         else
         {
