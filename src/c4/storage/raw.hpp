@@ -78,6 +78,24 @@ struct default_small_size
 };
 
 //-----------------------------------------------------------------------------
+
+
+/** returns the maximum size that a container can have when there is a npos
+ * marker.
+ * @warning assumes npos==-1 */
+template< class Storage >
+C4_CONSTEXPR14 C4_ALWAYS_INLINE size_t raw_max_size_with_npos()
+{
+    using I = typename Storage::size_type;
+    size_t mc = Storage::max_capacity();
+    if(mc == std::numeric_limits< I >::max() && std::is_unsigned< I >::value)
+    {
+        mc -= 1;
+    }
+    return mc;
+}
+
+//-----------------------------------------------------------------------------
 /** since the page size is a power of two, the max capacity is simply the
  * maximum of the size type */
 template< class I >
@@ -86,16 +104,30 @@ C4_ALWAYS_INLINE constexpr size_t raw_max_capacity() noexcept
     return size_t(std::numeric_limits< I >::max());
 }
 
-#define _C4_FOREACH_ARR(member, macro)                                  \
+//-----------------------------------------------------------------------------
+
+#define _C4_FOREACH_ARR(soa, member, macro)                             \
 {                                                                       \
-    size_t _foreach_dummy[] = {                                         \
+    size_t C4_XCAT(_foreach_dummy, __LINE__)[] = {                      \
         (                                                               \
-         macro(std::get<Indices>(m_soa).member, Indices)                \
+         macro(std::get<Indices>(soa).member, Indices)                  \
          C4_COMMA                                                       \
          size_t(0)                                                      \
         )...                                                            \
     };                                                                  \
-    C4_UNUSED(_foreach_dummy);                                          \
+    C4_UNUSED(C4_XCAT(_foreach_dummy, __LINE__));                       \
+}
+
+#define _C4_FOREACH_ARR_LR(lsoa, rsoa, member, macro)                   \
+{                                                                       \
+    size_t C4_XCAT(_foreach_dummy_lr, __LINE__)[] = {                   \
+        (                                                               \
+         macro(std::get<Indices>(lsoa).member, std::get<Indices>(rsoa).member, Indices) \
+         C4_COMMA                                                       \
+         size_t(0)                                                      \
+        )...                                                            \
+    };                                                                  \
+    C4_UNUSED(C4_XCAT(_foreach_dummy_lr, __LINE__));                    \
 }
 
 //-----------------------------------------------------------------------------
@@ -108,9 +140,6 @@ template< class Storage, class TagType > struct raw_storage_traits;
  * @todo make the Alignment a size_t */
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed;
-
-template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class... IndexSequence >
-struct raw_fixed_soa_impl;
 
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed_soa;
@@ -135,221 +164,6 @@ template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=All
 using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
-
-/** pair of value and allocator. Makes use of the empty base class optimization to
- * compress the allocator when it has no members */
-template< class I, class Alloc >
-struct valnalloc : public Alloc
-{
-    I m_value;
-
-    valnalloc(I v) : Alloc(), m_value(v) {}
-    valnalloc(I v, Alloc const& a) : Alloc(a), m_value(v) {}
-    valnalloc(Alloc const& a) : Alloc(a), m_value(0) {}
-
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I          & value()       { return m_value; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I     const& value() const { return m_value; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc      & alloc()       { return static_cast< Alloc      & >(*this); }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc const& alloc() const { return static_cast< Alloc const& >(*this); }
-};
-
-//-----------------------------------------------------------------------------
-
-struct contiguous_t {};
-struct fixed_t {};
-struct small_t {};
-struct paged_t {};
-
-template< class Storage, class TagType >
-struct _raw_storage_traits;
-
-/** Type traits for raw storage classes.
- * @ingroup raw_storage_classes */
-template< class Storage, class TagType >
-struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
-{
-    using storage_type = Storage;
-    using value_type = typename Storage::value_type;
-    using size_type = typename Storage::size_type;
-    using tag_type = TagType;
-    using util_type = _raw_storage_traits< Storage, TagType >;
-
-    enum {
-        contiguous = std::is_same< TagType, contiguous_t >::value,
-        fixed = std::is_same< TagType, fixed_t >::value,
-        small = std::is_same< TagType, small_t >::value,
-        paged = std::is_same< TagType, paged_t >::value,
-        uses_allocator = ! fixed
-    };
-
-    using util_type::destroy_n;
-    using util_type::construct_n;
-    using util_type::move_construct_n;
-    using util_type::move_assign_n;
-    using util_type::copy_construct_n;
-    using util_type::copy_assign_n;
-};
-
-
-/** returns the maximum size that a container can have when there is a npos
- * marker.
- * @warning assumes npos==-1 */
-template< class Storage >
-C4_CONSTEXPR14 C4_ALWAYS_INLINE size_t raw_max_size_with_npos()
-{
-    using I = typename Storage::size_type;
-    size_t mc = Storage::max_capacity();
-    if(mc == std::numeric_limits< I >::max() && std::is_unsigned< I >::value)
-    {
-        mc -= 1;
-    }
-    return mc;
-}
-
-//-----------------------------------------------------------------------------
-
-/** specialization of _raw_storage_traits for fixed storage containers.
- * @ingroup raw_storage_classes */
-template< class Storage >
-struct _raw_storage_traits< Storage, fixed_t >
-{
-    using storage_type = Storage;
-
-    using T = typename Storage::value_type;
-    using I = typename Storage::size_type;
-
-    template< class ...Args >
-    C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
-    {
-        c4::construct_n(dest.data() + first, n, std::forward< Args >(args)...);
-    }
-
-    C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
-    {
-        c4::destroy_n(dest.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::move_construct_n(dest.data() + first, src.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::copy_construct_n(dest.data() + first, src.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::move_assign_n(dest.data() + first, src.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::copy_assign_n(dest.data() + first, src.data() + first, n);
-    }
-};
-
-template< class Storage >
-struct _common_contiguous_traits
-{
-    using storage_type = Storage;
-
-    using T = typename Storage::value_type;
-    using I = typename Storage::size_type;
-
-    /// @todo use alloc_traits here and in the other functions
-    template< class ...Args >
-    C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
-    {
-        dest.m_cap_n_alloc.alloc().construct_n(dest.data() + first, n, std::forward< Args >(args)...);
-    }
-
-    C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
-    {
-        dest.m_cap_n_alloc.alloc().destroy_n(dest.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::move_construct_n(dest.data() + first, src.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::copy_construct_n(dest.data() + first, src.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::move_assign_n(dest.data() + first, src.data() + first, n);
-    }
-
-    C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        c4::copy_assign_n(dest.data() + first, src.data() + first, n);
-    }
-
-};
-
-/** specialization of _raw_storage_traits for non-fixed contiguous containers.
- * @ingroup raw_storage_classes */
-template< class Storage >
-struct _raw_storage_traits< Storage, contiguous_t > : public _common_contiguous_traits< Storage >
-{
-};
-/** specialization of _raw_storage_traits for small contiguous containers.
- * @ingroup raw_storage_classes */
-template< class Storage >
-struct _raw_storage_traits< Storage, small_t > : public _common_contiguous_traits< Storage >
-{
-    using storage_type = Storage;
-};
-
-
-/** specialization of _raw_storage_traits for paged storage containers.
- * @ingroup raw_storage_classes */
-template< class Storage >
-struct _raw_storage_traits< Storage, paged_t >
-{
-    using storage_type = Storage;
-
-    using T = typename Storage::value_type;
-    using I = typename Storage::size_type;
-
-    template< class ...Args >
-    C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
-    {
-        dest._raw_construct_n(first, n, std::forward< Args >(args)...);
-    }
-
-    C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
-    {
-        dest._raw_destroy_n(first, n);
-    }
-
-    C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        dest._raw_move_construct_n(src, first, n);
-    }
-
-    C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        dest._raw_copy_construct_n(src, first, n);
-    }
-
-    C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        dest._raw_move_assign_n(src, first, n);
-    }
-
-    C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
-    {
-        dest._raw_copy_assign_n(src, first, n);
-    }
-};
-
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
@@ -372,7 +186,7 @@ struct tmp_storage< raw_fixed< T, N, I, Alignment > > : public _NoTmpStorage< T,
 {
 };
 template< class T, size_t N, class I, I Alignment >
-struct tmp_storage< raw_fixed_soa_impl< T, N, I, Alignment > > : public _NoTmpStorage< T, I >
+struct tmp_storage< raw_fixed_soa< T, N, I, Alignment > > : public _NoTmpStorage< T, I >
 {
 };
 /** paged storage does not need copying of the pages when grown or shrinked */
@@ -385,6 +199,225 @@ struct tmp_storage< raw_paged< T, I, PageSize, Alignment, Alloc > > : public _No
 template< class T, class I, size_t N, I Alignment, class Alloc, class GrowthPolicy >
 struct tmp_storage< raw_small< T, I, N, Alignment, Alloc, GrowthPolicy > > : public tmp_storage< raw< T, I, Alignment, Alloc, GrowthPolicy > >
 {
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+struct contiguous_t {};
+struct fixed_t {};
+struct small_t {};
+struct paged_t {};
+
+struct contiguous_soa_t {};
+struct fixed_soa_t {};
+struct small_soa_t {};
+struct paged_soa_t {};
+
+template< class Storage, class TagType >
+struct _raw_storage_traits;
+
+/** Type traits for raw storage classes.
+ * @ingroup raw_storage_classes */
+template< class Storage, class TagType >
+struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
+{
+
+    enum {
+        contiguous     = std::is_same< TagType, contiguous_t     >::value,
+        contiguous_soa = std::is_same< TagType, contiguous_soa_t >::value,
+        fixed          = std::is_same< TagType, fixed_t          >::value,
+        fixed_soa      = std::is_same< TagType, fixed_soa_t      >::value,
+        small          = std::is_same< TagType, small_t          >::value,
+        small_soa      = std::is_same< TagType, small_soa_t      >::value,
+        paged          = std::is_same< TagType, paged_t          >::value,
+        paged_soa      = std::is_same< TagType, paged_soa_t      >::value,
+        uses_allocator = ( ! fixed) && ( ! fixed_soa),
+    };
+
+    using _impl_type = _raw_storage_traits< Storage, TagType >;
+
+    using tag_type = TagType;
+    using storage_type = Storage;
+
+    using _impl_type::destroy_n;
+    using _impl_type::construct_n;
+    using _impl_type::move_construct_n;
+    using _impl_type::move_assign_n;
+    using _impl_type::copy_construct_n;
+    using _impl_type::copy_assign_n;
+};
+
+//-----------------------------------------------------------------------------
+
+template< class Storage >
+struct _raw_storage_calls_use_data_only
+{
+    using I = typename Storage::size_type;
+
+    template< class ...Args >
+    C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
+    {
+        c4::construct_n(dest.data() + first, n, std::forward< Args >(args)...);
+    }
+
+    C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
+    {
+        c4::destroy_n(dest.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage& src, I first, I n)
+    {
+        c4::move_construct_n(dest.data() + first, src.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage& src, I first, I n)
+    {
+        c4::move_assign_n(dest.data() + first, src.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
+    {
+        c4::copy_construct_n(dest.data() + first, src.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
+    {
+        c4::copy_assign_n(dest.data() + first, src.data() + first, n);
+    }
+};
+
+template< class Storage >
+struct _raw_storage_calls_use_allocator_and_data
+{
+    using I = typename Storage::size_type;
+    using allocator_traits = typename Storage::allocator_traits;
+
+    /// @todo use alloc_traits here and in the other functions
+    template< class ...Args >
+    C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
+    {
+        dest.m_cap_n_alloc.alloc().construct_n(dest.data() + first, n, std::forward< Args >(args)...);
+    }
+
+    C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
+    {
+        dest.m_cap_n_alloc.alloc().destroy_n(dest.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage& src, I first, I n)
+    {
+        c4::move_construct_n(dest.data() + first, src.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage& src, I first, I n)
+    {
+        c4::copy_construct_n(dest.data() + first, src.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage const& src, I first, I n)
+    {
+        c4::move_assign_n(dest.data() + first, src.data() + first, n);
+    }
+
+    C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
+    {
+        c4::copy_assign_n(dest.data() + first, src.data() + first, n);
+    }
+};
+
+template< class Storage >
+struct _raw_storage_calls_forward_to_storage
+{
+    using I = typename Storage::size_type;
+
+    template< class ...Args >
+    C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
+    {
+        dest._raw_construct_n(first, n, std::forward< Args >(args)...);
+    }
+
+    C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
+    {
+        dest._raw_destroy_n(first, n);
+    }
+
+    C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage& src, I first, I n)
+    {
+        dest._raw_move_construct_n(src, first, n);
+    }
+
+    C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage& src, I first, I n)
+    {
+        dest._raw_move_assign_n(src, first, n);
+    }
+
+    C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
+    {
+        dest._raw_copy_construct_n(src, first, n);
+    }
+
+    C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
+    {
+        dest._raw_copy_assign_n(src, first, n);
+    }
+};
+
+//-----------------------------------------------------------------------------
+
+/** specialization of _raw_storage_traits for fixed storage containers.
+ * @ingroup raw_storage_classes */
+template< class Storage >
+struct _raw_storage_traits< Storage, fixed_t > : public _raw_storage_calls_use_data_only< Storage >
+{
+};
+
+template< class Storage >
+struct _raw_storage_traits< Storage, fixed_soa_t > : public _raw_storage_calls_forward_to_storage< Storage >
+{
+};
+
+/** specialization of _raw_storage_traits for non-fixed contiguous containers.
+ * @ingroup raw_storage_classes */
+template< class Storage >
+struct _raw_storage_traits< Storage, contiguous_t > : public _raw_storage_calls_use_allocator_and_data< Storage >
+{
+};
+
+/** specialization of _raw_storage_traits for small contiguous containers.
+ * @ingroup raw_storage_classes */
+template< class Storage >
+struct _raw_storage_traits< Storage, small_t > : public _raw_storage_calls_use_allocator_and_data< Storage >
+{
+};
+
+/** specialization of _raw_storage_traits for paged storage containers.
+ * @ingroup raw_storage_classes */
+template< class Storage >
+struct _raw_storage_traits< Storage, paged_t > : public _raw_storage_calls_forward_to_storage< Storage >
+{
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** pair of value and allocator. Makes use of the empty base class optimization to
+ * compress the allocator when it has no members */
+template< class I, class Alloc >
+struct valnalloc : public Alloc
+{
+    I m_value;
+
+    valnalloc(I v) : Alloc(), m_value(v) {}
+    valnalloc(I v, Alloc const& a) : Alloc(a), m_value(v) {}
+    valnalloc(Alloc const& a) : Alloc(a), m_value(0) {}
+
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I          & value()       { return m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I     const& value() const { return m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc      & alloc()       { return static_cast< Alloc      & >(*this); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 Alloc const& alloc() const { return static_cast< Alloc const& >(*this); }
 };
 
 //-----------------------------------------------------------------------------
@@ -434,7 +467,6 @@ struct mem_small
 
 #ifdef __clang__
 #   pragma clang diagnostic pop
-#   pragma clang diagnostic ignored "-Wnested-anon-types" // warning: anonymous types declared in an anonymous union are an extension
 #endif
 
     C4_ALWAYS_INLINE mem_small() : m_ptr(nullptr) {}
@@ -470,6 +502,157 @@ template< class T, size_t PgSz, size_t NumPg > struct ___natvis_util_paged { T**
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+template< class T, size_t N, class I, I Alignment >
+struct raw_fixed : public mem_fixed< T, N, Alignment >
+{
+
+    C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
+
+public:
+
+    _c4_DEFINE_ARRAY_TYPES(T, I);
+    using allocator_type = void;
+
+    using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
+
+    template< class U >
+    using rebind_type = raw_fixed<U, N, I, alignof(U)>;
+
+    using tmp_type = tmp_storage< raw_fixed >;
+
+    enum : I { arr_size = static_cast<I>(N), num_arrays = 1, };
+
+public:
+
+    C4_ALWAYS_INLINE raw_fixed() {}
+    C4_ALWAYS_INLINE ~raw_fixed() {}
+
+    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_UNUSED(cap); C4_ASSERT(cap <= (I)N); }
+
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
+    C4_NO_COPY_OR_MOVE(raw_fixed);
+
+    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return this->m_arr[i]; }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return this->m_arr[i]; }
+
+    C4_ALWAYS_INLINE T      * data()       noexcept { return this->m_arr; }
+    C4_ALWAYS_INLINE T const* data() const noexcept { return this->m_arr; }
+
+    C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
+    C4_ALWAYS_INLINE constexpr bool empty() const noexcept { return false; }
+
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return N; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 static size_t next_capacity(size_t cap) C4_NOEXCEPT_A
+    {
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (size_t)N);
+        return N;
+    }
+
+public:
+
+    iterator       _raw_iterator(I id)       noexcept { return this->m_arr + id; }
+    const_iterator _raw_iterator(I id) const noexcept { return this->m_arr + id; }
+
+public:
+
+    /** assume the curr size is zero */
+    void _raw_reserve(I cap)
+    {
+        _raw_reserve(0, cap);
+    }
+
+    void _raw_reserve(I currsz, I cap) const
+    {
+        C4_UNUSED(currsz);
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (I)N);
+    }
+
+    void _raw_reserve_allocate(I cap, tmp_type * /*tmp*/)
+    {
+        C4_UNUSED(cap);
+        C4_ASSERT(cap <= (I)N);
+    }
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type * /*tmp*/)
+    {
+        C4_NEVER_REACH();
+    }
+
+    /** Resize the buffer at pos, so that prevsz increases to nextsz;
+     *  when growing, ___adds to the right___ of pos; when
+     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+     *  will increase to the value obtained with the growth policy; if shrinking,
+     *  the capacity will stay the same. Use _raw_reserve() to diminish the
+     *  capacity.
+     *
+     *  @param pos the position from which room is to be created (to the right)
+     *         or destroyed (to the left)
+     *  @param prevsz the previous size
+     *  @param nextsz the next size
+     *  @see _raw_make_room
+     *  @see _raw_destroy_room
+     */
+    void _raw_resize(I pos, I prevsz, I nextsz)
+    {
+        if(nextsz > prevsz) // grow to the right of pos
+        {
+            _raw_make_room(pos, prevsz, nextsz-prevsz);
+        }
+        else if(nextsz < prevsz) // shrink to the left of pos
+        {
+            _raw_destroy_room(pos, prevsz, prevsz-nextsz);
+        }
+    }
+
+    /** grow to the right of pos 
+     @code
+     pos: 0 1 2 3 4 5
+     val: A B C D E F
+
+     _raw_make_room(3, 6, 3)
+
+     pos: 0 1 2 3 4 5 6 7 8
+     val: A B C . . . D E F
+     @endcode
+     */
+    void _raw_make_room(I pos, I prevsz, I more)
+    {
+        C4_ASSERT(prevsz >= 0 && prevsz < N);
+        C4_ASSERT(more   >= 0 && more   < N);
+        C4_ASSERT(pos    >= 0 && pos    < N);
+        C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
+        C4_ASSERT(pos <= prevsz);
+        c4::make_room(this->m_arr + pos, prevsz - pos, more);
+    }
+    /** shrink to the left of pos 
+     @code
+     pos: 0 1 2 3 4 5 6 7 8
+     val: A B C D E F G H I
+
+     _raw_destroy_room(6, 9, 3)
+
+     pos: 0 1 2 3 4 5
+     val: A B C G H I
+     @endcode
+     */
+    void _raw_destroy_room(I pos, I prevsz, I less)
+    {
+        C4_ASSERT(prevsz >= 0 && prevsz < N);
+        C4_ASSERT(pos    >= 0 && pos    < N);
+        C4_ASSERT(pos <= prevsz);
+        C4_ASSERT(pos >= less);
+        c4::destroy_room(this->m_arr + pos - less, prevsz - (pos - less), less);
+    }
+
+};
+
+//-----------------------------------------------------------------------------
+
+template< class T, size_t N, class I, I Alignment, class IndexSequence >
+struct raw_fixed_soa_impl;
+
 /** raw fixed storage for structure-of-arrays. this is a work in progress */
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
 struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >
@@ -485,7 +668,7 @@ public:
     _c4_DEFINE_TUPLE_ARRAY_TYPES(SoaTypes, I);
     using allocator_type = void;
 
-    using storage_traits = raw_storage_traits< raw_fixed_soa_impl, fixed_t >;
+    using storage_traits = raw_storage_traits< raw_fixed_soa_impl, fixed_soa_t >;
 
     template< class U >
     using rebind_type = raw_fixed<U, N, I, alignof(U)>;
@@ -508,10 +691,7 @@ public:
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
-    raw_fixed_soa_impl(raw_fixed_soa_impl const& that) = delete;
-    raw_fixed_soa_impl(raw_fixed_soa_impl     && that) = delete;
-    raw_fixed_soa_impl& operator=(raw_fixed_soa_impl const& that) = delete;
-    raw_fixed_soa_impl& operator=(raw_fixed_soa_impl     && that) = delete;
+    C4_NO_COPY_OR_MOVE(raw_fixed_soa_impl);
 
 public:
 
@@ -575,7 +755,10 @@ public:
      *  @param pos the position from which room is to be created (to the right)
      *         or destroyed (to the left)
      *  @param prevsz the previous size
-     *  @param nextsz the next size */
+     *  @param nextsz the next size
+     *  @see _raw_make_room
+     *  @see _raw_destroy_room
+     */
     void _raw_resize(I pos, I prevsz, I nextsz)
     {
         if(nextsz > prevsz) // grow to the right of pos
@@ -588,7 +771,18 @@ public:
         }
     }
 
-    void _raw_make_room(I pos, I prevsz, I more) ///< grow to the right of pos
+    /** grow to the right of pos 
+     @code
+     pos: 0 1 2 3 4 5
+     val: A B C D E F
+
+     _raw_make_room(3, 6, 3)
+
+     pos: 0 1 2 3 4 5 6 7 8
+     val: A B C . . . D E F
+     @endcode
+     */
+    void _raw_make_room(I pos, I prevsz, I more)
     {
         C4_ASSERT(prevsz >= 0 && prevsz < N);
         C4_ASSERT(more   >= 0 && more   < N);
@@ -596,149 +790,107 @@ public:
         C4_ASSERT(prevsz+more >= 0 && prevsz+more < N);
         C4_ASSERT(pos <= prevsz);
         #define _c4mcr(arr, i) c4::make_room(arr + pos, prevsz - pos, more)
-        _C4_FOREACH_ARR(m_arr, _c4mcr)
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
         #undef _c4mcr
     }
-    void _raw_destroy_room(I pos, I prevsz, I less) ///< shrink to the left of pos
+    /** shrink to the left of pos 
+     @code
+     pos: 0 1 2 3 4 5 6 7 8
+     val: A B C D E F G H I
+
+     _raw_destroy_room(6, 9, 3)
+
+     pos: 0 1 2 3 4 5
+     val: A B C G H I
+     @endcode
+     */
+    void _raw_destroy_room(I pos, I prevsz, I less)
     {
         C4_ASSERT(prevsz >= 0 && prevsz < N);
         C4_ASSERT(pos    >= 0 && pos    < N);
         C4_ASSERT(pos <= prevsz);
         C4_ASSERT(pos >= less);
         #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz - (pos - less), less)
-        _C4_FOREACH_ARR(m_arr, _c4mcr)
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+public:
+
+    /** passes args to all arrays */
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, Args const&... args)
+    {
+        #define _c4mcr(arr, i) c4::construct_n(arr + first, n, args...)
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    /** passes each tuple element to the elements of its corresponding array */
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, std::tuple< Args... > const& args)
+    {
+        static_assert(sizeof...(args) == sizeof...(SoaTypes), "incompatible number of arguments");
+        #define _c4mcr(arr, i) c4::construct_n(arr + first, n, std::forward(std::get< i >(args)))
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_destroy_n(I first, I n)
+    {
+        #define _c4mcr(arr, i) c4::destroy_n(arr + first, n)
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_construct_n(raw_fixed_soa_impl& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::move_construct_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_assign_n(raw_fixed_soa_impl& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::move_assign_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_construct_n(raw_fixed_soa_impl const& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::copy_construct_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_assign_n(raw_fixed_soa_impl const& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::copy_assign_n(larr + first, rarr + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_arr, _c4mcr)
         #undef _c4mcr
     }
 
 };
 
+/** implement raw_fixed_soa for a single type */
 template< class T, size_t N, class I, I Alignment >
 struct raw_fixed_soa
     :
-        public raw_fixed_soa_impl< soa<T>, N, I, Alignment, std::index_sequence<0>() >
+        public raw_fixed_soa_impl< soa<T>, N, I, Alignment, index_sequence<0>() >
 {
-    using _impl_type = raw_fixed_soa_impl< soa<T>, N, I, Alignment, std::index_sequence<0>() >;
+    using _impl_type = raw_fixed_soa_impl< soa<T>, N, I, Alignment, index_sequence<0>() >;
     using _impl_type::_impl_type;
 };
+
+/** implement raw_fixed_soa for a collection of types */
 template< class... SoaTypes, size_t N, class I, I Alignment >
 struct raw_fixed_soa< soa<SoaTypes...>, N, I, Alignment >
     :
-        public raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >
+        public raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence_for<SoaTypes...>() >
 {
-    using _impl_type = raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence_for<SoaTypes...>() >;
+    using _impl_type = raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence_for<SoaTypes...>() >;
     using _impl_type::_impl_type;
-};
-
-
-template< class T, size_t N, class I, I Alignment >
-struct raw_fixed : public mem_fixed< T, N, Alignment >
-{
-
-    C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
-
-public:
-
-    _c4_DEFINE_ARRAY_TYPES(T, I);
-    using allocator_type = void;
-
-    using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
-
-    template< class U >
-    using rebind_type = raw_fixed<U, N, I, alignof(U)>;
-
-    using tmp_type = tmp_storage< raw_fixed >;
-
-    enum : I { arr_size = static_cast<I>(N) };
-
-public:
-
-    C4_ALWAYS_INLINE raw_fixed() {}
-    C4_ALWAYS_INLINE ~raw_fixed() {}
-
-    C4_ALWAYS_INLINE raw_fixed(I cap) { C4_UNUSED(cap); C4_ASSERT(cap <= (I)N); }
-
-    // copy and move operations are deleted, and must be implemented by the containers,
-    // as this will involve knowledge over what elements are to copied or moved
-    raw_fixed(raw_fixed const& that) = delete;
-    raw_fixed(raw_fixed     && that) = delete;
-    raw_fixed& operator=(raw_fixed const& that) = delete;
-    raw_fixed& operator=(raw_fixed     && that) = delete;
-
-    C4_ALWAYS_INLINE T      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return this->m_arr[i]; }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < (I)N); return this->m_arr[i]; }
-
-    C4_ALWAYS_INLINE T      * data()       noexcept { return this->m_arr; }
-    C4_ALWAYS_INLINE T const* data() const noexcept { return this->m_arr; }
-
-    C4_ALWAYS_INLINE constexpr I capacity() const noexcept { return (I)N; }
-    C4_ALWAYS_INLINE constexpr bool empty() const noexcept { return false; }
-
-    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return N; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 static size_t next_capacity(size_t cap) C4_NOEXCEPT_A
-    {
-        C4_UNUSED(cap);
-        C4_ASSERT(cap <= (size_t)N);
-        return N;
-    }
-
-public:
-
-    iterator       _raw_iterator(I id)       noexcept { return this->m_arr + id; }
-    const_iterator _raw_iterator(I id) const noexcept { return this->m_arr + id; }
-
-public:
-
-    /** assume the curr size is zero */
-    void _raw_reserve(I cap)
-    {
-        _raw_reserve(0, cap);
-    }
-
-    void _raw_reserve(I currsz, I cap) const
-    {
-        C4_UNUSED(currsz);
-        C4_UNUSED(cap);
-        C4_ASSERT(cap <= (I)N);
-    }
-
-    void _raw_reserve_allocate(I cap, tmp_type * /*tmp*/)
-    {
-        C4_UNUSED(cap);
-        C4_ASSERT(cap <= (I)N);
-    }
-    void _raw_reserve_replace(I /*tmpsz*/, tmp_type * /*tmp*/)
-    {
-        C4_NEVER_REACH();
-    }
-
-    /** Resize the buffer at pos, so that the previous size increases to the
-     *  value of next; when growing, ___adds to the right___ of pos; when
-     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
-     *  will increase to the value obtained with the growth policy; if shrinking,
-     *  the capacity will stay the same. Use _raw_reserve() to diminish the
-     *  capacity.
-     *
-     *  @param pos the position from which room is to be created (to the right)
-     *         or destroyed (to the left)
-     *  @param prev the previous size
-     *  @param next the next size */
-    void _raw_resize(I pos, I prev, I next)
-    {
-        C4_ASSERT(next >= 0 && next < N);
-        C4_ASSERT(prev >= 0 && prev < N);
-        C4_ASSERT(pos  >= 0 && pos  < N);
-        if(next > prev)
-        {
-            c4::make_room(this->m_arr + pos, prev - pos, next - prev);
-        }
-        else if(next < prev)
-        {
-            I delta = prev - next;
-            C4_ASSERT(pos > delta);
-            c4::destroy_room(this->m_arr + pos - delta, prev - pos, delta);
-        }
-    }
-
 };
 
 //-----------------------------------------------------------------------------
@@ -754,6 +906,8 @@ struct raw : public mem_raw< T >
     // m_ptr is brought in by the base class
 
     valnalloc<I, Alloc> m_cap_n_alloc;
+
+    enum : I { num_arrays = 1, };
 
 public:
 
@@ -786,10 +940,7 @@ public:
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to be copied or moved
-    raw(raw const& that) = delete;
-    raw(raw     && that) = delete;
-    raw& operator=(raw const& that) = delete;
-    raw& operator=(raw     && that) = delete;
+    C4_NO_COPY_OR_MOVE(raw);
 
 public:
 
@@ -814,6 +965,9 @@ public:
     const_iterator _raw_iterator(I id) const noexcept { return this->m_ptr + id; }
 
 public:
+
+    C4_ALWAYS_INLINE Alloc      & allocator()       { return m_cap_n_alloc.alloc(); }
+    C4_ALWAYS_INLINE Alloc const& allocator() const { return m_cap_n_alloc.alloc(); }
 
     /** assume the curr size is zero */
     void _raw_reserve(I cap)
@@ -954,7 +1108,7 @@ public:
 
     using tmp_type = tmp_storage< raw_small >;
 
-    enum : I { array_size = (I)N_, N = (I)N_ };
+    enum : I { array_size = (I)N_, N = (I)N_, num_arrays = 1, };
 
 public:
 
@@ -971,10 +1125,7 @@ public:
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
-    raw_small(raw_small const& that) = delete;
-    raw_small(raw_small     && that) = delete;
-    raw_small& operator=(raw_small const& that) = delete;
-    raw_small& operator=(raw_small     && that) = delete;
+    C4_NO_COPY_OR_MOVE(raw_small);
 
     // gcc is triggering a false positive here when compiling in release mode:
     // error: array subscript is below array bounds [-Werror=array-bounds].
@@ -1176,6 +1327,8 @@ public:
     using tmp_type = tmp_storage< RawPaged >;
 
     _raw_paged_crtp(T **p) : mem_paged< T >(p) {}
+
+    enum : I { num_arrays = 1, };
 
 public:
 
@@ -1573,10 +1726,7 @@ public:
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
-    raw_paged(raw_paged const& that) = delete;
-    raw_paged(raw_paged     && that) = delete;
-    raw_paged& operator=(raw_paged const& that) = delete;
-    raw_paged& operator=(raw_paged     && that) = delete;
+    C4_NO_COPY_OR_MOVE(raw_paged);
 
     C4_ALWAYS_INLINE static constexpr I page_size() noexcept { return PageSize; }
 
@@ -1644,10 +1794,7 @@ public:
 
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
-    raw_paged(raw_paged const& that) = delete;
-    raw_paged(raw_paged     && that) = delete;
-    raw_paged& operator=(raw_paged const& that) = delete;
-    raw_paged& operator=(raw_paged     && that) = delete;
+    C4_NO_COPY_OR_MOVE(raw_paged);
 
     C4_ALWAYS_INLINE I page_size() const noexcept { return m_id_mask + 1; }
 
