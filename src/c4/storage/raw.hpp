@@ -1001,9 +1001,12 @@ public:
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp);
 
     void _raw_resize(I pos, I prev, I next);
+    void _raw_make_room(I pos, I prevsz, I more);
+    void _raw_destroy_room(I pos, I prevsz, I less);
 
 };
 
+//-----------------------------------------------------------------------------
 /** assume the curr size is zero */
 template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
 void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve(I cap)
@@ -1072,41 +1075,82 @@ void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve_replace(I /*tmpsz
  *  @see _raw_destroy_room
  */
 template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
-void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_resize(I pos, I prev, I next)
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_resize(I pos, I prevsz, I nextsz)
 {
-    C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
-    C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
-    C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
-    if(next > prev)
+    C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    if(nextsz > prevsz)
     {
-        if(next <= m_cap_n_alloc.m_value)
-        {
-            c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
-        }
-        else
-        {
-            m_cap_n_alloc.m_value = next_capacity(next);
-            T* tmp = m_cap_n_alloc.alloc().allocate(m_cap_n_alloc.m_value, Alignment);
-            if(this->m_ptr)
-            {
-                c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
-                m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-            }
-            else
-            {
-                C4_ASSERT(prev == 0);
-            }
-            this->m_ptr = tmp;
-        }
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
     }
-    else if(next < prev)
+    else if(nextsz < prevsz)
     {
-        I delta = prev - next;
-        C4_ASSERT(pos > delta);
-        c4::destroy_room(this->m_ptr + pos - delta, prev - pos, delta);
     }
 }
 
+/** grow to the right of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F . . .
+
+ _raw_make_room(3, 6, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C . . . D E F
+ @endcode
+ */
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos <= prevsz);
+    if(next <= m_cap_n_alloc.m_value)
+    {
+        c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
+    }
+    else
+    {
+        m_cap_n_alloc.m_value = next_capacity(next);
+        T* tmp = m_cap_n_alloc.alloc().allocate(m_cap_n_alloc.m_value, Alignment);
+        if(this->m_ptr)
+        {
+            c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
+            m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
+        }
+        else
+        {
+            C4_ASSERT(prev == 0);
+        }
+        this->m_ptr = tmp;
+    }
+}
+
+/** grow to the right of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F . . .
+
+ _raw_make_room(3, 6, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C . . . D E F
+ @endcode
+ */
+template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
+void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos <= prevsz);
+    I delta = pos - less;
+    c4::destroy_room(this->m_ptr + delta, prev - delta, delta);
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
