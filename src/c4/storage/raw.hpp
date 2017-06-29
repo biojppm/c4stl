@@ -593,7 +593,7 @@ struct raw_fixed_soa_impl;
 
 /** raw fixed storage for structure-of-arrays. this is a work in progress */
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
-struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >
+struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >
 {
     template< class U > using arr_type = mem_fixed< U, N, (Alignment > alignof(U) ? Alignment : alignof(U)) >;
 
@@ -825,8 +825,8 @@ _raw_resize(I pos, I prevsz, I nextsz)
 //-----------------------------------------------------------------------------
 /** grow to the right of pos
  @code
- pos: 0 1 2 3 4 5
- val: A B C D E F
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F . . .
 
  _raw_make_room(3, 6, 3)
 
@@ -847,8 +847,8 @@ void raw_fixed< T, N, I, Alignment >::_raw_make_room(I pos, I prevsz, I more)
 
 /** grow to the right of pos
  @code
- pos: 0 1 2 3 4 5
- val: A B C D E F
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F . . .
 
  _raw_make_room(3, 6, 3)
 
@@ -889,7 +889,8 @@ void raw_fixed< T, N, I, Alignment >::_raw_destroy_room(I pos, I prevsz, I less)
     C4_ASSERT(pos    >= 0 && pos    < N);
     C4_ASSERT(pos <= prevsz);
     C4_ASSERT(pos >= less);
-    c4::destroy_room(this->m_arr + pos - less, prevsz - (pos - less), less);
+    I delta = pos - less;
+    c4::destroy_room(this->m_arr + delta, prevsz - delta, less);
 }
 
 /** shrink to the left of pos
@@ -911,7 +912,8 @@ _raw_destroy_room(I pos, I prevsz, I less)
     C4_ASSERT(pos    >= 0 && pos    < N);
     C4_ASSERT(pos <= prevsz);
     C4_ASSERT(pos >= less);
-    #define _c4mcr(arr, i) c4::destroy_room(arr + pos - less, prevsz - (pos - less), less)
+    I delta = pos - less;
+    #define _c4mcr(arr, i) c4::destroy_room(arr + delta, prevsz - delta, less)
     _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
     #undef _c4mcr
 }

@@ -409,8 +409,8 @@ struct is_mass_forwardable<T> : public std::conditional<
     C4_NO_COPY_CTOR(ty); \
     C4_NO_MOVE_CTOR(ty)
 
-#define C4_NO_COPY_ASSIGN(ty) ty& operator=(ty const&) = delete;
-#define C4_NO_MOVE_ASSIGN(ty) ty& operator=(ty     &&) = delete;
+#define C4_NO_COPY_ASSIGN(ty) ty& operator=(ty const&) = delete
+#define C4_NO_MOVE_ASSIGN(ty) ty& operator=(ty     &&) = delete
 #define C4_NO_COPY_OR_MOVE_ASSIGN(ty) \
     C4_NO_COPY_ASSIGN(ty); \
     C4_NO_MOVE_ASSIGN(ty)
