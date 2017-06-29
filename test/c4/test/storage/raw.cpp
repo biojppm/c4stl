@@ -32,6 +32,75 @@ TEST(raw_fixed, instantiation)
         }
         ch.check_all_delta(0, 0, 0);
     }
+
+    {
+        raw_fixed< int, 10 > rf(0);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_fixed< int, 10 > rf(5);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_fixed< int, 10 > rf(10);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        C4_EXPECT_ASSERT_TRIGGERS(1);
+        {
+            raw_fixed< int, 10 > rf(15);
+            EXPECT_EQ(rf.capacity(), 10);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(raw_fixed_soa, instantiation)
+{
+    using ci = Counting< int >;
+    using cf = Counting< float >;
+    using ty = soa< ci, cf >;
+
+    {
+        AllocationCountsChecker ch;
+        {
+            auto cdi = ci::check_ctors_dtors(0, 0);
+            auto cdf = cf::check_ctors_dtors(0, 0);
+            raw_fixed_soa< ty, 10 > rf;
+            EXPECT_EQ(rf.capacity(), 10);
+        }
+        ch.check_all_delta(0, 0, 0);
+    }
+
+    {
+        AllocationCountsChecker ch;
+        {
+            auto cdi = ci::check_ctors_dtors(0, 0);
+            auto cdf = cf::check_ctors_dtors(0, 0);
+            raw_fixed_soa< ty, 11 > rf;
+            EXPECT_EQ(rf.capacity(), 11);
+        }
+        ch.check_all_delta(0, 0, 0);
+    }
+    {
+        raw_fixed_soa< soa<int, float>, 10 > rf(0);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_fixed_soa< soa<int, float>, 10 > rf(5);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_fixed_soa< soa<int, float>, 10 > rf(10);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        C4_EXPECT_ASSERT_TRIGGERS(1);
+        {
+            raw_fixed_soa< soa<int, float>, 10 > rf(15);
+            EXPECT_EQ(rf.capacity(), 10);
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -124,6 +193,22 @@ TEST(raw_small, instantiation)
             ch.check_curr_delta(1, num * sizeof(ci));
         }
         ch.check_curr_delta(0, 0);
+    }
+    {
+        raw_small< int, size_t, 10 > rf(0);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_small< int, size_t, 10 > rf(5);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_small< int, size_t, 10 > rf(10);
+        EXPECT_EQ(rf.capacity(), 10);
+    }
+    {
+        raw_small< int, size_t, 10 > rf(15);
+        EXPECT_EQ(rf.capacity(), 15);
     }
 }
 
@@ -460,6 +545,44 @@ void test_raw_construction(Raw &rp)
     }
 }
 template< class Raw >
+void test_raw_soa_construction(Raw &rp)
+{
+    C4_STATIC_ASSERT(Raw::num_arrays == 2);
+
+    using traits = typename Raw::storage_traits;
+    using value_type0 = typename Raw::value_type<0>;
+    using value_type1 = typename Raw::value_type<1>;
+
+    C4_STATIC_ASSERT(is_instance_of_tpl< Counting C4_COMMA value_type0 >::value);
+    C4_STATIC_ASSERT(is_instance_of_tpl< Counting C4_COMMA value_type1 >::value);
+    C4_STATIC_ASSERT(std::is_integral< typename value_type0::value_type >::value);
+    C4_STATIC_ASSERT(std::is_integral< typename value_type1::value_type >::value);
+
+    {
+        auto c0 = value_type0::check_ctors_dtors(10, 0);
+        auto c1 = value_type1::check_ctors_dtors(10, 0);
+        {
+            traits::construct_n(rp, 0, 10, /*the value*/123);
+        }
+    }
+
+    {
+        auto c0 = value_type0::check_ctors_dtors(10, 0);
+        auto c1 = value_type1::check_ctors_dtors(10, 0);
+        {
+            traits::construct_n(rp, 0, 10, /*the value*/123);
+        }
+    }
+
+    {
+        auto c0 = value_type0::check_ctors_dtors(10, 0);
+        auto c1 = value_type1::check_ctors_dtors(10, 0);
+        {
+            traits::construct_n(rp, 10, 10, /*the value*/123);
+        }
+    }
+}
+template< class Raw >
 void test_raw_construction_paged(Raw &rp)
 {
     using traits = typename Raw::storage_traits;
@@ -530,6 +653,13 @@ TEST(raw_fixed, construction)
     raw_fixed< ci, 1000 > rp;
     test_raw_construction(rp);
 }
+TEST(raw_fixed_soa, construction)
+{
+    using ci = Counting< int >;
+    using ch = Counting< uint16_t >;
+    raw_fixed_soa< soa<ci,ch>, 1000 > rp;
+    test_raw_soa_construction(rp);
+}
 TEST(raw, construction)
 {
     using ci = Counting< int >;
@@ -556,14 +686,62 @@ TEST(raw_paged_rt, construction)
 }
 
 
+//-----------------------------------------------------------------------------
+template< class Raw >
+void test_raw_data()
+{
+    Raw r(10);
+    EXPECT_EQ(r.template data<0>(), r.data());
+    EXPECT_NE(r.data(), nullptr);
+}
+
+template< class RawStorage >
+void test_raw_resize()
+{
+    RawStorage r(10);
+#define i(pos) r[pos]
+    r._raw_make_room(0, 0, 3);
+    i(0) = 0;
+    i(1) = 1;
+    i(2) = 2;
+    r._raw_make_room(0, 3, 3);
+    i(0) = 20;
+    i(1) = 21;
+    i(2) = 22;
+    EXPECT_EQ(i(0), 20);
+    EXPECT_EQ(i(1), 21);
+    EXPECT_EQ(i(2), 22);
+    EXPECT_EQ(i(3), 0);
+    EXPECT_EQ(i(4), 1);
+    EXPECT_EQ(i(5), 2);
+    r._raw_make_room(3, 6, 3);
+    i(3) = 3;
+    i(4) = 4;
+    i(5) = 5;
+    EXPECT_EQ(i(0), 20);
+    EXPECT_EQ(i(1), 21);
+    EXPECT_EQ(i(2), 22);
+    EXPECT_EQ(i(3), 3);
+    EXPECT_EQ(i(4), 4);
+    EXPECT_EQ(i(5), 5);
+    EXPECT_EQ(i(6), 0);
+    EXPECT_EQ(i(7), 1);
+    EXPECT_EQ(i(8), 2);
+    r._raw_destroy_room(3, 9, 3);
+    EXPECT_EQ(i(0), 3);
+    EXPECT_EQ(i(1), 4);
+    EXPECT_EQ(i(2), 5);
+    EXPECT_EQ(i(3), 0);
+    EXPECT_EQ(i(4), 1);
+    EXPECT_EQ(i(5), 2);
+#undef i
+}
+
 template< class RawStorage >
 void test_raw_soa_resize_1_type()
 {
     C4_STATIC_ASSERT(RawStorage::num_arrays == 1);
-    static_assert(std::is_same< typename RawStorage::template value_type<0>, int >::value, "must be int");
     RawStorage r(10);
-    EXPECT_EQ(r.template data<0>(), r.data());
-    EXPECT_NE(r.data(), nullptr);
 #define i r.template get<0>
     r._raw_make_room(0, 0, 3);
     i(0) = 0;
@@ -646,19 +824,31 @@ void test_raw_soa_resize_2_types()
     EXPECT_EQ(i(3), 0); EXPECT_FLOAT_EQ(j(3), 10.f);
     EXPECT_EQ(i(4), 1); EXPECT_FLOAT_EQ(j(4), 11.f);
     EXPECT_EQ(i(5), 2); EXPECT_FLOAT_EQ(j(5), 12.f);
+    r._raw_destroy_room(3, 6, 3);
+    EXPECT_EQ(i(0), 0); EXPECT_FLOAT_EQ(j(3), 10.f);
+    EXPECT_EQ(i(1), 1); EXPECT_FLOAT_EQ(j(4), 11.f);
+    EXPECT_EQ(i(2), 2); EXPECT_FLOAT_EQ(j(5), 12.f);
+    r._raw_destroy_room(3, 3, 3);
+    EXPECT_EQ(i(0), 0); EXPECT_FLOAT_EQ(j(3), 10.f);
+    EXPECT_EQ(i(1), 1); EXPECT_FLOAT_EQ(j(4), 11.f);
+    EXPECT_EQ(i(2), 2); EXPECT_FLOAT_EQ(j(5), 12.f);
 #undef i
 #undef j
 }
 
-TEST(raw_fixed, soa_resize_1_bare)
+TEST(raw_fixed, resize)
+{
+    test_raw_resize< raw_fixed< int, 10 > >();
+}
+TEST(raw_fixed_soa, soa_resize_1_bare)
 {
     test_raw_soa_resize_1_type< raw_fixed_soa< int, 10 > >();
 }
-TEST(raw_fixed, soa_resize_1_soa)
+TEST(raw_fixed_soa, soa_resize_1_soa)
 {
     test_raw_soa_resize_1_type< raw_fixed_soa< soa<int>, 10 > >();
 }
-TEST(raw_fixed, soa_resize_2)
+TEST(raw_fixed_soa, soa_resize_2)
 {
     test_raw_soa_resize_2_types< raw_fixed_soa< soa<int,float>, 10 > >();
 }
