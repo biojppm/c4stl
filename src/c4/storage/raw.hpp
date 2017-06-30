@@ -2412,7 +2412,7 @@ struct _raw_paged_common_crtp
 
 //-----------------------------------------------------------------------------
 
-/* a crtp base for paged storage. non-soa version */
+/* a crtp base for paged storage. non-soa version. */
 template< class T, class I, I Alignment, class RawPaged >
 struct _raw_paged_crtp : public _raw_paged_common_crtp< I, RawPaged >
 {
@@ -2537,12 +2537,12 @@ public:
 
 public:
 
-    void _raw_copy_construct_n(RawPaged & src, I first, I n)
+    void _raw_copy_construct_n(RawPaged const& src, I first, I n)
     {
         _process_pages(&_raw_paged_crtp::_raw_copy_construct_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
     }
 
-    void _raw_copy_construct_n(RawPaged & src, I first_this, I first_that, I n)
+    void _raw_copy_construct_n(RawPaged const& src, I first_this, I first_that, I n)
     {
         _process_pages(&_raw_paged_crtp::_raw_copy_construct_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
     }
@@ -2574,7 +2574,7 @@ public:
         _process_pages(&_raw_paged_crtp::_raw_copy_assign_n_handler, pages, first_this, that, first_that, n);
     }
 
-    C4_ALWAYS_INLINE static void _raw_copy_assign_n_handler(T *dst, T *src, I n)
+    C4_ALWAYS_INLINE static void _raw_copy_assign_n_handler(T *dst, T const* src, I n)
     {
         c4::copy_assign_n(dst, src, n);
     }
@@ -2594,6 +2594,230 @@ public:
 
 template< class T, class I, I Alignment, class RawPaged, class IndexSequence >
 struct _raw_paged_soa_crtp;
+
+/* a crtp base for paged storage. soa version. */
+template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+struct _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >
+    : public _raw_paged_common_crtp< I, RawPaged >
+{
+    static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
+
+public:
+
+    template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
+    template< I n > using nth_alignment = maxalign< nth_type<n> >;
+
+    template< I n > using iterator       = paged_iterator_impl<       RawPaged,       nth_type<n>, I >;
+    template< I n > using const_iterator = paged_iterator_impl< const RawPaged, const nth_type<n>, I >;
+
+    using tmp_type = tmp_storage< RawPaged >;
+
+    enum : I { num_arrays = sizeof(SoaTypes...), };
+
+public:
+
+    template< I n=0 > iterator<n>       _raw_iterator(I id)       noexcept { return       iterator<n>(_c4this, id); }
+    template< I n=0 > const_iterator<n> _raw_iterator(I id) const noexcept { return const_iterator<n>(_c4cthis, id); }
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & operator[](I i)       C4_NOEXCEPT_X { return get(i); }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& operator[](I i) const C4_NOEXCEPT_X { return get(i); }
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>& get(I i) C4_NOEXCEPT_X
+    {
+        C4_XASSERT(i < capacity());
+        const I pg = i >> _c4cthis->m_page_lsb;
+        const I id = i & _c4cthis->m_id_mask;
+        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
+        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
+        return _c4this->m_pages[pg][id];
+    }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& get(I i) const C4_NOEXCEPT_X
+    {
+        C4_XASSERT(i < capacity());
+        const I pg = i >> _c4cthis->m_page_lsb;
+        const I id = i & _c4cthis->m_id_mask;
+        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
+        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
+        return _c4cthis->m_pages[pg][id];
+    }
+
+public:
+
+    void _raw_reserve(I cap)
+    {
+        _raw_reserve(0, cap);
+    }
+    void _raw_reserve(I currsz, I cap);
+
+    void _raw_reserve_allocate(I cap, tmp_type *tmp);
+    void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp) { C4_XASSERT(!(*tmp)); /* nothing to do */ }
+
+public:
+
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, Args const&... args)
+    {
+        // _process_pages(&_raw_paged_soa_crtp::_raw_construct_n_handler< Args... >, _c4this->m_pages, first, n, args...);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_construct_n_handler< nth_type<i>, Args... >, pgs, first, n, args...)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+
+    template< class U, class ...Args >
+    C4_ALWAYS_INLINE static void _raw_construct_n_handler(U *ptr, I n, Args const&... args)
+    {
+        c4::construct_n(ptr, n, args...);
+    }
+
+public:
+
+    void _raw_destroy_n(I first, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler, _c4this->m_pages, first, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler<nth_type<i>>, pgs, first, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+/*
+    void _raw_destroy_n(T **pages, I first, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler, pages, first, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler<nth_type<i>>, pgs, first, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+*/
+    template< class U >
+    C4_ALWAYS_INLINE static void _raw_destroy_n_handler(U *ptr, I n)
+    {
+        c4::destroy_n(ptr, n);
+    }
+
+public:
+
+    void _raw_move_construct_n(RawPaged & src, I first, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler<nth_type<i>>, pgs, first, std::get<i>(src.m_soa).m_pages, first, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_construct_n(RawPaged & src, I first_this, I first_that, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler<nth_type<i>>, pgs, first_this, std::get<i>(src.m_soa).m_pages, first_that, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+/*
+    void _raw_move_construct_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler, pages, first_this, that, first_that, n);
+    }
+*/
+    template< class U >
+    C4_ALWAYS_INLINE static void _raw_move_construct_n_handler(U *dst, U *src, I n)
+    {
+        c4::move_construct_n(dst, src, n);
+    }
+
+public:
+
+    void _raw_move_assign_n(RawPaged & src, I first, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler<nth_type<i>>, pgs, first, std::get<i>(src.m_soa).m_pages, first, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_assign_n(RawPaged & src, I first_this, I first_that, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler<nth_type<i>>, pgs, first_this, std::get<i>(src.m_soa).m_pages, first_that, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+/*
+    void _raw_move_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler, pages, first_this, that, first_that, n);
+    }
+*/
+    template< class U >
+    C4_ALWAYS_INLINE static void _raw_move_assign_n_handler(U *dst, U *src, I n)
+    {
+        c4::move_assign_n(dst, src, n);
+    }
+
+public:
+
+    void _raw_copy_construct_n(RawPaged const& src, I first, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler<nth_type<i>>, pgs, first, std::get<i>(src.m_soa).m_pages, first, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_construct_n(RawPaged const& src, I first_this, I first_that, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler<nth_type<i>>, pgs, first_this, std::get<i>(src.m_soa).m_pages, first_that, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+/*
+    void _raw_copy_construct_n(T ** pages, I first_this, T const*const* that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler, pages, first_this, that, first_that, n);
+    }
+*/
+    template< class U >
+    C4_ALWAYS_INLINE static void _raw_copy_construct_n_handler(U *dst, U const* src, I n)
+    {
+        c4::copy_construct_n(dst, src, n);
+    }
+
+public:
+
+    void _raw_copy_assign_n(RawPaged const& src, I first, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler<nth_type<i>>, pgs, first, std::get<i>(src.m_soa).m_pages, first, n)
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_assign_n(RawPaged const& src, I first_this, I first_that, I n)
+    {
+        //_process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler<nth_type<i>>, pgs, first_this, std::get<i>(src.m_soa).m_pages, first_that, n);
+        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+        #undef _c4mcr
+    }
+/*
+    void _raw_copy_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler, pages, first_this, that, first_that, n);
+    }
+*/
+    template< class U >
+    C4_ALWAYS_INLINE static void _raw_copy_assign_n_handler(U *dst, U *src, I n)
+    {
+        c4::copy_assign_n(dst, src, n);
+    }
+
+public:
+
+    template< class U, class Function, class ...Args >
+    void _process_pages(Function handler, U **pages, I first, I n, Args... args);
+
+    template< class U, class Function, class ...Args >
+    void _process_pages(Function handler, U **pages, I first_this, U **other, I first_that, I n, Args... args);
+
+};
 
 //-----------------------------------------------------------------------------
 
@@ -2619,6 +2843,29 @@ _process_pages(Function handler, T **pages, I first_id, I n, Args... args)
     }
 }
 
+template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class U, class Function, class ...Args >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_process_pages(Function handler, U **pages, I first_id, I n, Args... args)
+{
+    I pg = _c4cthis->_raw_pg(first_id);
+    const I last_pg = _c4cthis->_raw_pg(first_id + n);
+    first_id = _c4cthis->_raw_id(first_id);
+    I count = 0; // num elms handled so far
+    while(count < n)
+    {
+        C4_ASSERT(pg <= last_pg); C4_UNUSED(last_pg);
+        const I remaining = n - count;
+        I pn = _c4this->page_size() - first_id;
+        pn = pn < remaining ? pn : remaining;  // num elms to handle in this page
+        handler(pages[pg] + first_id, pn, args...);
+        ++pg;
+        first_id = 0;
+        count += pn;
+    }
+}
+
+//-----------------------------------------------------------------------------
 
 /** the page size of other is the same! */
 template< class T, class I, I Alignment, class RawPaged >
@@ -2655,6 +2902,41 @@ _process_pages(Function handler, T **pages, I first_id_this, T **other, I first_
     }
 }
 
+template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class U, class Function, class ...Args >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_process_pages(Function handler, U **pages, I first_id_this, U **other, I first_id_that, I n, Args... args)
+{
+    I pg = _c4this->_raw_pg(first_id_this);
+    const I last_pg = _c4cthis->_raw_pg(first_id_this + n);
+    first_id_this = _c4this->_raw_id(first_id_this);
+    first_id_that = _c4this->_raw_id(first_id_that);
+    I count = 0; // num elms handled so far
+    while(count < n)
+    {
+        C4_ASSERT(pg <= last_pg); C4_UNUSED(last_pg);
+        const I remaining = n - count;
+        I pnthis = _c4this->page_size() - first_id_this;
+        I pnthat = _c4this->page_size() - first_id_that;
+        pnthis = pnthis < remaining ? pnthis : remaining;  // num elms to handle in this page
+        pnthat = pnthat < remaining ? pnthat : remaining;  // num elms to handle in this page
+        if(pnthis == pnthat)
+        {
+            handler(pages[pg] + first_id_this, other[pg] + first_id_that, pnthis, args...);
+        }
+        else
+        {
+            // it's complicated, needs to be implemented. merely a placeholder.
+            C4_NOT_IMPLEMENTED();
+        }
+        ++pg;
+        first_id_this = 0;
+        first_id_that = 0;
+        count += pnthis;
+    }
+}
+
+//-----------------------------------------------------------------------------
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, tmp_type *tmp)
@@ -2694,6 +2976,47 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
     _c4this->m_numpages_n_alloc.m_value = np;
 }
 
+template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class U, class Function, class ...Args >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_raw_reserve_allocate(I cap, tmp_type *tmp)
+{
+    C4_XASSERT(!(*tmp));
+    const I ps = _c4cthis->page_size();
+    const I np = szconv<I>(size_t(cap + ps - 1) / size_t(ps));
+
+    if(np == _c4this->m_numpages_n_alloc.m_value) return;
+
+    auto at = _c4this->m_numpages_n_alloc.alloc().template rebound< U* >();
+    U** tmp_pages = at.allocate(np);
+    if(np > _c4this->m_numpages_n_alloc.m_value) // more pages (grow)
+    {
+        for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
+        {
+            tmp_pages[i] = _c4this->m_pages[i];
+        }
+        for(I i = _c4this->m_numpages_n_alloc.m_value; i < np; ++i)
+        {
+            tmp_pages[i] = _c4this->m_numpages_n_alloc.alloc().allocate(ps, Alignment);
+        }
+    }
+    else // less pages (shrink)
+    {
+        for(I i = 0; i < np; ++i)
+        {
+            tmp_pages[i] = _c4this->m_pages[i];
+        }
+        for(I i = np; i < _c4this->m_numpages_n_alloc.m_value; ++i)
+        {
+            _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
+        }
+    }
+    at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
+    _c4this->m_pages = tmp_pages;
+    _c4this->m_numpages_n_alloc.m_value = np;
+}
+
+//-----------------------------------------------------------------------------
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
@@ -2750,6 +3073,62 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
 }
 
 
+template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class U, class Function, class ...Args >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_raw_reserve(I currsz, I cap)
+{
+    auto at = _c4this->m_numpages_n_alloc.alloc().template rebound< T* >();
+    const I ps = _c4this->page_size();
+    if(cap == 0)
+    {
+        _c4this->_raw_destroy_n(0, currsz);
+        for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
+        {
+            _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
+        }
+        at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
+        _c4this->m_pages = nullptr;
+        _c4this->m_numpages_n_alloc.m_value = 0;
+        return;
+    }
+
+    // number of pages: round up to the next multiple of ps
+    const I np = (cap + ps - 1) / ps;
+    C4_ASSERT(np * ps >= cap);
+
+    if(np == _c4this->m_numpages_n_alloc.m_value)
+    {
+        return;
+    }
+
+    T ** tmp = at.allocate(np);
+    for(I i = 0; i < np; ++i)
+    {
+        tmp[i] = _c4this->m_numpages_n_alloc.alloc().allocate(ps, Alignment);
+    }
+    if(_c4this->m_pages)
+    {
+        if(currsz > 0)
+        {
+            I num_to_move = currsz;
+            if(cap < currsz)
+            {
+                _c4this->_raw_destroy_n(cap, currsz);
+                num_to_move = cap;
+            }
+            _raw_move_construct_n(tmp, 0, _c4this->m_pages, 0, num_to_move);
+        }
+        for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
+        {
+            _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
+        }
+        at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
+    }
+    _c4this->m_numpages_n_alloc.m_value = np;
+    _c4this->m_pages = tmp;
+}
+
 #undef _c4this
 #undef _c4cthis
 
@@ -2768,7 +3147,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
   * @ingroup raw_storage_classes */
 template< class T, class I, size_t PageSize, I Alignment, class Alloc >
 struct raw_paged
-    : 
+    :
     public mem_paged< T >,
     public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >
 {
@@ -2853,7 +3232,7 @@ public:
  * @ingroup raw_storage_classes */
 template< class T, class I, I Alignment, class Alloc >
 struct raw_paged< T, I, 0, Alignment, Alloc >
-    : 
+    :
     public mem_paged< T >,
     public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >
 {
@@ -2921,7 +3300,6 @@ public:
     friend void test_raw_page_addressing(RawPagedContainer const& rp);
 
 };
-
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
