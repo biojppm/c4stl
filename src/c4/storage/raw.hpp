@@ -2358,39 +2358,43 @@ _raw_destroy_room(I pos, I prevsz, I less)
 #define _c4this static_cast< RawPaged* >(this)
 #define _c4cthis static_cast< RawPaged const* >(this)
 
-/* a crtp base for paged storage */
-template< class T, class I, I Alignment, class RawPaged >
-struct _raw_paged_crtp : public mem_paged< T >
+
+template< class RawPaged, class U, class I >
+class paged_iterator_impl : public std::iterator< std::random_access_iterator_tag, U >
 {
-public:
-
-    using tmp_type = tmp_storage< RawPaged >;
-
-    _raw_paged_crtp(T **p) : mem_paged< T >(p) {}
-
-    enum : I { num_arrays = 1, };
+    RawPaged *this_;
+    I i;
 
 public:
 
-    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
-    {
-        C4_XASSERT(i < capacity());
-        const I pg = i >> _c4cthis->m_page_lsb;
-        const I id = i & _c4cthis->m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
-        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
-        return this->m_pages[pg][id];
-    }
-    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
-    {
-        C4_XASSERT(i < capacity());
-        const I pg = i >> _c4cthis->m_page_lsb;
-        const I id = i & _c4cthis->m_id_mask;
-        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
-        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
-        return this->m_pages[pg][id];
-    }
+    using value_type = U;
+    using size_type = I;
 
+    paged_iterator_impl(RawPaged *rp, I i_) : this_(rp), i(i_) {}
+
+    U& operator*  () const noexcept { return  (*this_)[i]; }
+    U* operator-> () const noexcept { return &(*this_)[i]; }
+
+    paged_iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
+    paged_iterator_impl  operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
+
+    paged_iterator_impl& operator-- (   ) noexcept {                           --i; return *this; }
+    paged_iterator_impl  operator-- (int) noexcept { iterator_impl it = *this; --i; return    it; }
+
+    bool operator== (paged_iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
+    bool operator!= (paged_iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
+
+};
+
+//-----------------------------------------------------------------------------
+
+/* a crtp base for paged storage. common code for soa and non-soa. */
+template< class I, class RawPaged >
+struct _raw_paged_common_crtp
+{
+
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value; }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value * _c4cthis->page_size(); }
     C4_ALWAYS_INLINE bool empty() const noexcept { return _c4cthis->m_capacity == 0; }
 
     /** since the page size is a power of two, the max capacity is simply the
@@ -2404,9 +2408,46 @@ public:
         C4_ASSERT(cap >= desired);
         return cap;
     }
+};
 
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value * _c4cthis->page_size(); }
+//-----------------------------------------------------------------------------
+
+/* a crtp base for paged storage. non-soa version */
+template< class T, class I, I Alignment, class RawPaged >
+struct _raw_paged_crtp : public _raw_paged_common_crtp< I, RawPaged >
+{
+public:
+
+    using tmp_type = tmp_storage< RawPaged >;
+
+    using iterator = paged_iterator_impl< RawPaged, T*, I>;
+    using const_iterator = paged_iterator_impl< RawPaged, T const*, I >;
+
+    enum : I { num_arrays = 1, };
+
+public:
+
+    C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
+    {
+        C4_XASSERT(i < capacity());
+        const I pg = i >> _c4cthis->m_page_lsb;
+        const I id = i & _c4cthis->m_id_mask;
+        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
+        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
+        return _c4this->m_pages[pg][id];
+    }
+    C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
+    {
+        C4_XASSERT(i < capacity());
+        const I pg = i >> _c4cthis->m_page_lsb;
+        const I id = i & _c4cthis->m_id_mask;
+        C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
+        C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
+        return _c4cthis->m_pages[pg][id];
+    }
+
+    iterator       _raw_iterator(I id)       noexcept { return       iterator(this, id); }
+    const_iterator _raw_iterator(I id) const noexcept { return const_iterator(this, id); }
 
 public:
 
@@ -2421,51 +2462,10 @@ public:
 
 public:
 
-    template< class U >
-    class iterator_impl : public std::iterator< std::random_access_iterator_tag, U >
-    {
-        RawPaged *this_;
-        I i;
-
-    public:
-
-        using value_type = U;
-        using size_type = I;
-
-        iterator_impl(RawPaged *rp, I i_) : this_(rp), i(i_) {}
-
-        U& operator*  () const noexcept { return  (*this_)[i]; }
-        U* operator-> () const noexcept { return &(*this_)[i]; }
-
-        iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
-        iterator_impl  operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
-
-        iterator_impl& operator-- (   ) noexcept {                           --i; return *this; }
-        iterator_impl  operator-- (int) noexcept { iterator_impl it = *this; --i; return    it; }
-
-        bool operator== (iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
-        bool operator!= (iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
-
-    };
-
-    using iterator = iterator_impl< T* >;
-    using const_iterator = iterator_impl< T const* >;
-
-    iterator       _raw_iterator(I id)       noexcept { return       iterator(this, id); }
-    const_iterator _raw_iterator(I id) const noexcept { return const_iterator(this, id); }
-
-public:
-
     template< class ...Args >
     void _raw_construct_n(I first, I n, Args const&... args)
     {
         _process_pages(&_raw_paged_crtp::_raw_construct_n_handler< Args... >, _c4this->m_pages, first, n, args...);
-    }
-
-    template< class ...Args >
-    void _raw_construct_n(T **pages, I first, I n, Args const&... args)
-    {
-        _process_pages(&_raw_paged_crtp::_raw_construct_n_handler< Args... >, pages, first, n, args...);
     }
 
     template< class ...Args >
@@ -2515,15 +2515,69 @@ public:
 
 public:
 
-    void _raw_copy_construct_n(RawPaged const& /*src*/, I /*first*/, I /*n*/) { C4_NOT_IMPLEMENTED(); }
+    void _raw_move_assign_n(RawPaged & src, I first, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_move_assign_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+    }
+
+    void _raw_move_assign_n(RawPaged & src, I first_this, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_move_assign_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+    }
+
+    void _raw_move_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_move_assign_n_handler, pages, first_this, that, first_that, n);
+    }
+
+    C4_ALWAYS_INLINE static void _raw_move_assign_n_handler(T *dst, T *src, I n)
+    {
+        c4::move_assign_n(dst, src, n);
+    }
 
 public:
 
-    void _raw_move_assign_n(RawPaged      & /*src*/, I /*first*/, I /*n*/) { C4_NOT_IMPLEMENTED(); }
+    void _raw_copy_construct_n(RawPaged & src, I first, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_copy_construct_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+    }
+
+    void _raw_copy_construct_n(RawPaged & src, I first_this, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_copy_construct_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+    }
+
+    void _raw_copy_construct_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_copy_construct_n_handler, pages, first_this, that, first_that, n);
+    }
+
+    C4_ALWAYS_INLINE static void _raw_copy_construct_n_handler(T *dst, T const* src, I n)
+    {
+        c4::copy_construct_n(dst, src, n);
+    }
 
 public:
 
-    void _raw_copy_assign_n(RawPaged const& /*src*/, I /*first*/, I /*n*/) { C4_NOT_IMPLEMENTED(); }
+    void _raw_copy_assign_n(RawPaged const& src, I first, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_copy_assign_n_handler, _c4this->m_pages, first, src.m_pages, first, n);
+    }
+
+    void _raw_copy_assign_n(RawPaged const& src, I first_this, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_copy_assign_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
+    }
+
+    void _raw_copy_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    {
+        _process_pages(&_raw_paged_crtp::_raw_copy_assign_n_handler, pages, first_this, that, first_that, n);
+    }
+
+    C4_ALWAYS_INLINE static void _raw_copy_assign_n_handler(T *dst, T *src, I n)
+    {
+        c4::copy_assign_n(dst, src, n);
+    }
 
 public:
 
@@ -2534,6 +2588,14 @@ public:
     void _process_pages(Function handler, T **pages, I first_this, T **other, I first_that, I n, Args... args);
 
 };
+
+//-----------------------------------------------------------------------------
+
+
+template< class T, class I, I Alignment, class RawPaged, class IndexSequence >
+struct _raw_paged_soa_crtp;
+
+//-----------------------------------------------------------------------------
 
 template< class T, class I, I Alignment, class RawPaged >
 template< class Function, class ...Args >
@@ -2556,6 +2618,7 @@ _process_pages(Function handler, T **pages, I first_id, I n, Args... args)
         count += pn;
     }
 }
+
 
 /** the page size of other is the same! */
 template< class T, class I, I Alignment, class RawPaged >
@@ -2591,6 +2654,7 @@ _process_pages(Function handler, T **pages, I first_id_this, T **other, I first_
         count += pnthis;
     }
 }
+
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, tmp_type *tmp)
@@ -2629,6 +2693,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
     _c4this->m_pages = tmp_pages;
     _c4this->m_numpages_n_alloc.m_value = np;
 }
+
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
@@ -2702,7 +2767,10 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
   *
   * @ingroup raw_storage_classes */
 template< class T, class I, size_t PageSize, I Alignment, class Alloc >
-struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >
+struct raw_paged
+    : 
+    public mem_paged< T >,
+    public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >
 {
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >;
 
@@ -2710,6 +2778,13 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
     static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
+
+public:
+
+    // the pages array is brought by the base class
+    valnalloc<I, Alloc> m_numpages_n_alloc;  ///< number of current pages in the array + allocator (for empty base class optimization)
+
+public:
 
     enum : I {
         /** id mask: all the bits up to PageSize. Use to extract the position
@@ -2727,9 +2802,6 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
 
     constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; } ///< get the page index
     constexpr static I _raw_id(I const i) { return i &  m_id_mask; }  ///< get the index within the page
-
-    // the pages array is brought by the base class
-    valnalloc<I, Alloc> m_numpages_n_alloc;  ///< number of current pages in the array + allocator (for empty base class optimization)
 
 public:
 
@@ -2750,11 +2822,11 @@ public:
     raw_paged() : raw_paged(0) {}
     raw_paged(Alloc const& a) : raw_paged(0, a) {}
 
-    raw_paged(I cap) : crtp_base(nullptr), m_numpages_n_alloc(0)
+    raw_paged(I cap) : mem_paged< T >(nullptr), m_numpages_n_alloc(0)
     {
         crtp_base::_raw_reserve(0, cap);
     }
-    raw_paged(I cap, Alloc const& a) : crtp_base(nullptr), m_numpages_n_alloc(0, a)
+    raw_paged(I cap, Alloc const& a) : mem_paged< T >(nullptr), m_numpages_n_alloc(0, a)
     {
         crtp_base::_raw_reserve(0, cap);
     }
@@ -2780,17 +2852,24 @@ public:
 /** specialization of raw_paged for dynamic (set at run time) page size.
  * @ingroup raw_storage_classes */
 template< class T, class I, I Alignment, class Alloc >
-struct raw_paged< T, I, 0, Alignment, Alloc > : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >
+struct raw_paged< T, I, 0, Alignment, Alloc >
+    : 
+    public mem_paged< T >,
+    public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >
 {
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >;
     static_assert(std::is_integral< I >::value, "");
 
-    C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
-    C4_CONSTEXPR14 I _raw_id(const I i) const { return i &  m_id_mask; }
+public:
 
     valnalloc<I, Alloc> m_numpages_n_alloc;  ///< number of current pages in the array + allocator (for empty base class optimization)
-    I      m_id_mask;     ///< page size - 1: cannot be changed after construction.
-    I      m_page_lsb;    ///< least significant bit of the page size: cannot be changed after construction.
+    I                   m_id_mask;           ///< page size - 1: cannot be changed after construction.
+    I                   m_page_lsb;          ///< least significant bit of the page size: cannot be changed after construction.
+
+public:
+
+    C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
+    C4_CONSTEXPR14 I _raw_id(const I i) const { return i &  m_id_mask; }
 
 public:
 
@@ -2814,13 +2893,13 @@ public:
     raw_paged(I cap) : raw_paged(cap, default_page_size<T,I>::value) {}
     raw_paged(I cap, Alloc const& a) : raw_paged(cap, default_page_size<T,I>::value, a) {}
 
-    raw_paged(I cap, I page_sz) : crtp_base(nullptr), m_numpages_n_alloc(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
+    raw_paged(I cap, I page_sz) : mem_paged< T >(nullptr), m_numpages_n_alloc(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
         crtp_base::_raw_reserve(0, cap);
     }
-    raw_paged(I cap, I page_sz, Alloc const& a) : crtp_base(nullptr), m_numpages_n_alloc(0, a), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
+    raw_paged(I cap, I page_sz, Alloc const& a) : mem_paged< T >(nullptr), m_numpages_n_alloc(0, a), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
     {
         C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
         C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
@@ -2843,22 +2922,6 @@ public:
 
 };
 
-
-/** raw paged storage for structure-of-arrays. This is a work-in-progress. */
-template< class... SoaTypes, class I, size_t PageSize, I Alignment, class Alloc >
-struct raw_paged< soa< SoaTypes... >, I, PageSize, Alignment, Alloc >
-{
-    std::tuple< mem_paged<SoaTypes>... > m_soa;
-    valnalloc< I, Alloc >                m_numpages_n_alloc;
-};
-template< class... SoaTypes, class I, I Alignment, class Alloc >
-struct raw_paged< soa< SoaTypes... >, I, 0, Alignment, Alloc >
-{
-    std::tuple< mem_paged<SoaTypes>... > m_soa;
-    valnalloc< I, Alloc >                m_numpages_n_alloc;
-    I m_id_mask;     ///< page size - 1: cannot be changed after construction.
-    I m_page_lsb;    ///< least significant bit of the page size: cannot be changed after construction.
-};
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
