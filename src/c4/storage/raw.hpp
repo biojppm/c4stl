@@ -657,7 +657,7 @@ struct raw_fixed_soa_impl;
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
 struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >
 {
-    static_assert(Alignment >= max_alignment< SoaTypes... >), "bad alignment");
+    static_assert(Alignment >= max_alignment< SoaTypes... >::value, "bad alignment");
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_fixed< U, N, maxalign<U>::value >;
 
@@ -766,7 +766,7 @@ public:
     template< class ...Args >
     void _raw_construct_n(I first, I n, std::tuple< Args... > const& args)
     {
-        static_assert(sizeof...(args) == sizeof...(SoaTypes), "incompatible number of arguments");
+        static_assert(sizeof...(Args) == sizeof...(SoaTypes), "incompatible number of arguments");
         #define _c4mcr(arr, i) c4::construct_n(arr + first, n, std::forward(std::get< i >(args)))
         _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
         #undef _c4mcr
@@ -873,7 +873,7 @@ void raw_fixed< T, N, I, Alignment >::_raw_resize(I pos, I prevsz, I nextsz)
  *  @see _raw_destroy_room
  */
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
-void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >::
+void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >::
 _raw_resize(I pos, I prevsz, I nextsz)
 {
     if(nextsz > prevsz) // grow to the right of pos
@@ -921,7 +921,7 @@ void raw_fixed< T, N, I, Alignment >::_raw_make_room(I pos, I prevsz, I more)
  @endcode
  */
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
-void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >::
+void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >::
 _raw_make_room(I pos, I prevsz, I more)
 {
     C4_ASSERT(prevsz >= 0 && prevsz < N);
@@ -969,7 +969,7 @@ void raw_fixed< T, N, I, Alignment >::_raw_destroy_room(I pos, I prevsz, I less)
  @endcode
  */
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
-void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, std::index_sequence<Indices...>() >::
+void raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >::
 _raw_destroy_room(I pos, I prevsz, I less)
 {
     C4_ASSERT(prevsz >= 0 && prevsz < N);
@@ -1082,7 +1082,7 @@ struct raw_soa_impl;
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 struct raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >
 {
-    static_assert(Alignment >= max_alignment< SoaTypes... >), "bad alignment");
+    static_assert(Alignment >= max_alignment< SoaTypes... >::value, "bad alignment");
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_raw< U >;
 
@@ -1334,7 +1334,6 @@ _raw_reserve(I currsz, I cap)
 template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
 void raw< T, I, Alignment, Alloc, GrowthPolicy >::_raw_reserve_allocate(I cap, tmp_type *tmp)
 {
-    C4_ASSERT(currsz <= cap);
     T *t = nullptr;
     if(cap != m_cap_n_alloc.m_value && cap != 0)
     {
@@ -1360,7 +1359,6 @@ template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPoli
 void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
 _raw_reserve_allocate(I cap, tmp_type *tmp)
 {
-    C4_ASSERT(currsz <= cap);
     #define _c4mcr(arr, i) _do_raw_reserve_allocate<i>(cap, tmp)
     _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
     #undef _c4mcr
@@ -2600,7 +2598,7 @@ template< class T, class I, I Alignment, class RawPaged, class IndexSequence >
 struct _raw_paged_soa_crtp;
 
 /* a crtp base for paged storage. soa version. */
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 struct _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >
     : public _raw_paged_common_crtp< I, RawPaged >
 {
@@ -2609,7 +2607,7 @@ struct _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequ
 public:
 
     template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
-    template< I n > using nth_alignment = maxalign< nth_type<n> >;
+    template< I n > using nth_alignment = max_alignment< nth_type<n> >;
 
     template< I n > using iterator       = paged_iterator_impl<       RawPaged,       nth_type<n>, I >;
     template< I n > using const_iterator = paged_iterator_impl< const RawPaged, const nth_type<n>, I >;
@@ -2659,9 +2657,11 @@ public:
 public:
 
     template< I n >
-    void _do_raw_reserve_allocate(I currsz, I cap, I ps, np);
+    void _do_raw_reserve(I currsz, I cap, I np);
     template< I n >
-    void _do_raw_clear(I currsz, I cap, I ps, np);
+    void _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np);
+    template< I n >
+    void _do_raw_clear(I currsz);
 
 public:
 
@@ -2751,7 +2751,7 @@ public:
     }
 
     template< class U >
-    void _raw_move_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
+    void _raw_move_assign_n(U ** pages, I first_this, U ** that, I first_that, I n)
     {
         _process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler<U>, pages, first_this, that, first_that, n);
     }
@@ -2856,7 +2856,7 @@ _process_pages(Function handler, T **pages, I first_id, I n, Args... args)
     }
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< class U, class Function, class ...Args >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _process_pages(Function handler, U **pages, I first_id, I n, Args... args)
@@ -2915,7 +2915,7 @@ _process_pages(Function handler, T **pages, I first_id_this, T **other, I first_
     }
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< class U, class Function, class ...Args >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _process_pages(Function handler, U **pages, I first_id_this, U **other, I first_id_that, I n, Args... args)
@@ -2989,7 +2989,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
     _c4this->m_numpages_n_alloc.m_value = np;
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np)
@@ -3022,7 +3022,7 @@ _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np)
     _c4this->m_pages = tmp_pages;
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _raw_reserve_allocate(I cap, tmp_type *tmp)
 {
@@ -3095,7 +3095,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
     _c4this->m_pages = tmp;
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _do_raw_clear(I currsz)
@@ -3111,7 +3111,7 @@ _do_raw_clear(I currsz)
     std::get<n>(_c4this->m_soa).m_pages = nullptr;
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _do_raw_reserve(I currsz, I cap, I np)
@@ -3149,7 +3149,7 @@ _do_raw_reserve(I currsz, I cap, I np)
     C4_ASSERT(std::get<n>(_c4this->m_soa).m_pages == tmp);
 }
 
-template< class... SoaTypes, class I, I Alignment, class RawPaged, class... Indexes >
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _raw_reserve(I currsz, I cap)
 {
