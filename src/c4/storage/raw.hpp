@@ -2682,15 +2682,13 @@ public:
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
     }
-/*
-    void _raw_destroy_n(T **pages, I first, I n)
+
+    template< class U >
+    void _raw_destroy_n(U **pages, I first, I n)
     {
-        //_process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler, pages, first, n);
-        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler<nth_type<i>>, pgs, first, n)
-        _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
-        #undef _c4mcr
+        _process_pages(&_raw_paged_soa_crtp::_raw_destroy_n_handler<U>, pages, first, n);
     }
-*/
+
     template< class U >
     C4_ALWAYS_INLINE static void _raw_destroy_n_handler(U *ptr, I n)
     {
@@ -2714,12 +2712,13 @@ public:
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
     }
-/*
-    void _raw_move_construct_n(T ** pages, I first_this, T ** that, I first_that, I n)
+
+    template< class U >
+    void _raw_move_construct_n(U ** pages, I first_this, U ** that, I first_that, I n)
     {
-        _process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler, pages, first_this, that, first_that, n);
+        _process_pages(&_raw_paged_soa_crtp::_raw_move_construct_n_handler<U>, pages, first_this, that, first_that, n);
     }
-*/
+
     template< class U >
     C4_ALWAYS_INLINE static void _raw_move_construct_n_handler(U *dst, U *src, I n)
     {
@@ -2743,12 +2742,13 @@ public:
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
     }
-/*
+
+    template< class U >
     void _raw_move_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
     {
-        _process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler, pages, first_this, that, first_that, n);
+        _process_pages(&_raw_paged_soa_crtp::_raw_move_assign_n_handler<U>, pages, first_this, that, first_that, n);
     }
-*/
+
     template< class U >
     C4_ALWAYS_INLINE static void _raw_move_assign_n_handler(U *dst, U *src, I n)
     {
@@ -2772,12 +2772,13 @@ public:
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
     }
-/*
-    void _raw_copy_construct_n(T ** pages, I first_this, T const*const* that, I first_that, I n)
+
+    template< class U >
+    void _raw_copy_construct_n(U ** pages, I first_this, U ** that, I first_that, I n)
     {
-        _process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler, pages, first_this, that, first_that, n);
+        _process_pages(&_raw_paged_soa_crtp::_raw_copy_construct_n_handler<U>, pages, first_this, that, first_that, n);
     }
-*/
+
     template< class U >
     C4_ALWAYS_INLINE static void _raw_copy_construct_n_handler(U *dst, U const* src, I n)
     {
@@ -2801,12 +2802,13 @@ public:
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
     }
-/*
-    void _raw_copy_assign_n(T ** pages, I first_this, T ** that, I first_that, I n)
+
+    template< class U >
+    void _raw_copy_assign_n(U ** pages, I first_this, U ** that, I first_that, I n)
     {
-        _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler, pages, first_this, that, first_that, n);
+        _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler<U>, pages, first_this, that, first_that, n);
     }
-*/
+
     template< class U >
     C4_ALWAYS_INLINE static void _raw_copy_assign_n_handler(U *dst, U *src, I n)
     {
