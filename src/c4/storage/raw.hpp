@@ -158,6 +158,8 @@ struct raw_soa;
  * @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, size_t N=default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw_small;
+template< class T, class I=C4_SIZE_TYPE, size_t N=default_small_size<T,I>::value, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
+struct raw_small_soa;
 
 /** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, size_t PageSize=default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> >
@@ -1651,19 +1653,140 @@ public:
 
 //-----------------------------------------------------------------------------
 
-/** raw small storage for structure-of-arrays. this is a work in progress */
-template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
-struct raw_small< soa< SoaTypes... >, I, N_, Alignment, Alloc, GrowthPolicy >
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, class IndexSequence >
+struct raw_small_soa_impl;
+
+/** raw contiguous storage with in-place room for a small number of objects
+ * @tparam N the number of objects
+ * @ingroup raw_storage_classes */
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+struct raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >
 {
-    template< class U > using arr_type = mem_small< U, N_, (Alignment > alignof(U) ? Alignment : alignof(U)) >;
+    C4_STATIC_ASSERT(N_ <= (size_t)std::numeric_limits< I >::max());
+    //C4_STATIC_ASSERT(sizeof(T) == alignof(T));  // not sure if this is needed
+
+    template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
+    template< class U > using arr_type = mem_small< U, N_, Alignment >;
 
     std::tuple< arr_type<SoaTypes>... > m_soa;
-    valnalloc< I, Alloc >               m_cap_n_alloc;
+    valnalloc<I,Alloc> m_cap_n_alloc;
+
+public:
+
+    _c4_DEFINE_TUPLE_ARRAY_TYPES(SoaTypes, I);
+    using storage_traits = raw_storage_traits< raw_small_soa_impl, small_soa_t >;
+
+    using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
+    using growth_policy = GrowthPolicy;
+
+    template< class U >
+    using rebind_type = raw_small_soa_impl<U, I, N_, maxalign<U>::value, rebind_alloc<U>, GrowthPolicy, index_sequence<Indices...>() >;
+
+    template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
+    template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
+    template< I n > using nth_alignment = maxalign< nth_type<n> >;
+    using tuple_type = std::tuple< arr_type<SoaTypes>... >;
+
+    using tmp_type = tmp_storage< raw_small_soa_impl >;
+
+    enum : I { array_size = (I)N_, N = (I)N_, num_arrays = sizeof...(SoaTypes), };
+
+public:
+
+    raw_small_soa_impl() : raw_small_soa_impl(0) {}
+    raw_small_soa_impl(Alloc const& a) : raw_small_soa_impl(0, a) {}
+
+    raw_small_soa_impl(I cap) : m_soa(), m_cap_n_alloc(N) { _raw_reserve(0, cap); }
+    raw_small_soa_impl(I cap, Alloc const& a) : m_soa(), m_cap_n_alloc(N, a) { _raw_reserve(0, cap); }
+
+    ~raw_small_soa_impl()
+    {
+        _raw_reserve(0, 0);
+    }
+
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
+    C4_NO_COPY_OR_MOVE(raw_small_soa_impl);
+
+public:
+
+    C4_ALWAYS_INLINE Alloc      & allocator()       { return m_cap_n_alloc.alloc(); }
+    C4_ALWAYS_INLINE Alloc const& allocator() const { return m_cap_n_alloc.alloc(); }
+    template< I n=0 > C4_ALWAYS_INLINE nth_allocator_type<n> nth_allocator() const { return nth_allocator_type<n>(m_cap_n_alloc.alloc()); }
+
+    C4_ALWAYS_INLINE I capacity() const noexcept { return m_cap_n_alloc.m_value; }
+    C4_ALWAYS_INLINE bool empty() const noexcept { return m_cap_n_alloc.m_value == 0; }
+    C4_ALWAYS_INLINE bool is_small() const noexcept { return m_cap_n_alloc.m_value <= N; }
+
+    C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
+    C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
+    {
+        return GrowthPolicy::next_size(sizeof(T), m_cap_n_alloc.m_value, desired);
+    }
+
+public:
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      * data()       noexcept { return m_cap_n_alloc.m_value <= N ? std::get<n>(m_soa).m_arr : std::get<n>(m_soa).m_ptr; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const* data() const noexcept { return m_cap_n_alloc.m_value <= N ? std::get<n>(m_soa).m_arr : std::get<n>(m_soa).m_ptr; }
+
+    // gcc is triggering a false positive here when compiling in release mode:
+    // error: array subscript is below array bounds [-Werror=array-bounds].
+    // probably this is due to moving a return branch into the assert.
+    // see https://gcc.gnu.org/ml/gcc/2009-09/msg00270.html for a similar example
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr[i] : std::get<n>(m_soa).m_ptr[i]; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr[i] : std::get<n>(m_soa).m_ptr[i]; }
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      * _raw_iterator(I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return i + (C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr : std::get<n>(m_soa).m_ptr); }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const* _raw_iterator(I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return i + (C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr : std::get<n>(m_soa).m_ptr); }
+
+public:
+
+    /** assume the curr size is zero */
+    void _raw_reserve(I cap) { _raw_reserve(0, cap); }
+
+    void _raw_reserve(I currsz, I cap);
+
+    void _raw_reserve_allocate(I cap, tmp_type *tmp);
+    void _raw_reserve_replace(I tmpsz, tmp_type *tmp);
+
+    void _raw_resize(I pos, I prev, I next);
+    void _raw_make_room(I pos, I prevsz, I more);
+    void _raw_destroy_room(I pos, I prevsz, I less);
+
+public:
+
+    template< I n > void _do_raw_reserve(I currsz, I cap);
+    template< I n > void _do_raw_make_room(I pos, I prevsz, I more);
+
+};
+
+//-----------------------------------------------------------------------------
+
+/** implement raw_small_soa for a single array */
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+struct raw_small_soa
+    :
+        public raw_small_soa_impl< soa<T>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<0>() >
+{
+    using _impl_type = raw_small_soa_impl< soa<T>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<0>() >;
+    using _impl_type::_impl_type;
+};
+
+/** implement raw_small_soa for multiple arrays */
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+struct raw_small_soa< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy >
+    :
+        public raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence_for<SoaTypes...>() >
+{
+    using _impl_type = raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence_for<SoaTypes...>() >;
+    using _impl_type::_impl_type;
 };
 
 
 //-----------------------------------------------------------------------------
-
 template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
 void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
 _raw_reserve(I currsz, I cap)
@@ -1705,6 +1828,56 @@ _raw_reserve(I currsz, I cap)
     this->m_ptr = tmp;
 }
 
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+template< I n >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_do_raw_reserve(I currsz, I cap)
+{
+    C4_ASSERT(currsz <= cap);
+    T *tmp = nullptr;
+    if(cap == m_cap_n_alloc.m_value) return;
+    if(cap <= N)
+    {
+        if(m_cap_n_alloc.m_value <= N)
+        {
+            return; // nothing to do
+        }
+        else
+        {
+            tmp = std::get<n>(m_soa).m_arr; // move the storage to the array
+        }
+    }
+    else
+    {
+        // since here we know that cap != m_cap_n_alloc.m_value and that cap
+        // is larger than the array, we'll always need a new buffer
+        tmp = nth_allocator<n>().allocate(cap, Alignment);
+    }
+    if(m_cap_n_alloc.m_value)
+    {
+        if(m_cap_n_alloc.m_value <= N)
+        {
+            C4_ASSERT(tmp != std::get<n>(m_soa).m_arr);
+            c4::move_construct_n(tmp, std::get<n>(m_soa).m_arr, currsz);
+        }
+        else
+        {
+            c4::move_construct_n(tmp, std::get<n>(m_soa).m_ptr, currsz);
+            nth_allocator<n>().deallocate(std::get<n>(m_soa).m_ptr, m_cap_n_alloc.m_value, Alignment);
+        }
+    }
+    std::get<n>(m_soa).m_ptr = tmp;
+}
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_raw_reserve(I currsz, I cap)
+{
+    #define _c4mcr(arr, i) _do_raw_reserve<i>(currsz, cap)
+    _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+    #undef _c4mcr
+    m_cap_n_alloc.m_value = cap;
+}
+
 
 //-----------------------------------------------------------------------------
 template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
@@ -1737,6 +1910,40 @@ _raw_reserve_allocate(I cap, tmp_type *tmp)
     }
 }
 
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_raw_reserve_allocate(I cap, tmp_type *tmp)
+{
+    #define _c4set(arr, i) std::get<i>(tmp->m_soa).m_ptr = nth_allocator<i>().allocate(cap, Alignment)
+    #define _c4clr(arr, i) std::get<i>(tmp->m_soa).m_ptr = nullptr
+    if(cap == m_cap_n_alloc.m_value)
+    {
+        tmp->m_cap_n_alloc.m_value = 0;
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4clr)
+    }
+    else if(cap < N)
+    {
+        if(m_cap_n_alloc.m_value <= N)
+        {
+            tmp->m_cap_n_alloc.m_value = 0;
+            _C4_FOREACH_ARR(m_soa, m_ptr, _c4clr)
+        }
+        else
+        {
+            // move the storage to the array - this requires a temporary buffer
+            tmp->m_cap_n_alloc.m_value = cap;
+            _C4_FOREACH_ARR(m_soa, m_ptr, _c4set)
+        }
+    }
+    else
+    {
+        tmp->m_cap_n_alloc.m_value = cap;
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4set)
+    }
+    #undef _c4set
+    #undef _c4clr
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -1760,6 +1967,34 @@ _raw_reserve_replace(I tmpsz, tmp_type *tmp)
     tmp->m_cap_n_alloc.m_value = 0;
 }
 
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_raw_reserve_replace(I tmpsz, tmp_type *tmp)
+{
+    C4_ASSERT(*tmp);
+    if(tmp->m_cap_n_alloc.m_value <= N)
+    {
+        // moving the storage to the array requires a temporary buffer.
+        #define _c4mcr(arr, i) c4::move_construct_n(arr, std::get<i>(tmp->m_soa).m_ptr, tmpsz)
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+        #define _c4mcr(arr, i) nth_allocator<i>.deallocate(std::get<i>(tmp->m_soa).m_ptr, tmp->m_cap_n_alloc.m_value)
+        _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
+        #undef _c4mcr
+    }
+    else
+    {
+        #define _c4mcr(arr, i) arr = std::get<i>(tmp->m_soa).m_ptr
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+    m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
+    tmp->m_cap_n_alloc.m_value = 0;
+    #define _c4mcr(arr, i) arr = std::get<i>(tmp->m_soa).m_ptr = nullptr
+    _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+    #undef _c4mcr
+}
+
 
 //-----------------------------------------------------------------------------
 /** Resize the buffer at pos, so that the previous size increases to the
@@ -1778,6 +2013,37 @@ _raw_reserve_replace(I tmpsz, tmp_type *tmp)
  */
 template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
 void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_resize(I pos, I prevsz, I nextsz)
+{
+    C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    if(next > prev)
+    {
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
+    }
+    else if(next < prev)
+    {
+        _raw_destroy_room(pos, prevsz, prevsz-nextsz);
+    }
+}
+
+/** Resize the buffer at pos, so that the previous size increases to the
+ *  value of next; when growing, ___adds to the right___ of pos; when
+ *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+ *  will increase to the value obtained with the growth policy; if shrinking,
+ *  the capacity will stay the same. Use _raw_reserve() to diminish the
+ *  capacity.
+ *
+ *  @param pos the position from which room is to be created (to the right)
+ *         or destroyed (to the left)
+ *  @param prev the previous size
+ *  @param next the next size
+ *  @see _raw_make_room
+ *  @see _raw_destroy_room
+ */
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
 _raw_resize(I pos, I prevsz, I nextsz)
 {
     C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
@@ -1845,6 +2111,90 @@ _raw_make_room(I pos, I prevsz, I more)
     }
 }
 
+/** grow to the right of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F . . .
+
+ _raw_make_room(3, 6, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C . . . D E F
+ @endcode
+ */
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+template< I n >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_do_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos <= prevsz);
+    I nextsz = prevsz + more;
+    if(m_cap_n_alloc.m_value <= N && nextsz <= N)
+    {
+        c4::make_room(std::get<n>(m_soa).m_arr + pos, prevsz - pos, more);
+    }
+    else
+    {
+        C4_ASSERT(nextsz > N);
+        if(nextsz <= m_cap_n_alloc.m_value)
+        {
+            c4::make_room(std::get<n>(m_soa).m_ptr + pos, prevsz - pos, more);
+        }
+        else
+        {
+            I cap = next_capacity(nextsz);
+            nth_type<n>* tmp = nth_allocator<n>().allocate(cap, Alignment);
+            if(m_cap_n_alloc.m_value <= N)
+            {
+                c4::make_room(tmp, std::get<n>(m_soa).m_arr, prevsz, more, pos);
+            }
+            else if(m_cap_n_alloc.m_value > N)
+            {
+                c4::make_room(tmp, std::get<n>(m_soa).m_ptr, prevsz, more, pos);
+                nth_allocator<n>().deallocate(std::get<n>(m_soa).m_ptr, m_cap_n_alloc.m_value, Alignment);
+            }
+            std::get<n>(m_soa).m_ptr = tmp;
+            //m_cap_n_alloc.m_value = cap; //  this can only be done at the end, see the function below
+        }
+    }
+}
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos <= prevsz);
+
+    #define _c4mcr(arr, i) _do_raw_make_room<i>(pos, prevsz, more)
+    _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+    #undef _c4mcr
+
+    // set the new capacity
+    if(m_cap_n_alloc.m_value <= N && nextsz <= N)
+    {
+        // nothing to do
+    }
+    else
+    {
+        C4_ASSERT(nextsz > N);
+        if(nextsz <= m_cap_n_alloc.m_value)
+        {
+            // nothing to do
+        }
+        else
+        {
+            m_cap_n_alloc.m_value = cap;
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 /** shrink to the left of pos
  @code
@@ -1867,6 +2217,22 @@ _raw_destroy_room(I pos, I prevsz, I less)
     C4_ASSERT(pos    >= less);
     I delta = pos - less;
     c4::destroy_room(data() + delta, prevsz - delta, less);
+}
+
+template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
+void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
+_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    <= prevsz);
+    C4_ASSERT(pos    >= less);
+    I delta = pos - less;
+
+    // c4::destroy_room(data() + delta, prevsz - delta, less);
+    #define _c4mcr(arr, i) c4::destroy_room(data<i>() + delta, prevsz - delta, less)
+    _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+    #undef _c4mcr
 }
 
 
