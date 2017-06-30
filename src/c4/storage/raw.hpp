@@ -1636,152 +1636,17 @@ public:
 public:
 
     /** assume the curr size is zero */
-    void _raw_reserve(I cap)
-    {
-        _raw_reserve(0, cap);
-    }
+    void _raw_reserve(I cap) { _raw_reserve(0, cap); }
 
-    void _raw_reserve(I currsz, I cap)
-    {
-        C4_ASSERT(currsz <= cap);
-        T *tmp = nullptr;
-        if(cap == m_cap_n_alloc.m_value) return;
-        if(cap <= N)
-        {
-            if(m_cap_n_alloc.m_value <= N)
-            {
-                return; // nothing to do
-            }
-            else
-            {
-                tmp = this->m_arr; // move the storage to the array
-            }
-        }
-        else
-        {
-            // since here we know that cap != m_cap_n_alloc.m_value and that cap
-            // is larger than the array, we'll always need a new buffer
-            tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
-        }
-        if(m_cap_n_alloc.m_value)
-        {
-            if(m_cap_n_alloc.m_value <= N)
-            {
-                C4_ASSERT(tmp != this->m_arr);
-                c4::move_construct_n(tmp, this->m_arr, currsz);
-            }
-            else
-            {
-                c4::move_construct_n(tmp, this->m_ptr, currsz);
-                m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-            }
-        }
-        m_cap_n_alloc.m_value = cap;
-        this->m_ptr = tmp;
-    }
+    void _raw_reserve(I currsz, I cap);
 
-    void _raw_reserve_allocate(I cap, tmp_type *tmp)
-    {
-        tmp->m_cap_n_alloc.m_value = 0;
-        tmp->m_ptr = 0;
-        if(cap == m_cap_n_alloc.m_value)
-        {
-            return;
-        }
-        else if(cap < N)
-        {
-            if(m_cap_n_alloc.m_value <= N)
-            {
-                return;
-            }
-            else
-            {
-                // move the storage to the array - this requires a temporary buffer
-                tmp->m_cap_n_alloc.m_value = cap;
-                tmp->m_ptr = m_cap_n_alloc.alloc().allocate(cap, Alignment);
-            }
-        }
-        else
-        {
-            tmp->m_cap_n_alloc.m_value = cap;
-            tmp->m_ptr = m_cap_n_alloc.alloc().allocate(cap, Alignment);
-        }
-    }
-    void _raw_reserve_replace(I tmpsz, tmp_type *tmp)
-    {
-        C4_ASSERT(*tmp);
-        if(tmp->m_cap_n_alloc.m_value <= N)
-        {
-            // moving the storage to the array requires a temporary buffer.
-            c4::move_construct_n(this->m_arr, tmp->m_ptr, tmpsz);
-            m_cap_n_alloc.alloc().deallocate(tmp->m_ptr, tmp->m_cap_n_alloc.m_value);
-        }
-        else
-        {
-            this->m_ptr = tmp->m_ptr;
-        }
-        m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
-        tmp->m_ptr = nullptr;
-        tmp->m_cap_n_alloc.m_value = 0;
-    }
+    void _raw_reserve_allocate(I cap, tmp_type *tmp);
+    void _raw_reserve_replace(I tmpsz, tmp_type *tmp);
 
-    /** Resize the buffer at pos, so that the previous size increases to the
-     *  value of next; when growing, ___adds to the right___ of pos; when
-     *  shrinking, ___removes to the left___ of pos. If growing, the capacity
-     *  will increase to the value obtained with the growth policy; if shrinking,
-     *  the capacity will stay the same. Use _raw_reserve() to diminish the
-     *  capacity.
-     *
-     *  @param pos the position from which room is to be created (to the right)
-     *         or destroyed (to the left)
-     *  @param prev the previous size
-     *  @param next the next size */
-    void _raw_resize(I pos, I prev, I next)
-    {
-        C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
-        C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
-        C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
-        if(next > prev)
-        {
-            if(m_cap_n_alloc.m_value <= N && next <= N)
-            {
-                c4::make_room(this->m_arr + pos, prev - pos, next - prev);
-            }
-            else
-            {
-                C4_ASSERT(next > N);
-                if(next <= m_cap_n_alloc.m_value)
-                {
-                    c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
-                }
-                else
-                {
-                    I cap = next_capacity(next);
-                    T* tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
-                    if(m_cap_n_alloc.m_value <= N)
-                    {
-                        c4::make_room(tmp, this->m_arr, prev, next - prev, pos);
-                    }
-                    else if(m_cap_n_alloc.m_value > N)
-                    {
-                        c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
-                        m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-                    }
-                    this->m_ptr = tmp;
-                    m_cap_n_alloc.m_value = cap;
-                }
-            }
-        }
-        else if(next < prev)
-        {
-            I delta = prev - next;
-            C4_ASSERT(pos > delta);
-            c4::destroy_room(data() + pos - delta, prev - pos, delta);
-        }
-    }
-
+    void _raw_resize(I pos, I prev, I next);
 };
 
+//-----------------------------------------------------------------------------
 
 /** raw small storage for structure-of-arrays. this is a work in progress */
 template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
@@ -1793,6 +1658,167 @@ struct raw_small< soa< SoaTypes... >, I, N_, Alignment, Alloc, GrowthPolicy >
     valnalloc< I, Alloc >               m_cap_n_alloc;
 };
 
+
+//-----------------------------------------------------------------------------
+
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_reserve(I currsz, I cap)
+{
+    C4_ASSERT(currsz <= cap);
+    T *tmp = nullptr;
+    if(cap == m_cap_n_alloc.m_value) return;
+    if(cap <= N)
+    {
+        if(m_cap_n_alloc.m_value <= N)
+        {
+            return; // nothing to do
+        }
+        else
+        {
+            tmp = this->m_arr; // move the storage to the array
+        }
+    }
+    else
+    {
+        // since here we know that cap != m_cap_n_alloc.m_value and that cap
+        // is larger than the array, we'll always need a new buffer
+        tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+    }
+    if(m_cap_n_alloc.m_value)
+    {
+        if(m_cap_n_alloc.m_value <= N)
+        {
+            C4_ASSERT(tmp != this->m_arr);
+            c4::move_construct_n(tmp, this->m_arr, currsz);
+        }
+        else
+        {
+            c4::move_construct_n(tmp, this->m_ptr, currsz);
+            m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
+        }
+    }
+    m_cap_n_alloc.m_value = cap;
+    this->m_ptr = tmp;
+}
+
+
+//-----------------------------------------------------------------------------
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_reserve_allocate(I cap, tmp_type *tmp)
+{
+    tmp->m_cap_n_alloc.m_value = 0;
+    tmp->m_ptr = 0;
+    if(cap == m_cap_n_alloc.m_value)
+    {
+        return;
+    }
+    else if(cap < N)
+    {
+        if(m_cap_n_alloc.m_value <= N)
+        {
+            return;
+        }
+        else
+        {
+            // move the storage to the array - this requires a temporary buffer
+            tmp->m_cap_n_alloc.m_value = cap;
+            tmp->m_ptr = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+        }
+    }
+    else
+    {
+        tmp->m_cap_n_alloc.m_value = cap;
+        tmp->m_ptr = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_reserve_replace(I tmpsz, tmp_type *tmp)
+{
+    C4_ASSERT(*tmp);
+    if(tmp->m_cap_n_alloc.m_value <= N)
+    {
+        // moving the storage to the array requires a temporary buffer.
+        c4::move_construct_n(this->m_arr, tmp->m_ptr, tmpsz);
+        m_cap_n_alloc.alloc().deallocate(tmp->m_ptr, tmp->m_cap_n_alloc.m_value);
+    }
+    else
+    {
+        this->m_ptr = tmp->m_ptr;
+    }
+    m_cap_n_alloc.m_value = tmp->m_cap_n_alloc.m_value;
+    tmp->m_ptr = nullptr;
+    tmp->m_cap_n_alloc.m_value = 0;
+}
+
+
+//-----------------------------------------------------------------------------
+/** Resize the buffer at pos, so that the previous size increases to the
+ *  value of next; when growing, ___adds to the right___ of pos; when
+ *  shrinking, ___removes to the left___ of pos. If growing, the capacity
+ *  will increase to the value obtained with the growth policy; if shrinking,
+ *  the capacity will stay the same. Use _raw_reserve() to diminish the
+ *  capacity.
+ *
+ *  @param pos the position from which room is to be created (to the right)
+ *         or destroyed (to the left)
+ *  @param prev the previous size
+ *  @param next the next size */
+
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_resize(I pos, I prev, I next)
+{
+    C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
+    C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
+    if(next > prev)
+    {
+        if(m_cap_n_alloc.m_value <= N && next <= N)
+        {
+            c4::make_room(this->m_arr + pos, prev - pos, next - prev);
+        }
+        else
+        {
+            C4_ASSERT(next > N);
+            if(next <= m_cap_n_alloc.m_value)
+            {
+                c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
+            }
+            else
+            {
+                I cap = next_capacity(next);
+                T* tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+                if(m_cap_n_alloc.m_value <= N)
+                {
+                    c4::make_room(tmp, this->m_arr, prev, next - prev, pos);
+                }
+                else if(m_cap_n_alloc.m_value > N)
+                {
+                    c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
+                    m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
+                }
+                this->m_ptr = tmp;
+                m_cap_n_alloc.m_value = cap;
+            }
+        }
+    }
+    else if(next < prev)
+    {
+        I delta = prev - next;
+        C4_ASSERT(pos > delta);
+        c4::destroy_room(data() + pos - delta, prev - pos, delta);
+    }
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 // utility defines, undefined below
