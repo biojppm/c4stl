@@ -274,6 +274,18 @@ struct raw_storage_traits : public _raw_storage_traits< Storage, TagType >
 
 //-----------------------------------------------------------------------------
 
+#ifdef C4_USE_ASSERT
+template< class Storage >
+C4_ALWAYS_INLINE void _c4_check_range_vs_capacity(Storage const& s, typename Storage::size_type first, typename Storage::size_type n)
+{
+    C4_ASSERT(first >= 0 && first <  s.capacity());
+    C4_ASSERT(n     >= 0 && n     <= s.capacity());
+    C4_ASSERT(first + n <= s.capacity());
+}
+#else
+#   define _c4_check_range_vs_capacity(...)
+#endif
+
 template< class Storage >
 struct _raw_storage_calls_use_data_only
 {
@@ -282,31 +294,37 @@ struct _raw_storage_calls_use_data_only
     template< class ...Args >
     C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::construct_n(dest.data() + first, n, std::forward< Args >(args)...);
     }
 
     C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::destroy_n(dest.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::move_construct_n(dest.data() + first, src.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::move_assign_n(dest.data() + first, src.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::copy_construct_n(dest.data() + first, src.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::copy_assign_n(dest.data() + first, src.data() + first, n);
     }
 };
@@ -321,31 +339,37 @@ struct _raw_storage_calls_use_allocator_and_data
     template< class ...Args >
     C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest.m_cap_n_alloc.alloc().construct_n(dest.data() + first, n, std::forward< Args >(args)...);
     }
 
     C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest.m_cap_n_alloc.alloc().destroy_n(dest.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::move_construct_n(dest.data() + first, src.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::copy_construct_n(dest.data() + first, src.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage const& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::move_assign_n(dest.data() + first, src.data() + first, n);
     }
 
     C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         c4::copy_assign_n(dest.data() + first, src.data() + first, n);
     }
 };
@@ -358,31 +382,37 @@ struct _raw_storage_calls_forward_to_storage
     template< class ...Args >
     C4_ALWAYS_INLINE static void construct_n(Storage& dest, I first, I n, Args&&... args)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest._raw_construct_n(first, n, std::forward< Args >(args)...);
     }
 
     C4_ALWAYS_INLINE static void destroy_n(Storage& dest, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest._raw_destroy_n(first, n);
     }
 
     C4_ALWAYS_INLINE static void move_construct_n(Storage& dest, Storage& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest._raw_move_construct_n(src, first, n);
     }
 
     C4_ALWAYS_INLINE static void move_assign_n(Storage& dest, Storage& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest._raw_move_assign_n(src, first, n);
     }
 
     C4_ALWAYS_INLINE static void copy_construct_n(Storage& dest, Storage const& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest._raw_copy_construct_n(src, first, n);
     }
 
     C4_ALWAYS_INLINE static void copy_assign_n(Storage& dest, Storage const& src, I first, I n)
     {
+        _c4_check_range_vs_capacity(dest, first, n);
         dest._raw_copy_assign_n(src, first, n);
     }
 };
