@@ -79,6 +79,25 @@ struct default_small_size
 
 //-----------------------------------------------------------------------------
 
+template< class T, class... More >
+struct max_alignment
+{
+    enum : size_t { value = alignof(T) >= max_alignment< More... >::value ? alignof(T) : max_alignment< More... >::value };
+};
+template< class T >
+struct max_alignment< T >
+{
+    enum : size_t { value = alignof(T) };
+};
+
+template< size_t N, class... T >
+struct max_alignment_n
+{
+    enum : size_t { value = N >= max_alignment< T... >::value ? N : max_alignment< T... >::value };
+};
+
+//-----------------------------------------------------------------------------
+
 
 /** returns the maximum size that a container can have when there is a npos
  * marker.
@@ -140,14 +159,12 @@ template< class Storage, class TagType > struct raw_storage_traits;
  * @todo make the Alignment a size_t */
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed;
-
 template< class T, size_t N, class I=C4_SIZE_TYPE, I Alignment=alignof(T) >
 struct raw_fixed_soa;
 
 /** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw;
-
 /** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T>, class GrowthPolicy=growth_default >
 struct raw_soa;
@@ -378,7 +395,6 @@ template< class Storage >
 struct _raw_storage_traits< Storage, fixed_t > : public _raw_storage_calls_use_data_only< Storage >
 {
 };
-
 template< class Storage >
 struct _raw_storage_traits< Storage, fixed_soa_t > : public _raw_storage_calls_forward_to_storage< Storage >
 {
@@ -399,6 +415,10 @@ struct _raw_storage_traits< Storage, contiguous_soa_t > : public _raw_storage_ca
  * @ingroup raw_storage_classes */
 template< class Storage >
 struct _raw_storage_traits< Storage, small_t > : public _raw_storage_calls_use_allocator_and_data< Storage >
+{
+};
+template< class Storage >
+struct _raw_storage_traits< Storage, small_soa_t > : public _raw_storage_calls_forward_to_storage< Storage >
 {
 };
 
@@ -434,9 +454,11 @@ struct valnalloc : public Alloc
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** for instantiating raw storage with structure of arrays */
+/** for instantiating raw storage with structure of arrays. This is a type to
+ * be used only in instantiation of soa storage; it is never actually
+ * instantiated. */
 template< class... SoaTypes >
-struct soa
+struct alignas(max_alignment<SoaTypes...>::value) soa/* : std::tuple< SoaTypes... >*/
 {
 };
 
@@ -455,7 +477,7 @@ struct mem_fixed
     C4_ALWAYS_INLINE ~mem_fixed() {}
 };
 
-template< class T, size_t N, size_t Alignment >
+template< class T, size_t N, size_t Alignment=alignof(T) >
 struct mem_small
 {
     static_assert(Alignment >= alignof(T), "bad alignment value");
@@ -1663,7 +1685,7 @@ template< class... SoaTypes, class I, size_t N_, I Alignment, class Alloc, class
 struct raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >
 {
     C4_STATIC_ASSERT(N_ <= (size_t)std::numeric_limits< I >::max());
-    //C4_STATIC_ASSERT(sizeof(T) == alignof(T));  // not sure if this is needed
+    static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
 
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_small< U, N_, Alignment >;
@@ -1724,7 +1746,7 @@ public:
     C4_ALWAYS_INLINE constexpr static size_t max_capacity() noexcept { return raw_max_capacity< I >(); }
     C4_ALWAYS_INLINE constexpr size_t next_capacity(size_t desired) const noexcept
     {
-        return GrowthPolicy::next_size(sizeof(T), m_cap_n_alloc.m_value, desired);
+        return GrowthPolicy::next_size(alignof(soa<SoaTypes...>), m_cap_n_alloc.m_value, desired);
     }
 
 public:
@@ -1738,6 +1760,8 @@ public:
     // see https://gcc.gnu.org/ml/gcc/2009-09/msg00270.html for a similar example
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & operator[] (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr[i] : std::get<n>(m_soa).m_ptr[i]; }
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& operator[] (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr[i] : std::get<n>(m_soa).m_ptr[i]; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      & get        (I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr[i] : std::get<n>(m_soa).m_ptr[i]; }
+    template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& get        (I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr[i] : std::get<n>(m_soa).m_ptr[i]; }
 
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n>      * _raw_iterator(I i)       C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return i + (C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr : std::get<n>(m_soa).m_ptr); }
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const* _raw_iterator(I i) const C4_NOEXCEPT_X { C4_XASSERT(i >= 0 && i < m_cap_n_alloc.m_value); return i + (C4_LIKELY(i >= 0 && m_cap_n_alloc.m_value <= N) ? std::get<n>(m_soa).m_arr : std::get<n>(m_soa).m_ptr); }
@@ -1771,6 +1795,8 @@ struct raw_small_soa
     :
         public raw_small_soa_impl< soa<T>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<0>() >
 {
+    static_assert(Alignment > 1, "bad alignment");
+    static_assert(Alignment >= alignof(T), "bad alignment");
     using _impl_type = raw_small_soa_impl< soa<T>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence<0>() >;
     using _impl_type::_impl_type;
 };
@@ -1781,6 +1807,7 @@ struct raw_small_soa< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy >
     :
         public raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence_for<SoaTypes...>() >
 {
+    static_assert(Alignment > 1, "bad alignment");
     using _impl_type = raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy, index_sequence_for<SoaTypes...>() >;
     using _impl_type::_impl_type;
 };
@@ -1834,7 +1861,7 @@ void raw_small_soa_impl< soa<SoaTypes...>, I, N_, Alignment, Alloc, GrowthPolicy
 _do_raw_reserve(I currsz, I cap)
 {
     C4_ASSERT(currsz <= cap);
-    T *tmp = nullptr;
+    nth_type<n> *tmp = nullptr;
     if(cap == m_cap_n_alloc.m_value) return;
     if(cap <= N)
     {
@@ -2176,6 +2203,7 @@ _raw_make_room(I pos, I prevsz, I more)
     _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
     #undef _c4mcr
 
+    I nextsz = prevsz + more;
     // set the new capacity
     if(m_cap_n_alloc.m_value <= N && nextsz <= N)
     {
@@ -2190,7 +2218,7 @@ _raw_make_room(I pos, I prevsz, I more)
         }
         else
         {
-            m_cap_n_alloc.m_value = cap;
+            m_cap_n_alloc.m_value = nextsz;
         }
     }
 }

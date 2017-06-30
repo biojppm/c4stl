@@ -885,6 +885,18 @@ TEST(raw_small, resize)
 {
     test_raw_resize< raw_small< int > >();
 }
+TEST(raw_small_soa, soa_resize_1_bare)
+{
+    test_raw_soa_resize_1_type< raw_small_soa< int,size_t,10 > >();
+}
+TEST(raw_small_soa, soa_resize_1_soa)
+{
+    test_raw_soa_resize_1_type< raw_small_soa< soa<int>,size_t,10 > >();
+}
+TEST(raw_small_soa, soa_resize_2)
+{
+    test_raw_soa_resize_2_types< raw_small_soa< soa<int,float>,size_t,10 > >();
+}
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
