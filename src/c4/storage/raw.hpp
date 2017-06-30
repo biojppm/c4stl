@@ -1395,7 +1395,7 @@ _do_raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
 }
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 void raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >::
-_raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp)
+_raw_reserve_replace(I tmpsz, tmp_type *tmp)
 {
     #define _c4mcr(arr, i) _do_raw_reserve_replace<i>(tmpsz, tmp)
     _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
@@ -1832,7 +1832,7 @@ public:
     template< class ...Args >
     void _raw_construct_n(I first, I n, std::tuple< Args... > const& args)
     {
-        static_assert(sizeof...(args) == sizeof...(SoaTypes), "incompatible number of arguments");
+        static_assert(sizeof...(Args) == sizeof...(SoaTypes), "incompatible number of arguments");
         #define _c4mcr(arr, i) c4::construct_n(data<i>() + first, n, std::forward(std::get< i >(args)))
         _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
         #undef _c4mcr
@@ -2133,11 +2133,11 @@ _raw_resize(I pos, I prevsz, I nextsz)
     C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
     C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
     C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
-    if(next > prev)
+    if(nextsz > prevsz)
     {
         _raw_make_room(pos, prevsz, nextsz-prevsz);
     }
-    else if(next < prev)
+    else if(nextsz < prevsz)
     {
         _raw_destroy_room(pos, prevsz, prevsz-nextsz);
     }
@@ -2164,11 +2164,11 @@ _raw_resize(I pos, I prevsz, I nextsz)
     C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
     C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
     C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
-    if(next > prev)
+    if(nextsz > prevsz)
     {
         _raw_make_room(pos, prevsz, nextsz-prevsz);
     }
-    else if(next < prev)
+    else if(nextsz < prevsz)
     {
         _raw_destroy_room(pos, prevsz, prevsz-nextsz);
     }
@@ -2377,11 +2377,11 @@ public:
     U& operator*  () const noexcept { return  (*this_)[i]; }
     U* operator-> () const noexcept { return &(*this_)[i]; }
 
-    paged_iterator_impl& operator++ (   ) noexcept {                           ++i; return *this; }
-    paged_iterator_impl  operator++ (int) noexcept { iterator_impl it = *this; ++i; return    it; }
+    paged_iterator_impl& operator++ (   ) noexcept {                                 ++i; return *this; }
+    paged_iterator_impl  operator++ (int) noexcept { paged_iterator_impl it = *this; ++i; return    it; }
 
-    paged_iterator_impl& operator-- (   ) noexcept {                           --i; return *this; }
-    paged_iterator_impl  operator-- (int) noexcept { iterator_impl it = *this; --i; return    it; }
+    paged_iterator_impl& operator-- (   ) noexcept {                                 --i; return *this; }
+    paged_iterator_impl  operator-- (int) noexcept { paged_iterator_impl it = *this; --i; return    it; }
 
     bool operator== (paged_iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
     bool operator!= (paged_iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
@@ -2431,7 +2431,7 @@ public:
 
     C4_ALWAYS_INLINE T& operator[] (I i) C4_NOEXCEPT_X
     {
-        C4_XASSERT(i < capacity());
+        C4_XASSERT(i < _c4this->capacity());
         const I pg = i >> _c4cthis->m_page_lsb;
         const I id = i & _c4cthis->m_id_mask;
         C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
@@ -2440,7 +2440,7 @@ public:
     }
     C4_ALWAYS_INLINE T const& operator[] (I i) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(i < capacity());
+        C4_XASSERT(i < _c4cthis->capacity());
         const I pg = i >> _c4cthis->m_page_lsb;
         const I id = i & _c4cthis->m_id_mask;
         C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
