@@ -880,6 +880,12 @@ TEST(raw_soa, soa_resize_2)
     test_raw_soa_resize_2_types< raw_soa< soa<int,float> > >();
 }
 
+
+TEST(raw_small, resize)
+{
+    test_raw_resize< raw_small< int > >();
+}
+
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
 

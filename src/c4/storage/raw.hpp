@@ -1644,6 +1644,9 @@ public:
     void _raw_reserve_replace(I tmpsz, tmp_type *tmp);
 
     void _raw_resize(I pos, I prev, I next);
+    void _raw_make_room(I pos, I prevsz, I more);
+    void _raw_destroy_room(I pos, I prevsz, I less);
+
 };
 
 //-----------------------------------------------------------------------------
@@ -1769,53 +1772,103 @@ _raw_reserve_replace(I tmpsz, tmp_type *tmp)
  *  @param pos the position from which room is to be created (to the right)
  *         or destroyed (to the left)
  *  @param prev the previous size
- *  @param next the next size */
-
+ *  @param next the next size
+ *  @see _raw_make_room
+ *  @see _raw_destroy_room
+ */
 template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
 void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
-_raw_resize(I pos, I prev, I next)
+_raw_resize(I pos, I prevsz, I nextsz)
 {
-    C4_ASSERT(next >= 0 && next < m_cap_n_alloc.m_value);
-    C4_ASSERT(prev >= 0 && prev < m_cap_n_alloc.m_value);
-    C4_ASSERT(pos  >= 0 && pos  < m_cap_n_alloc.m_value);
+    C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
     if(next > prev)
     {
-        if(m_cap_n_alloc.m_value <= N && next <= N)
-        {
-            c4::make_room(this->m_arr + pos, prev - pos, next - prev);
-        }
-        else
-        {
-            C4_ASSERT(next > N);
-            if(next <= m_cap_n_alloc.m_value)
-            {
-                c4::make_room(this->m_ptr + pos, prev - pos, next - prev);
-            }
-            else
-            {
-                I cap = next_capacity(next);
-                T* tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
-                if(m_cap_n_alloc.m_value <= N)
-                {
-                    c4::make_room(tmp, this->m_arr, prev, next - prev, pos);
-                }
-                else if(m_cap_n_alloc.m_value > N)
-                {
-                    c4::make_room(tmp, this->m_ptr, prev, next - prev, pos);
-                    m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
-                }
-                this->m_ptr = tmp;
-                m_cap_n_alloc.m_value = cap;
-            }
-        }
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
     }
     else if(next < prev)
     {
-        I delta = prev - next;
-        C4_ASSERT(pos > delta);
-        c4::destroy_room(data() + pos - delta, prev - pos, delta);
+        _raw_destroy_room(pos, prevsz, prevsz-nextsz);
     }
 }
+
+//-----------------------------------------------------------------------------
+/** grow to the right of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F . . .
+
+ _raw_make_room(3, 6, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C . . . D E F
+ @endcode
+ */
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(more   >= 0 && more   < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(prevsz+more >= 0 && prevsz+more < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos <= prevsz);
+    I nextsz = prevsz + more;
+    if(m_cap_n_alloc.m_value <= N && nextsz <= N)
+    {
+        c4::make_room(this->m_arr + pos, prevsz - pos, more);
+    }
+    else
+    {
+        C4_ASSERT(nextsz > N);
+        if(nextsz <= m_cap_n_alloc.m_value)
+        {
+            c4::make_room(this->m_ptr + pos, prevsz - pos, more);
+        }
+        else
+        {
+            I cap = next_capacity(nextsz);
+            T* tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
+            if(m_cap_n_alloc.m_value <= N)
+            {
+                c4::make_room(tmp, this->m_arr, prevsz, more, pos);
+            }
+            else if(m_cap_n_alloc.m_value > N)
+            {
+                c4::make_room(tmp, this->m_ptr, prevsz, more, pos);
+                m_cap_n_alloc.alloc().deallocate(this->m_ptr, m_cap_n_alloc.m_value, Alignment);
+            }
+            this->m_ptr = tmp;
+            m_cap_n_alloc.m_value = cap;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** shrink to the left of pos
+ @code
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C D E F G H I
+
+ _raw_destroy_room(6, 9, 3)
+
+ pos: 0 1 2 3 4 5 6 7 8
+ val: A B C G H I . . .
+ @endcode
+ */
+template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPolicy >
+void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
+_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
+    C4_ASSERT(pos    <= prevsz);
+    C4_ASSERT(pos    >= less);
+    I delta = pos - less;
+    c4::destroy_room(data() + delta, prevsz - delta, less);
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
