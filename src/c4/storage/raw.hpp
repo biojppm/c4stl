@@ -1815,6 +1815,62 @@ public:
     template< I n > void _do_raw_reserve(I currsz, I cap);
     template< I n > void _do_raw_make_room(I pos, I prevsz, I more);
 
+public:
+
+    /** passes args to all arrays */
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, Args const&... args)
+    {
+        #define _c4mcr(arr, i) c4::construct_n(data<i>() + first, n, args...)
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    /** passes each tuple element to the elements of its corresponding array */
+    template< class ...Args >
+    void _raw_construct_n(I first, I n, std::tuple< Args... > const& args)
+    {
+        static_assert(sizeof...(args) == sizeof...(SoaTypes), "incompatible number of arguments");
+        #define _c4mcr(arr, i) c4::construct_n(data<i>() + first, n, std::forward(std::get< i >(args)))
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_destroy_n(I first, I n)
+    {
+        #define _c4mcr(arr, i) c4::destroy_n(data<i>() + first, n)
+        _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_construct_n(raw_small_soa_impl& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::move_construct_n(data<i>() + first, src.data<i>() + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_move_assign_n(raw_small_soa_impl& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::move_assign_n(data<i>() + first, src.data<i>() + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_construct_n(raw_small_soa_impl const& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::copy_construct_n(data<i>() + first, src.data<i>() + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
+    void _raw_copy_assign_n(raw_small_soa_impl const& src, I first, I n)
+    {
+        #define _c4mcr(larr, rarr, i) c4::copy_assign_n(data<i>() + first, src.data<i>() + first, n)
+        _C4_FOREACH_ARR_LR(m_soa, src.m_soa, m_ptr, _c4mcr)
+        #undef _c4mcr
+    }
+
 };
 
 //-----------------------------------------------------------------------------
@@ -2144,13 +2200,13 @@ _raw_make_room(I pos, I prevsz, I more)
     }
     else
     {
-        C4_ASSERT(nextsz > N);
         if(nextsz <= m_cap_n_alloc.m_value)
         {
             c4::make_room(this->m_ptr + pos, prevsz - pos, more);
         }
         else
         {
+            C4_ASSERT(nextsz > N);
             I cap = next_capacity(nextsz);
             T* tmp = m_cap_n_alloc.alloc().allocate(cap, Alignment);
             if(m_cap_n_alloc.m_value <= N)
@@ -2196,13 +2252,13 @@ _do_raw_make_room(I pos, I prevsz, I more)
     }
     else
     {
-        C4_ASSERT(nextsz > N);
         if(nextsz <= m_cap_n_alloc.m_value)
         {
             c4::make_room(std::get<n>(m_soa).m_ptr + pos, prevsz - pos, more);
         }
         else
         {
+            C4_ASSERT(nextsz > N);
             I cap = next_capacity(nextsz);
             nth_type<n>* tmp = nth_allocator<n>().allocate(cap, Alignment);
             if(m_cap_n_alloc.m_value <= N)
@@ -2241,13 +2297,13 @@ _raw_make_room(I pos, I prevsz, I more)
     }
     else
     {
-        C4_ASSERT(nextsz > N);
         if(nextsz <= m_cap_n_alloc.m_value)
         {
             // nothing to do
         }
         else
         {
+            C4_ASSERT(nextsz > N);
             m_cap_n_alloc.m_value = nextsz;
         }
     }
@@ -2666,7 +2722,7 @@ struct raw_paged : public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, Page
          * name starts with the m_ prefix to allow for compatibility with
          * code for raw_paged_rt, the dynamically-sized version of this
          * class. */
-        m_page_lsb = lsb11< I, PageSize >::value
+        m_page_lsb = lsb11< I, PageSize >::value,
     };
 
     constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; } ///< get the page index
