@@ -567,7 +567,7 @@ template< class T, size_t PgSz, size_t NumPg > struct ___natvis_util_paged { T**
 template< class T, size_t N, class I, I Alignment >
 struct raw_fixed : public mem_fixed< T, N, Alignment >
 {
-
+    static_assert(Alignment >= alignof(T), "bad alignment");
     C4_STATIC_ASSERT(N <= (size_t)std::numeric_limits< I >::max());
 
 public:
@@ -657,6 +657,7 @@ struct raw_fixed_soa_impl;
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
 struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >
 {
+    static_assert(Alignment >= max_alignment< SoaTypes... >), "bad alignment");
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_fixed< U, N, maxalign<U>::value >;
 
@@ -991,6 +992,7 @@ template< class T, class I, I Alignment, class Alloc, class GrowthPolicy >
 struct raw : public mem_raw< T >
 {
 
+    static_assert(Alignment >= alignof(T), "bad alignment");
     // m_ptr is brought in by the base class
 
     valnalloc<I, Alloc> m_cap_n_alloc;
@@ -1080,6 +1082,7 @@ struct raw_soa_impl;
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 struct raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >
 {
+    static_assert(Alignment >= max_alignment< SoaTypes... >), "bad alignment");
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_raw< U >;
 
@@ -1619,6 +1622,7 @@ template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPol
 struct raw_small : public mem_small< T, N_, Alignment >
 {
 
+    static_assert(Alignment >= alignof(T), "bad alignment");
     C4_STATIC_ASSERT(N_ <= (size_t)std::numeric_limits< I >::max());
     //C4_STATIC_ASSERT(sizeof(T) == alignof(T));  // not sure if this is needed
 
