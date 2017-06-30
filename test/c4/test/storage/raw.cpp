@@ -679,6 +679,13 @@ TEST(raw_small, construction)
     raw_small< ci > rp(1000);
     test_raw_construction(rp);
 }
+TEST(raw_small_soa, construction)
+{
+    using ci = Counting< int >;
+    using ch = Counting< uint16_t >;
+    raw_small_soa< soa<ci,ch> > rp(1000);
+    test_raw_soa_construction(rp);
+}
 TEST(raw_paged, construction)
 {
     using ci = Counting< int >;
