@@ -243,21 +243,21 @@ See also:
       <Item Name="[soa]">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*&gt;"> <!-- soa, 3 types -->
+  <Type Name="c4::stg::raw_fixed_soa&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*&gt;"> <!-- soa, 3 types -->
     <DisplayString>{{cap={$T4}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T4</Item>
       <Item Name="[soa]">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*&gt;"> <!-- soa, 4 types -->
+  <Type Name="c4::stg::raw_fixed_soa&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*&gt;"> <!-- soa, 4 types -->
     <DisplayString>{{cap={$T5}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T5</Item>
       <Item Name="[soa]">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_fixed&lt;c4::stg::soa&lt;*,*,*,*,*&gt;,*,*,*&gt;"> <!-- soa, 5 types -->
+  <Type Name="c4::stg::raw_fixed_soa&lt;c4::stg::soa&lt;*,*,*,*,*&gt;,*,*,*&gt;"> <!-- soa, 5 types -->
     <DisplayString>{{cap={$T6}}}</DisplayString>
     <Expand>
       <Item Name="[capacity]">$T6</Item>
@@ -274,11 +274,11 @@ See also:
     </Expand>
   </Type>
   <Type Name="c4::stg::raw&lt;*,*,*,*,*&gt;">
-    <DisplayString>{{cap={m_capacity}}}</DisplayString>
+    <DisplayString>{{cap={m_cap_n_alloc.m_value}}}</DisplayString>
     <Expand>
-      <Item Name="[capacity]">m_capacity</Item>
+      <Item Name="[capacity]">m_cap_n_alloc.m_value</Item>
       <ArrayItems>
-        <Size>m_capacity</Size>
+        <Size>m_cap_n_alloc.m_value</Size>
         <ValuePointer>m_ptr</ValuePointer>
       </ArrayItems>
     </Expand>
@@ -318,40 +318,47 @@ See also:
   <!-- =========================================================================================== -->
 
   <Type Name="c4::stg::raw_small&lt;*,*,*,*,*,*&gt;">
-    <DisplayString Condition="m_capacity &lt;= $T3">{{cap={m_capacity}}} [SHORT]</DisplayString>
-    <DisplayString Condition="m_capacity &gt;  $T3">{{cap={m_capacity}}} [LONG]</DisplayString>
+    <DisplayString Condition="m_capacity &lt;= $T3">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_capacity &gt;  $T3">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
     <Expand>
-      <Item Name="[capacity]" Condition="m_capacity &lt;= $T3">m_capacity</Item>
-      <Item Name="[capacity]" Condition="m_capacity &gt;  $T3">m_capacity</Item>
+      <Item Name="[capacity]" Condition="m_cap_n_alloc.m_value &lt;= $T3">m_cap_n_alloc.m_value</Item>
+      <Item Name="[capacity]" Condition="m_cap_n_alloc.m_value &gt;  $T3">m_cap_n_alloc.m_value</Item>
       <ArrayItems>
-        <Size>m_capacity</Size>
-        <ValuePointer Condition="m_capacity &lt;= $T3">m_arr</ValuePointer>
-        <ValuePointer Condition="m_capacity &gt;  $T3">m_ptr</ValuePointer>
+        <Size>m_cap_n_alloc.m_value</Size>
+        <ValuePointer Condition="m_cap_n_alloc.m_value &lt;= $T3">m_arr</ValuePointer>
+        <ValuePointer Condition="m_cap_n_alloc.m_value &gt;  $T3">m_ptr</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*&gt;,*,*,*,*,*&gt;">
+  <Type Name="c4::stg::raw_small_soa&lt;*,*,*,*,*,*&gt;">
     <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T3">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
     <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T3">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
     <Expand>
       <Item Name="Arrays">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*,*&gt;,*,*,*,*,*&gt;">
+  <Type Name="c4::stg::raw_small_soa&lt;c4::stg::soa&lt;*&gt;,*,*,*,*,*&gt;">
+    <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T3">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
+    <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T3">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
+    <Expand>
+      <Item Name="Arrays">m_soa</Item>
+    </Expand>
+  </Type>
+  <Type Name="c4::stg::raw_small_soa&lt;c4::stg::soa&lt;*,*&gt;,*,*,*,*,*&gt;">
     <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T4">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
     <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T4">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
     <Expand>
       <Item Name="Arrays">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*,*,*&gt;">
+  <Type Name="c4::stg::raw_small_soa&lt;c4::stg::soa&lt;*,*,*&gt;,*,*,*,*,*&gt;">
     <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T5">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
     <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T5">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
     <Expand>
       <Item Name="Arrays">m_soa</Item>
     </Expand>
   </Type>
-  <Type Name="c4::stg::raw_small&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*,*,*&gt;">
+  <Type Name="c4::stg::raw_small_soa&lt;c4::stg::soa&lt;*,*,*,*&gt;,*,*,*,*,*&gt;">
     <DisplayString Condition="m_cap_n_alloc.m_value &lt;= $T6">{{cap={m_cap_n_alloc.m_value}}} [SHORT]</DisplayString>
     <DisplayString Condition="m_cap_n_alloc.m_value &gt;  $T6">{{cap={m_cap_n_alloc.m_value}}} [LONG]</DisplayString>
     <Expand>
@@ -362,20 +369,20 @@ See also:
   <!-- =========================================================================================== -->
 
   <Type Name="c4::stg::raw_paged&lt;*,*,*,*,*&gt;">
-    <DisplayString>{{pg_sz={$T3} #pgs={m_num_pages}}}</DisplayString>
+    <DisplayString>{{pg_sz={$T3} #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
     <Expand>
-      <Item Name="[capacity]">$T3 * m_num_pages</Item>
+      <Item Name="[capacity]">$T3 * m_numpages_n_alloc.m_value</Item>
       <Item Name="[page size]">$T3</Item>
-      <Item Name="[num pages]">m_num_pages</Item>
-      <Synthetic Name="[page 0]" Condition="m_num_pages >= 1"><Expand><ArrayItems Condition="m_num_pages > 0"><Size>$T3</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 1]" Condition="m_num_pages >= 2"><Expand><ArrayItems Condition="m_num_pages > 1"><Size>$T3</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 2]" Condition="m_num_pages >= 3"><Expand><ArrayItems Condition="m_num_pages > 2"><Size>$T3</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 3]" Condition="m_num_pages >= 4"><Expand><ArrayItems Condition="m_num_pages > 3"><Size>$T3</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 4]" Condition="m_num_pages >= 5"><Expand><ArrayItems Condition="m_num_pages > 4"><Size>$T3</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 5]" Condition="m_num_pages >= 6"><Expand><ArrayItems Condition="m_num_pages > 5"><Size>$T3</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 6]" Condition="m_num_pages >= 7"><Expand><ArrayItems Condition="m_num_pages > 6"><Size>$T3</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 7]" Condition="m_num_pages >= 8"><Expand><ArrayItems Condition="m_num_pages > 7"><Size>$T3</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[......]" Condition="m_num_pages >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
+      <Synthetic Name="[page 0]" Condition="m_numpages_n_alloc.m_value >= 1"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 0"><Size>$T3</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 1]" Condition="m_numpages_n_alloc.m_value >= 2"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 1"><Size>$T3</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 2]" Condition="m_numpages_n_alloc.m_value >= 3"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 2"><Size>$T3</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 3]" Condition="m_numpages_n_alloc.m_value >= 4"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 3"><Size>$T3</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 4]" Condition="m_numpages_n_alloc.m_value >= 5"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 4"><Size>$T3</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 5]" Condition="m_numpages_n_alloc.m_value >= 6"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 5"><Size>$T3</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 6]" Condition="m_numpages_n_alloc.m_value >= 7"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 6"><Size>$T3</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 7]" Condition="m_numpages_n_alloc.m_value >= 8"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 7"><Size>$T3</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[......]" Condition="m_numpages_n_alloc.m_value >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
     </Expand>
   </Type>
   <Type Name="c4::stg::raw_paged&lt;c4::stg::soa&lt;*&gt;,*,*,*,*&gt;">
@@ -420,20 +427,20 @@ See also:
   <Type Name="c4::stg::raw_paged&lt;*,*,0,*,*&gt;">
     <AlternativeType Name="c4::stg::raw_paged_rt&lt;*,*,*,*&gt;"/>
     <AlternativeType Name="c4::default_list_storage&lt;*,*&gt;"/>
-    <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_num_pages}}}</DisplayString>
+    <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
     <Expand>
-      <Item Name="[capacity]">(m_id_mask+1) * m_num_pages</Item>
+      <Item Name="[capacity]">(m_id_mask+1) * m_numpages_n_alloc.m_value</Item>
       <Item Name="[page size]">(m_id_mask+1)</Item>
-      <Item Name="[num pages]">m_num_pages</Item>
-      <Synthetic Name="[page 0]" Condition="m_num_pages >= 1"><Expand><ArrayItems Condition="m_num_pages > 0"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 1]" Condition="m_num_pages >= 2"><Expand><ArrayItems Condition="m_num_pages > 1"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 2]" Condition="m_num_pages >= 3"><Expand><ArrayItems Condition="m_num_pages > 2"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 3]" Condition="m_num_pages >= 4"><Expand><ArrayItems Condition="m_num_pages > 3"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 4]" Condition="m_num_pages >= 5"><Expand><ArrayItems Condition="m_num_pages > 4"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 5]" Condition="m_num_pages >= 6"><Expand><ArrayItems Condition="m_num_pages > 5"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 6]" Condition="m_num_pages >= 7"><Expand><ArrayItems Condition="m_num_pages > 6"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[page 7]" Condition="m_num_pages >= 8"><Expand><ArrayItems Condition="m_num_pages > 7"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
-      <Synthetic Name="[......]" Condition="m_num_pages >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
+      <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
+      <Synthetic Name="[page 0]" Condition="m_numpages_n_alloc.m_value >= 1"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 0"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[0]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 1]" Condition="m_numpages_n_alloc.m_value >= 2"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 1"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[1]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 2]" Condition="m_numpages_n_alloc.m_value >= 3"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 2"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[2]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 3]" Condition="m_numpages_n_alloc.m_value >= 4"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 3"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[3]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 4]" Condition="m_numpages_n_alloc.m_value >= 5"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 4"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[4]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 5]" Condition="m_numpages_n_alloc.m_value >= 6"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 5"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[5]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 6]" Condition="m_numpages_n_alloc.m_value >= 7"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 6"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[6]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[page 7]" Condition="m_numpages_n_alloc.m_value >= 8"><Expand><ArrayItems Condition="m_numpages_n_alloc.m_value > 7"><Size>(m_id_mask+1)</Size><ValuePointer>m_pages[7]</ValuePointer></ArrayItems></Expand></Synthetic>
+      <Synthetic Name="[......]" Condition="m_numpages_n_alloc.m_value >= 9"><DisplayString>(there are more pages)</DisplayString></Synthetic>
     </Expand>
   </Type>
 
@@ -442,7 +449,7 @@ See also:
     <AlternativeType Name="c4::default_list_storage&lt;c4::stg::soa&lt;*&gt;,*&gt;"/>
     <DisplayString>{{pg_sz=({m_id_mask}+1) #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
     <Expand>
-      <Item Name="[capacity]">(m_id_mask+1) * m_num_pages</Item>
+      <Item Name="[capacity]">(m_id_mask+1) * m_numpages_n_alloc.m_value</Item>
       <Item Name="[page size]">(m_id_mask+1)</Item>
       <Item Name="[num pages]">m_numpages_n_alloc.m_value</Item>
     </Expand>
