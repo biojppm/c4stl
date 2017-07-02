@@ -181,10 +181,14 @@ struct raw_small_soa;
 /** @todo make the Alignment a size_t */
 template< class T, class I=C4_SIZE_TYPE, size_t PageSize=default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> >
 struct raw_paged;
+template< class T, class I=C4_SIZE_TYPE, size_t PageSize=default_page_size<T, I>::value, I Alignment=alignof(T), class Alloc=Allocator<T> >
+struct raw_paged_soa;
 
 /** raw paged with page size determined at runtime. @ingroup raw_storage_classes */
 template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
 using raw_paged_rt = raw_paged< T, I, 0, Alignment, Alloc >;
+template< class T, class I=C4_SIZE_TYPE, I Alignment=alignof(T), class Alloc=Allocator<T> >
+using raw_paged_soa_rt = raw_paged_soa< T, I, 0, Alignment, Alloc >;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -2093,7 +2097,7 @@ _raw_reserve_replace(I tmpsz, tmp_type *tmp)
         #define _c4mcr(arr, i) c4::move_construct_n(arr, std::get<i>(tmp->m_soa).m_ptr, tmpsz)
         _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
         #undef _c4mcr
-        #define _c4mcr(arr, i) _c4this->template nth_allocator<i>.deallocate(std::get<i>(tmp->m_soa).m_ptr, tmp->m_cap_n_alloc.m_value)
+        #define _c4mcr(arr, i) this->template nth_allocator<i>.deallocate(std::get<i>(tmp->m_soa).m_ptr, tmp->m_cap_n_alloc.m_value)
         _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
         #undef _c4mcr
     }
@@ -3187,10 +3191,11 @@ _raw_reserve(I currsz, I cap)
 #undef _c4cthis
 
 //-----------------------------------------------------------------------------
-/** raw paged storage, allocatable. This is NOT a contiguous memory storage structure.
-  * However, it is a logically-contiguous storage structure, as it offers a O(1) [] operator with contiguous
-  * range indices. This is useful for minimizing allocations and data copies in
-  * dynamic array-based containers like flat_list or split_list.
+/** raw paged storage, allocatable. This is NOT a contiguous memory storage
+  * structure. However, it is a logically-contiguous storage structure, as
+  * it offers a O(1) [] operator with contiguous range indices. This is
+  * useful for minimizing allocations and data copies in dynamic array-based
+  * containers like flat_list or split_list.
   *
   * @tparam T the stored type
   * @tparam PageSize The page size, in number of elements (ie, not in bytes). Must be a power of two.
@@ -3231,6 +3236,8 @@ public:
          * code for raw_paged_rt, the dynamically-sized version of this
          * class. */
         m_page_lsb = lsb11< I, PageSize >::value,
+        fixed_page_size = PageSize,
+        num_arrays = 1,
     };
 
     constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; } ///< get the page index
@@ -3247,8 +3254,6 @@ public:
 
     template< class U >
     using rebind_type = raw_paged<U, I, PageSize, alignof(U), rebind_alloc<U>>;
-
-    enum : I { fixed_page_size = PageSize };
 
 public:
 
@@ -3279,6 +3284,115 @@ public:
     friend void test_raw_page_addressing(RawPagedContainer const& rp);
 
 };
+
+//-----------------------------------------------------------------------------
+
+template< class T, class I, size_t PageSize, I Alignment, class Alloc >
+struct raw_paged_soa;
+
+/** raw paged storage, allocatable - SOA (structure-of-arrays) version.
+ *  This is NOT a contiguous memory storage
+  * structure. However, it is a logically-contiguous storage structure, as
+  * it offers a O(1) [] operator with contiguous range indices. This is
+  * useful for minimizing allocations and data copies in dynamic array-based
+  * containers like flat_list or split_list.
+  *
+  * @tparam T the stored type
+  * @tparam PageSize The page size, in number of elements (ie, not in bytes). Must be a power of two.
+  * @tparam I the size type. Must be integral
+  * @tparam Alignment the alignment at which the stored type should be aligned
+  * @tparam Alloc an allocator
+  *
+  * @ingroup raw_storage_classes */
+template< class... SoaTypes, class I, size_t PageSize, I Alignment, class Alloc >
+struct raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >
+    :
+    public _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >
+{
+    using crtp_base = _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >;
+
+    static_assert(std::is_integral< I >::value, "I must be an integral type");
+    static_assert(PageSize > 1, "PageSize must be > 1");
+    static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
+    static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
+
+public:
+
+    template< class U > using arr_type = mem_paged< U >;
+
+    std::tuple< mem_paged<SoaTypes>... > m_soa;
+    valnalloc<I, Alloc> m_numpages_n_alloc;  ///< number of current pages in the array + allocator (for empty base class optimization)
+
+public:
+
+    enum : I {
+        /** id mask: all the bits up to PageSize. Use to extract the position
+         * of an index within a page. Despite being an enum value, the name
+         * starts with the m_ prefix to allow for compatibility with code for
+         * raw_paged_rt, the dynamically-sized version of this class. */
+        m_id_mask = I(PageSize) - I(1),
+        /** page lsb: the number of bits complementary to PageSize. Use to
+         * extract the page of an index. Despite being an enum value, the
+         * name starts with the m_ prefix to allow for compatibility with
+         * code for raw_paged_rt, the dynamically-sized version of this
+         * class. */
+        m_page_lsb = lsb11< I, PageSize >::value,
+        fixed_page_size = PageSize,
+        num_arrays = sizeof...(SoaTypes),
+    };
+
+    constexpr static I _raw_pg(I const i) { return i >> m_page_lsb; } ///< get the page index
+    constexpr static I _raw_id(I const i) { return i &  m_id_mask; }  ///< get the index within the page
+
+public:
+
+    _c4_DEFINE_TUPLE_ARRAY_TYPES_WITHOUT_ITERATOR(SoaTypes, I);
+    using storage_traits = raw_storage_traits< raw_paged_soa, paged_soa_t >;
+    using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
+
+    template< class U >
+    using rebind_type = raw_paged_soa<U, I, PageSize, alignof(U), rebind_alloc<U>>;
+
+    template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
+    template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
+    template< I n > using nth_alignment = max_alignment_n< Alignment, SoaTypes... >;
+    using tuple_type = std::tuple< arr_type<SoaTypes>... >;
+
+    using tmp_type = tmp_storage< raw_paged_soa >;
+
+public:
+
+    raw_paged_soa() : raw_paged_soa(0) {}
+    raw_paged_soa(Alloc const& a) : raw_paged_soa(0, a) {}
+
+    raw_paged_soa(I cap) : m_soa(), m_numpages_n_alloc(0)
+    {
+        crtp_base::_raw_reserve(0, cap);
+    }
+    raw_paged_soa(I cap, Alloc const& a) : m_soa(), m_numpages_n_alloc(0, a)
+    {
+        crtp_base::_raw_reserve(0, cap);
+    }
+
+    ~raw_paged_soa()
+    {
+        crtp_base::_raw_reserve(0, 0);
+    }
+
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
+    C4_NO_COPY_OR_MOVE(raw_paged_soa);
+
+    C4_ALWAYS_INLINE static constexpr I page_size() noexcept { return PageSize; }
+
+    template< class RawPagedContainer >
+    friend void test_raw_page_addressing(RawPagedContainer const& rp);
+
+};
+
 
 //-----------------------------------------------------------------------------
 
