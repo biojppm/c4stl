@@ -41,12 +41,16 @@ Classes
 ^^^^^^^
 
 .. doxygenclass:: basic_string
-
 .. doxygenclass:: basic_text
 
 
 The string CRTP base
 --------------------
+
+This is a reference to :cpp:func:`_str_crtp::find_first_of()`.
+This is a reference to :cpp:func:`_str_crtp::find_first_not_of()`.
+This is a reference to :cpp:func:`_str_crtp::find_last_of()`.
+This is a reference to :cpp:func:`_str_crtp::find_last_not_of()`.
 
 .. doxygenclass:: _str_crtp
 
