@@ -2134,7 +2134,7 @@ template< class T, class I, size_t N_, I Alignment, class Alloc, class GrowthPol
 void raw_small<T, I, N_, Alignment, Alloc, GrowthPolicy >::
 _raw_resize(I pos, I prevsz, I nextsz)
 {
-    C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
+    //C4_ASSERT(nextsz >= 0 && nextsz < m_cap_n_alloc.m_value);
     C4_ASSERT(prevsz >= 0 && prevsz < m_cap_n_alloc.m_value);
     C4_ASSERT(pos    >= 0 && pos    < m_cap_n_alloc.m_value);
     if(nextsz > prevsz)
@@ -2400,7 +2400,7 @@ struct _raw_paged_common_crtp
 {
 
     C4_ALWAYS_INLINE C4_CONSTEXPR14 I num_pages() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value; }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity() const noexcept { return _c4cthis->m_numpages_n_alloc.m_value * _c4cthis->page_size(); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 I capacity()  const noexcept { return _c4cthis->m_numpages_n_alloc.m_value * _c4cthis->page_size(); }
     C4_ALWAYS_INLINE bool empty() const noexcept { return _c4cthis->m_capacity == 0; }
 
     /** since the page size is a power of two, the max capacity is simply the
@@ -2462,9 +2462,12 @@ public:
         _raw_reserve(0, cap);
     }
     void _raw_reserve(I currsz, I cap);
-
     void _raw_reserve_allocate(I cap, tmp_type *tmp);
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp) { C4_XASSERT(!(*tmp)); /* nothing to do */ }
+
+    void _raw_resize(I pos, I prevsz, I more);
+    void _raw_make_room(I pos, I prevsz, I more);
+    void _raw_destroy_room(I pos, I prevsz, I less);
 
 public:
 
@@ -2654,9 +2657,12 @@ public:
         _raw_reserve(0, cap);
     }
     void _raw_reserve(I currsz, I cap);
-
     void _raw_reserve_allocate(I cap, tmp_type *tmp);
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp) { C4_XASSERT(!(*tmp)); /* nothing to do */ }
+
+    void _raw_resize(I pos, I prevsz, I nextsz);
+    void _raw_make_room(I pos, I prevsz, I more);
+    void _raw_destroy_room(I pos, I prevsz, I less);
 
 public:
 
@@ -3187,6 +3193,78 @@ _raw_reserve(I currsz, I cap)
     _c4this->m_numpages_n_alloc.m_value = np;
 }
 
+//-----------------------------------------------------------------------------
+
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::
+_raw_resize(I pos, I prevsz, I nextsz)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz <= _c4this->capacity());
+    C4_ASSERT(pos    >= 0 && pos    <  _c4this->capacity());
+    if(nextsz > prevsz)
+    {
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
+    }
+    else if(nextsz < prevsz)
+    {
+        _raw_destroy_room(pos, prevsz, prevsz-nextsz);
+    }
+}
+
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_raw_resize(I pos, I prevsz, I nextsz)
+{
+    C4_ASSERT(prevsz >= 0 && prevsz <= _c4this->capacity());
+    C4_ASSERT(pos    >= 0 && pos    <  _c4this->capacity());
+    if(nextsz > prevsz)
+    {
+        _raw_make_room(pos, prevsz, nextsz-prevsz);
+    }
+    else if(nextsz < prevsz)
+    {
+        _raw_destroy_room(pos, prevsz, prevsz-nextsz);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::
+_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_NOT_IMPLEMENTED();
+    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(more);
+}
+
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_NOT_IMPLEMENTED();
+    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(more);
+}
+
+//-----------------------------------------------------------------------------
+
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::
+_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_NOT_IMPLEMENTED();
+    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(less);
+}
+
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_raw_destroy_room(I pos, I prevsz, I less)
+{
+    C4_NOT_IMPLEMENTED();
+    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(less);
+}
+
+//-----------------------------------------------------------------------------
+
 #undef _c4this
 #undef _c4cthis
 
@@ -3213,6 +3291,7 @@ struct raw_paged
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, PageSize, Alignment, Alloc > >;
 
     static_assert(std::is_integral< I >::value, "I must be an integral type");
+    static_assert(Alignment >= alignof(T), "bad alignment");
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
     static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
@@ -3312,6 +3391,7 @@ struct raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >
     using crtp_base = _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >;
 
     static_assert(std::is_integral< I >::value, "I must be an integral type");
+    static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
     static_assert(PageSize > 1, "PageSize must be > 1");
     static_assert((PageSize & (PageSize - 1)) == 0, "PageSize must be a power of two");
     static_assert(PageSize <= std::numeric_limits< I >::max(), "PageSize overflow");
@@ -3405,7 +3485,8 @@ struct raw_paged< T, I, 0, Alignment, Alloc >
     public _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >
 {
     using crtp_base = _raw_paged_crtp< T, I, Alignment, raw_paged<T, I, 0, Alignment, Alloc > >;
-    static_assert(std::is_integral< I >::value, "");
+    static_assert(std::is_integral< I >::value, "size type must be an integral type");
+    static_assert(Alignment >= alignof(T), "bad alignment");
 
 public:
 
@@ -3414,6 +3495,11 @@ public:
     I                   m_page_lsb;          ///< least significant bit of the page size: cannot be changed after construction.
 
 public:
+
+    enum : I {
+        fixed_page_size = 0,
+        default_page_size = c4::stg::default_page_size<T, I >::value,
+    };
 
     C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
     C4_CONSTEXPR14 I _raw_id(const I i) const { return i &  m_id_mask; }
@@ -3430,15 +3516,13 @@ public:
     template< class U >
     using rebind_type = raw_paged<U, I, 0, Alignment, rebind_alloc<U>>;
 
-    enum : I { fixed_page_size = 0 };
-
 public:
 
-    raw_paged() : raw_paged(szconv<I>(0), default_page_size<T,I>::value) {}
-    raw_paged(Alloc const& a) : raw_paged(szconv<I>(0), default_page_size<T,I>::value, a) {}
+    raw_paged() : raw_paged(szconv<I>(0), default_page_size) {}
+    raw_paged(Alloc const& a) : raw_paged(szconv<I>(0), default_page_size, a) {}
 
-    raw_paged(I cap) : raw_paged(cap, default_page_size<T,I>::value) {}
-    raw_paged(I cap, Alloc const& a) : raw_paged(cap, default_page_size<T,I>::value, a) {}
+    raw_paged(I cap) : raw_paged(cap, default_page_size) {}
+    raw_paged(I cap, Alloc const& a) : raw_paged(cap, default_page_size, a) {}
 
     raw_paged(I cap, I page_sz) : mem_paged< T >(nullptr), m_numpages_n_alloc(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
     {
@@ -3461,6 +3545,96 @@ public:
     // copy and move operations are deleted, and must be implemented by the containers,
     // as this will involve knowledge over what elements are to copied or moved
     C4_NO_COPY_OR_MOVE(raw_paged);
+
+    C4_ALWAYS_INLINE I page_size() const noexcept { return m_id_mask + 1; }
+
+    template< class RawPagedContainer >
+    friend void test_raw_page_addressing(RawPagedContainer const& rp);
+
+};
+
+
+
+//-----------------------------------------------------------------------------
+
+/** specialization of raw_paged for dynamic (set at run time) page size.
+ * @ingroup raw_storage_classes */
+template< class... SoaTypes, class I, I Alignment, class Alloc >
+struct raw_paged_soa< soa<SoaTypes...>, I, 0, Alignment, Alloc >
+    :
+    public _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged<soa<SoaTypes...>, I, 0, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >
+{
+    using crtp_base = _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged<soa<SoaTypes...>, I, 0, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >;
+    static_assert(std::is_integral< I >::value, "size type must be an integral type");
+    static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
+
+public:
+
+    template< class U > using arr_type = mem_paged<U>;
+
+    std::tuple< mem_paged<SoaTypes...> > m_soa;
+    valnalloc<I, Alloc> m_numpages_n_alloc;     ///< number of current pages in the array + allocator (for empty base class optimization)
+    I                   m_id_mask;              ///< page size - 1: cannot be changed after construction.
+    I                   m_page_lsb;             ///< least significant bit of the page size: cannot be changed after construction.
+
+public:
+
+    enum : I {
+        fixed_page_size = 0,
+        default_page_size = c4::stg::default_page_size<soa<SoaTypes...>, I >::value,
+    };
+
+    C4_CONSTEXPR14 I _raw_pg(const I i) const { return i >> m_page_lsb; }
+    C4_CONSTEXPR14 I _raw_id(const I i) const { return i &  m_id_mask; }
+
+public:
+
+    _c4_DEFINE_TUPLE_ARRAY_TYPES(SoaTypes, I);
+    using storage_traits = raw_storage_traits< raw_paged_soa, paged_soa_t >;
+    using allocator_type = Alloc;
+    using allocator_traits = std::allocator_traits< Alloc >;
+    template< class U >
+    using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
+
+    template< class U >
+    using rebind_type = raw_paged_soa<U, I, 0, Alignment, rebind_alloc<U>>;
+
+    template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
+    template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
+    template< I n > using nth_alignment = max_alignment_n< Alignment, SoaTypes... >;
+    using tuple_type = std::tuple< arr_type<SoaTypes>... >;
+
+    using tmp_type = tmp_storage< raw_paged_soa >;
+
+public:
+
+    raw_paged_soa() : raw_paged_soa(szconv<I>(0), default_page_size) {}
+    raw_paged_soa(Alloc const& a) : raw_paged_soa(szconv<I>(0), default_page_size, a) {}
+
+    raw_paged_soa(I cap) : raw_paged_soa(cap, default_page_size) {}
+    raw_paged_soa(I cap, Alloc const& a) : raw_paged_soa(cap, default_page_size, a) {}
+
+    raw_paged_soa(I cap, I page_sz) : m_soa(), m_numpages_n_alloc(0), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
+    {
+        C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
+        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
+        crtp_base::_raw_reserve(0, cap);
+    }
+    raw_paged_soa(I cap, I page_sz, Alloc const& a) : m_soa(), m_numpages_n_alloc(0, a), m_id_mask(page_sz - 1), m_page_lsb(lsb(page_sz))
+    {
+        C4_ASSERT_MSG(page_sz > 1, "page_sz=%zu", (size_t)page_sz);
+        C4_ASSERT_MSG((page_sz & (page_sz - 1)) == 0, "page size must be a power of two. page_sz=%zu", (size_t)page_sz);
+        crtp_base::_raw_reserve(0, cap);
+    }
+
+    ~raw_paged_soa()
+    {
+        crtp_base::_raw_reserve(0, 0);
+    }
+
+    // copy and move operations are deleted, and must be implemented by the containers,
+    // as this will involve knowledge over what elements are to copied or moved
+    C4_NO_COPY_OR_MOVE(raw_paged_soa);
 
     C4_ALWAYS_INLINE I page_size() const noexcept { return m_id_mask + 1; }
 
