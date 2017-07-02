@@ -1195,7 +1195,7 @@ public:
     template< class ...Args >
     void _raw_construct_n(I first, I n, std::tuple< Args... > const& args)
     {
-        static_assert(sizeof...(args) == sizeof...(SoaTypes), "incompatible number of arguments");
+        static_assert(sizeof...(Args) == sizeof...(SoaTypes), "incompatible number of arguments");
         #define _c4mcr(arr, i) c4::construct_n(arr + first, n, std::forward(std::get< i >(args)))
         _C4_FOREACH_ARR(m_soa, m_ptr, _c4mcr)
         #undef _c4mcr
@@ -2614,7 +2614,7 @@ public:
 
     using tmp_type = tmp_storage< RawPaged >;
 
-    enum : I { num_arrays = sizeof(SoaTypes...), };
+    enum : I { num_arrays = sizeof...(SoaTypes), };
 
 public:
 
@@ -2626,7 +2626,7 @@ public:
 
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n>& get(I i) C4_NOEXCEPT_X
     {
-        C4_XASSERT(i < capacity());
+        C4_XASSERT(i < _c4cthis->capacity());
         const I pg = i >> _c4cthis->m_page_lsb;
         const I id = i & _c4cthis->m_id_mask;
         C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
@@ -2635,7 +2635,7 @@ public:
     }
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& get(I i) const C4_NOEXCEPT_X
     {
-        C4_XASSERT(i < capacity());
+        C4_XASSERT(i < _c4cthis->capacity());
         const I pg = i >> _c4cthis->m_page_lsb;
         const I id = i & _c4cthis->m_id_mask;
         C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
@@ -2805,7 +2805,7 @@ public:
     void _raw_copy_assign_n(RawPaged const& src, I first_this, I first_that, I n)
     {
         //_process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler, _c4this->m_pages, first_this, src.m_pages, first_that, n);
-        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler<nth_type<i>>, pgs, first_this, std::get<i>(src.m_soa).m_pages, first_that, n);
+        #define _c4mcr(pgs, i) _process_pages(&_raw_paged_soa_crtp::_raw_copy_assign_n_handler<nth_type<i>>, pgs, first_this, std::get<i>(src.m_soa).m_pages, first_that, n)
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
     }
@@ -2994,7 +2994,7 @@ template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np)
 {
-    auto at = _c4this->nth_allocator<n>().template rebound< U* >();
+    auto at = _c4this->template nth_allocator<n>().template rebound< U* >();
     U** tmp_pages = at.allocate(np);
     if(np > _c4this->m_numpages_n_alloc.m_value) // more pages (grow)
     {
@@ -3100,7 +3100,7 @@ template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _do_raw_clear(I currsz)
 {
-    auto al = _c4this->nth_allocator<n>();
+    auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
     const I ps = _c4this->page_size();
     for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
@@ -3118,7 +3118,7 @@ _do_raw_reserve(I currsz, I cap, I np)
 {
     C4_ASSERT(cap > 0);
 
-    auto al = _c4this->nth_allocator<n>();
+    auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
 
     nth_type<n> **   tmp = at.allocate(np);
