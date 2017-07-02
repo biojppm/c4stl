@@ -582,7 +582,7 @@ public:
     using storage_traits = raw_storage_traits< raw_fixed, fixed_t >;
 
     template< class U >
-    using rebind_type = raw_fixed<U, N, I, alignof(U)>;
+    using rebind_type = raw_fixed<U, N, I, max_alignment_n<Alignment, U>::value>;
 
     using tmp_type = tmp_storage< raw_fixed >;
 
@@ -661,7 +661,7 @@ struct raw_fixed_soa_impl;
 template< class... SoaTypes, size_t N, class I, I Alignment, size_t... Indices >
 struct raw_fixed_soa_impl< soa<SoaTypes...>, N, I, Alignment, index_sequence<Indices...>() >
 {
-    static_assert(Alignment >= max_alignment< SoaTypes... >::value, "bad alignment");
+    static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_fixed< U, N, maxalign<U>::value >;
 
@@ -677,7 +677,7 @@ public:
     using storage_traits = raw_storage_traits< raw_fixed_soa_impl, fixed_soa_t >;
 
     template< class U >
-    using rebind_type = raw_fixed_soa_impl<U, N, I, maxalign<U>::value, index_sequence<Indices...>()>;
+    using rebind_type = raw_fixed_soa_impl<U, N, I, max_alignment_n<Alignment, U>::value, index_sequence<Indices...>()>;
 
     template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
     using tuple_type = std::tuple< arr_type<SoaTypes>... >;
@@ -1015,7 +1015,7 @@ public:
     using growth_policy = GrowthPolicy;
 
     template< class U >
-    using rebind_type = raw<U, I, alignof(U), rebind_alloc<U>, GrowthPolicy>;
+    using rebind_type = raw<U, I, max_alignment_n<Alignment, U>::value, rebind_alloc<U>, GrowthPolicy>;
 
     using tmp_type = tmp_storage< raw >;
 
@@ -1086,7 +1086,7 @@ struct raw_soa_impl;
 template< class... SoaTypes, class I, I Alignment, class Alloc, class GrowthPolicy, size_t... Indices >
 struct raw_soa_impl< soa<SoaTypes...>, I, Alignment, Alloc, GrowthPolicy, index_sequence<Indices...>() >
 {
-    static_assert(Alignment >= max_alignment< SoaTypes... >::value, "bad alignment");
+    static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
     template< class U > struct maxalign { enum { value = (Alignment > alignof(U) ? Alignment : alignof(U)) }; };
     template< class U > using arr_type = mem_raw< U >;
 
@@ -1106,7 +1106,7 @@ public:
     using growth_policy = GrowthPolicy;
 
     template< class U >
-    using rebind_type = raw_soa_impl<U, I, maxalign<U>::value, rebind_alloc<U>, GrowthPolicy, index_sequence<Indices...>()>;
+    using rebind_type = raw_soa_impl<U, I, max_alignment_n<Alignment, U>::value, rebind_alloc<U>, GrowthPolicy, index_sequence<Indices...>()>;
 
     template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
     template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
@@ -1645,7 +1645,7 @@ public:
     using growth_policy = GrowthPolicy;
 
     template< class U >
-    using rebind_type = raw_small<U, I, N_, alignof(U), rebind_alloc<U>, GrowthPolicy>;
+    using rebind_type = raw_small<U, I, N_, max_alignment_n<Alignment, U>::value, rebind_alloc<U>, GrowthPolicy>;
 
     using tmp_type = tmp_storage< raw_small >;
 
@@ -1741,7 +1741,7 @@ public:
     using growth_policy = GrowthPolicy;
 
     template< class U >
-    using rebind_type = raw_small_soa_impl<U, I, N_, maxalign<U>::value, rebind_alloc<U>, GrowthPolicy, index_sequence<Indices...>() >;
+    using rebind_type = raw_small_soa_impl<U, I, N_, max_alignment_n<Alignment, U>::value, rebind_alloc<U>, GrowthPolicy, index_sequence<Indices...>() >;
 
     template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
     template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
@@ -3332,7 +3332,7 @@ public:
     using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
 
     template< class U >
-    using rebind_type = raw_paged<U, I, PageSize, alignof(U), rebind_alloc<U>>;
+    using rebind_type = raw_paged<U, I, PageSize, max_alignment_n<Alignment, U>::value, rebind_alloc<U>>;
 
 public:
 
@@ -3434,7 +3434,7 @@ public:
     using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
 
     template< class U >
-    using rebind_type = raw_paged_soa<U, I, PageSize, alignof(U), rebind_alloc<U>>;
+    using rebind_type = raw_paged_soa<U, I, PageSize, max_alignment_n<Alignment, U>::value, rebind_alloc<U>>;
 
     template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
     template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
@@ -3514,7 +3514,7 @@ public:
     using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
 
     template< class U >
-    using rebind_type = raw_paged<U, I, 0, Alignment, rebind_alloc<U>>;
+    using rebind_type = raw_paged<U, I, 0, max_alignment_n<Alignment, U>::value, rebind_alloc<U>>;
 
 public:
 
@@ -3597,7 +3597,7 @@ public:
     using rebind_alloc = typename allocator_traits::template rebind_alloc< U >;
 
     template< class U >
-    using rebind_type = raw_paged_soa<U, I, 0, Alignment, rebind_alloc<U>>;
+    using rebind_type = raw_paged_soa<U, I, 0, max_alignment_n<Alignment, U>::value, rebind_alloc<U>>;
 
     template< I n > using nth_type = typename std::tuple_element< n, std::tuple<SoaTypes...> >::type;
     template< I n > using nth_allocator_type = rebind_alloc< nth_type<n> >;
