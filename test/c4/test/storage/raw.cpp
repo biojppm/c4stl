@@ -550,8 +550,8 @@ void test_raw_soa_construction(Raw &rp)
     C4_STATIC_ASSERT(Raw::num_arrays == 2);
 
     using traits = typename Raw::storage_traits;
-    using value_type0 = typename Raw::value_type<0>;
-    using value_type1 = typename Raw::value_type<1>;
+    using value_type0 = typename Raw::template value_type<0>;
+    using value_type1 = typename Raw::template value_type<1>;
 
     C4_STATIC_ASSERT(is_instance_of_tpl< Counting C4_COMMA value_type0 >::value);
     C4_STATIC_ASSERT(is_instance_of_tpl< Counting C4_COMMA value_type1 >::value);

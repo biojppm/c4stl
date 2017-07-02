@@ -2093,7 +2093,7 @@ _raw_reserve_replace(I tmpsz, tmp_type *tmp)
         #define _c4mcr(arr, i) c4::move_construct_n(arr, std::get<i>(tmp->m_soa).m_ptr, tmpsz)
         _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
         #undef _c4mcr
-        #define _c4mcr(arr, i) nth_allocator<i>.deallocate(std::get<i>(tmp->m_soa).m_ptr, tmp->m_cap_n_alloc.m_value)
+        #define _c4mcr(arr, i) _c4this->template nth_allocator<i>.deallocate(std::get<i>(tmp->m_soa).m_ptr, tmp->m_cap_n_alloc.m_value)
         _C4_FOREACH_ARR(m_soa, m_arr, _c4mcr)
         #undef _c4mcr
     }
@@ -2657,7 +2657,7 @@ public:
 public:
 
     template< I n >
-    void _do_raw_reserve(I currsz, I cap, I np);
+    void _do_raw_reserve(I currsz, I cap, I ps, I np);
     template< I n >
     void _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np);
     template< I n >
@@ -2992,10 +2992,12 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
-_do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np)
+_do_raw_reserve_allocate(I cap, tmp_type */*tmp*/, I ps, I np)
 {
-    auto at = _c4this->template nth_allocator<n>().template rebound< nth_type<n>* >();
-    U** tmp_pages = at.allocate(np);
+    C4_ASSERT(cap == ps * np); C4_UNUSED(cap);
+    auto al = _c4this->template nth_allocator<n>();
+    auto at = al.template rebound< nth_type<n>* >();
+    nth_type<n>** tmp_pages = at.allocate(np);
     if(np > _c4this->m_numpages_n_alloc.m_value) // more pages (grow)
     {
         for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
@@ -3004,7 +3006,7 @@ _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np)
         }
         for(I i = _c4this->m_numpages_n_alloc.m_value; i < np; ++i)
         {
-            tmp_pages[i] = _c4this->nth_allocator<n>().allocate(ps, nth_alignment<n>);
+            tmp_pages[i] = al.allocate(ps, nth_alignment<n>::value);
         }
     }
     else // less pages (shrink)
@@ -3015,7 +3017,7 @@ _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np)
         }
         for(I i = np; i < _c4this->m_numpages_n_alloc.m_value; ++i)
         {
-            _c4this->template nth_allocator<n>().deallocate(std::get<n>(_c4this->m_soa).m_pages[i], ps, nth_alignment<n>);
+            al.deallocate(std::get<n>(_c4this->m_soa).m_pages[i], ps, nth_alignment<n>::value);
         }
     }
     at.deallocate(std::get<n>(_c4this->m_soa).m_pages, _c4this->m_numpages_n_alloc.m_value);
@@ -3103,6 +3105,8 @@ _do_raw_clear(I currsz)
     auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
     const I ps = _c4this->page_size();
+    C4_STATIC_ASSERT(currsz == _c4this->m_numpages_n_alloc.m_value * ps);
+    C4_UNUSED(currsz);
     for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
     {
         al.deallocate(std::get<n>(_c4this->m_soa).m_pages[i], ps, nth_alignment<n>::value);
@@ -3114,7 +3118,7 @@ _do_raw_clear(I currsz)
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
-_do_raw_reserve(I currsz, I cap, I np, I ps)
+_do_raw_reserve(I currsz, I cap, I ps, I np)
 {
     C4_ASSERT(cap > 0);
 
@@ -3173,7 +3177,7 @@ _raw_reserve(I currsz, I cap)
         return;
     }
 
-    #define _c4mcr(pgs, i) _do_raw_reserve<i>(currsz, cap, np, ps)
+    #define _c4mcr(pgs, i) _do_raw_reserve<i>(currsz, cap, ps, np)
     _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
     #undef _c4mcr
     _c4this->m_numpages_n_alloc.m_value = np;
@@ -3183,8 +3187,8 @@ _raw_reserve(I currsz, I cap)
 #undef _c4cthis
 
 //-----------------------------------------------------------------------------
-/** raw paged storage, allocatable. This is NOT a contiguous storage structure.
-  * However, it does behave as such, offering a O(1) [] operator with contiguous
+/** raw paged storage, allocatable. This is NOT a contiguous memory storage structure.
+  * However, it is a logically-contiguous storage structure, as it offers a O(1) [] operator with contiguous
   * range indices. This is useful for minimizing allocations and data copies in
   * dynamic array-based containers like flat_list or split_list.
   *
