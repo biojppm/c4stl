@@ -2414,6 +2414,15 @@ struct _raw_paged_common_crtp
         C4_ASSERT(cap >= desired);
         return cap;
     }
+
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _at_page_beginning(I pos)
+    {
+        return (pos & _c4this->m_id_mask) == 0;
+    }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _at_page_end(I pos)
+    {
+        return (pos & _c4this->m_id_mask) == _c4this->m_id_mask;
+    }
 };
 
 //-----------------------------------------------------------------------------
