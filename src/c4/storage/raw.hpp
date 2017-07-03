@@ -3249,7 +3249,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_add_pages(I first_page_to_add, I num_pages_to_add)
 {
     const I nextnp = _c4cthis->num_pages() + num_pages_to_add;
-    C4_ASSERT(first_page_to_add < _c4cthis->num_pages());
+    C4_ASSERT(first_page_to_add <= _c4cthis->num_pages());
     auto &al = _c4this->m_numpages_n_alloc.alloc();
     auto  at = al.template rebound< T* >();
     T **tmp = at.allocate(nextnp, max_alignment_n< Alignment, T* >::value);
@@ -3284,7 +3284,7 @@ template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_make_room(I pos, I prevsz, I more)
 {
-    C4_ASSERT(pos < _c4cthis->capacity() || (pos == 0 && _c4cthis->capacity() == 0));
+    C4_ASSERT(pos <= _c4cthis->capacity() || (pos == 0 && _c4cthis->capacity() == 0));
     C4_ASSERT(prevsz <= _c4cthis->capacity());
 
     if(!more) return;

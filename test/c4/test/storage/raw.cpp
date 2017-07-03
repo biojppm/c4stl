@@ -925,6 +925,7 @@ TEST(raw_paged, resize)
         {
             EXPECT_EQ(r[i], i);
         }
+        // add one page at the beginning
         r._raw_make_room(0, r.page_size(), r.page_size());
         EXPECT_EQ(r.num_pages(), 2);
         for(int i = 0; i < r.page_size(); ++i)
@@ -935,6 +936,19 @@ TEST(raw_paged, resize)
         {
             EXPECT_EQ(r[i], r.page_size() - 1 - i);
             EXPECT_EQ(r[r.page_size() + i], i);
+        }
+        // add one page at the end
+        r._raw_make_room(r.capacity(), 2*r.page_size(), r.page_size());
+        EXPECT_EQ(r.num_pages(), 3);
+        for(int i = 0; i < r.page_size(); ++i)
+        {
+            r[2 * r.page_size() + i] = 2 * r.page_size() + i;
+        }
+        for(int i = 0; i < r.page_size(); ++i)
+        {
+            EXPECT_EQ(r[i], r.page_size() - 1 - i);
+            EXPECT_EQ(r[r.page_size() + i], i);
+            EXPECT_EQ(r[2 * r.page_size() + i], 2 * r.page_size() + i);
         }
     }
 }
