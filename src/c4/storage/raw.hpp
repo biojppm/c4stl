@@ -2478,6 +2478,9 @@ public:
     void _raw_make_room(I pos, I prevsz, I more);
     void _raw_destroy_room(I pos, I prevsz, I less);
 
+    void _raw_add_pages(I first_page_to_add, I num_pages_to_add);
+    void _raw_rem_pages(I first_page_to_rem, I num_pages_to_rem);
+
 public:
 
     template< class ...Args >
@@ -2672,6 +2675,9 @@ public:
     void _raw_resize(I pos, I prevsz, I nextsz);
     void _raw_make_room(I pos, I prevsz, I more);
     void _raw_destroy_room(I pos, I prevsz, I less);
+
+    void _raw_add_pages(I first_page_to_add, I num_pages_to_add);
+    void _raw_rem_pages(I first_page_to_rem, I num_pages_to_rem);
 
 public:
 
@@ -3240,10 +3246,97 @@ _raw_resize(I pos, I prevsz, I nextsz)
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_make_room(I pos, I prevsz, I more)
+_raw_add_pages(I first_page_to_add, I num_pages_to_add)
+{
+    const I nextnp = _c4cthis->num_pages() + num_pages_to_add;
+    C4_ASSERT(first_page_to_add < _c4cthis->num_pages());
+    auto &al = _c4this->m_numpages_n_alloc.alloc();
+    auto  at = al.template rebound< T* >();
+    T **tmp = at.allocate(nextnp, max_alignment_n< Alignment, T* >::value);
+    for(I i = 0; i < first_page_to_add; ++i)
+    {
+        tmp[i] = _c4cthis->m_pages[i];
+    }
+    for(I i = first_page_to_add; i < first_page_to_add+num_pages_to_add; ++i)
+    {
+        tmp[i] = al.allocate(_c4cthis->page_size(), Alignment);
+    }
+    for(I i = first_page_to_add+num_pages_to_add; i < nextnp; ++i)
+    {
+        tmp[i] = _c4cthis->m_pages[i - num_pages_to_add];
+    }
+    at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value, max_alignment_n< Alignment, T* >::value);
+    _c4this->m_pages = tmp;
+    _c4this->m_numpages_n_alloc.m_value = nextnp;
+}
+
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_raw_add_pages(I first_page_to_add, I num_pages_to_add)
 {
     C4_NOT_IMPLEMENTED();
-    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(more);
+    C4_UNUSED(first_page_to_add); C4_UNUSED(num_pages_to_add);
+}
+
+//-----------------------------------------------------------------------------
+
+template< class T, class I, I Alignment, class RawPaged >
+void _raw_paged_crtp< T, I, Alignment, RawPaged >::
+_raw_make_room(I pos, I prevsz, I more)
+{
+    C4_ASSERT(pos < _c4cthis->capacity() || (pos == 0 && _c4cthis->capacity() == 0));
+    C4_ASSERT(prevsz <= _c4cthis->capacity());
+
+    if(!more) return;
+
+    const I pg = _c4cthis->_raw_pg(pos);
+    const I id = _c4cthis->_raw_id(pos);
+    const I pgsznext = _c4cthis->_raw_pg(prevsz + more);
+    const I num_pages_to_add = pgsznext - _c4cthis->num_pages();
+
+    if(num_pages_to_add > 0)
+    {
+        _c4this->_raw_add_pages(pg, num_pages_to_add);
+    }
+
+    // move existing data as needed
+
+    if(this->_at_page_beginning(more))
+    {
+        // we're adding a number of full pages, ie,
+        // the room to be made spans exactly a number of full pages
+
+        if(this->_at_page_beginning(pos))
+        {
+            // we're done here: no data in the original pages needs to be moved
+        }
+        else
+        {
+            // we need to move the data from pos up to the end of the original
+            // page to a new page, placing the data at the same position
+            // (because we're adding a multiple of the page size)
+            I ps = _c4cthis->page_size();
+            I num_elms_to_move;
+            if(prevsz >= pg * ps) // is the src page full?
+            {
+                C4_ASSERT(_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more) <= ps);
+                num_elms_to_move = ps - (_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more));
+            }
+            else
+            {
+                C4_ASSERT(_c4cthis->_raw_id(prevsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(prevsz));
+                num_elms_to_move = _c4cthis->_raw_id(prevsz) - (_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more));
+            }
+            move_construct_n(_c4this->m_pages[pgsznext]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
+        }
+    }
+    else // we're not adding full pages so we'll need to move data around
+    {
+        const I pgszprev = _c4cthis->_raw_pg(prevsz);
+        const I pgidprev = _c4cthis->_raw_id(prevsz);
+        C4_NOT_IMPLEMENTED();
+        C4_UNUSED(pgszprev); C4_UNUSED(pgidprev);
+    }
 }
 
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >

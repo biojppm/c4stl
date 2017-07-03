@@ -908,6 +908,37 @@ TEST(raw_small_soa, soa_resize_2)
     test_raw_soa_resize_2_types< raw_small_soa< soa<int,float>,size_t,4 > >();
 }
 
+
+TEST(raw_paged, resize)
+{
+    {
+        raw_paged< int, int, 8 > r;
+        EXPECT_EQ(r.num_pages(), 0);
+        r._raw_reserve(r.page_size());
+        EXPECT_EQ(r.num_pages(), 1);
+        for(int i = 0; i < r.page_size(); ++i)
+        {
+            r[i] = i;
+        }
+        r._raw_make_room(0, 0, 0); // must not change
+        for(int i = 0; i < r.page_size(); ++i)
+        {
+            EXPECT_EQ(r[i], i);
+        }
+        r._raw_make_room(0, r.page_size(), r.page_size());
+        EXPECT_EQ(r.num_pages(), 2);
+        for(int i = 0; i < r.page_size(); ++i)
+        {
+            r[i] = r.page_size() - 1 - i;
+        }
+        for(int i = 0; i < r.page_size(); ++i)
+        {
+            EXPECT_EQ(r[i], r.page_size() - 1 - i);
+            EXPECT_EQ(r[r.page_size() + i], i);
+        }
+    }
+}
+
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
 
