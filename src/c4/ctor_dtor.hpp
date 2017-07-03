@@ -263,64 +263,67 @@ destroy_n(U* ptr, I n) noexcept
 }
 
 //-----------------------------------------------------------------------------
+
 /** makes room at the beginning of buf, which has a current size of n */
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
-make_room(U *buf, I n, I room) C4_NOEXCEPT_A
+make_room(U *buf, I bufsz, I room) C4_NOEXCEPT_A
 {
-    C4_ASSERT(n >= 0 && room >= 0);
-    if(room >= n)
+    C4_ASSERT(bufsz >= 0 && room >= 0);
+    if(room >= bufsz)
     {
-        memcpy(buf + room, buf, n * sizeof(U));
+        memcpy (buf + room, buf, bufsz * sizeof(U));
     }
     else
     {
-        memmove(buf + room, buf, n * sizeof(U));
+        memmove(buf + room, buf, bufsz * sizeof(U));
     }
 }
-/** makes room at the beginning of buf, which has a current size of n */
+/** makes room at the beginning of buf, which has a current size of bufsz */
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
-make_room(U *buf, I n, I room) C4_NOEXCEPT_A
+make_room(U *buf, I bufsz, I room) C4_NOEXCEPT_A
 {
-    C4_ASSERT(n >= 0 && room >= 0);
-    if(room >= n)
+    C4_ASSERT(bufsz >= 0 && room >= 0);
+    if(room >= bufsz)
     {
-        for(I i = 0; i < n; ++i)
+        for(I i = 0; i < bufsz; ++i)
         {
             new ((void*)(buf + (i + room))) U(std::move(buf[i]));
         }
     }
     else
     {
-        for(I i = 0; i < n; ++i)
+        for(I i = 0; i < bufsz; ++i)
         {
-            I w = n-1 - i; // do a backwards loop
+            I w = bufsz-1 - i; // do a backwards loop
             new ((void*)(buf + (w + room))) U(std::move(buf[w]));
         }
     }
 }
 
 /** make room to the right of pos, copying to a different buffer */
+
+/** make room to the right of pos, copying to the beginning of a different buffer */
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
-make_room(U *dst, U const* src, I n, I room, I pos) C4_NOEXCEPT_A
+make_room(U *dst, U const* src, I srcsz, I room, I pos) C4_NOEXCEPT_A
 {
-    C4_ASSERT(n >= 0 && room >= 0 && pos >= 0);
-    C4_ASSERT(pos < n);
-    memcpy(dst, src, pos * sizeof(U));
-    memcpy(dst + room + pos, src + pos, (n - pos) * sizeof(U));
+    C4_ASSERT(srcsz >= 0 && room >= 0 && pos >= 0);
+    C4_ASSERT(pos < srcsz || (pos == 0 && srcsz == 0));
+    memcpy(dst             , src      , pos           * sizeof(U));
+    memcpy(dst + room + pos, src + pos, (srcsz - pos) * sizeof(U));
 }
-/** make room to the right of pos, copying to a different buffer */
+/** make room to the right of pos, copying to the beginning of a different buffer */
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
-make_room(U *dst, U const* src, I n, I room, I pos)
+make_room(U *dst, U const* src, I srcsz, I room, I pos)
 {
-    C4_ASSERT(n >= 0 && room >= 0 && pos >= 0);
-    C4_ASSERT(pos < n);
+    C4_ASSERT(srcsz >= 0 && room >= 0 && pos >= 0);
+    C4_ASSERT(pos < srcsz || (pos == 0 && srcsz == 0));
     for(I i = 0; i < pos; ++i)
     {
         new ((void*)(dst + i)) U(std::move(src[i]));
     }
     src += pos;
     dst += room + pos;
-    for(I i = 0, e = n - pos; i < e; ++i)
+    for(I i = 0, e = srcsz - pos; i < e; ++i)
     {
         new ((void*)(dst + i)) U(std::move(src[i]));
     }
