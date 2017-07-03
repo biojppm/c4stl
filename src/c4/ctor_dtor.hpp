@@ -300,7 +300,14 @@ make_room(U *buf, I bufsz, I room) C4_NOEXCEPT_A
     }
 }
 
-/** make room to the right of pos, copying to a different buffer */
+/** make room to the right of pos */
+template< class U, class I >
+C4_ALWAYS_INLINE void make_room(U *buf, I bufsz, I pos, I room)
+{
+    C4_ASSERT(pos >= 0 && pos < bufsz || (bufsz == 0 && pos == 0));
+    make_room(buf + pos, bufsz - pos, room);
+}
+
 
 /** make room to the right of pos, copying to the beginning of a different buffer */
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
@@ -328,6 +335,22 @@ make_room(U *dst, U const* src, I srcsz, I room, I pos)
         new ((void*)(dst + i)) U(std::move(src[i]));
     }
 }
+
+template< class U, class I >
+C4_ALWAYS_INLINE void make_room
+(
+    U      * dst, I dstsz,
+    U const* src, I srcsz,
+    I room, I pos
+)
+{
+    C4_ASSERT(pos >= 0 && pos < srcsz || (srcsz == 0 && pos == 0));
+    C4_ASSERT(pos >= 0 && pos < dstsz || (dstsz == 0 && pos == 0));
+    C4_ASSERT(srcsz+room <= dstsz);
+    C4_UNUSED(dstsz);
+    make_room(dst, src, srcsz, room, pos);
+}
+
 
 //-----------------------------------------------------------------------------
 /** destroy room at the beginning of buf, which has a current size of n */
