@@ -2376,19 +2376,19 @@ public:
     using value_type = U;
     using size_type = I;
 
-    paged_iterator_impl(RawPaged *rp, I i_) : this_(rp), i(i_) {}
+    C4_ALWAYS_INLINE paged_iterator_impl(RawPaged *rp, I i_) : this_(rp), i(i_) {}
 
-    U& operator*  () const noexcept { return  (*this_)[i]; }
-    U* operator-> () const noexcept { return &(*this_)[i]; }
+    C4_ALWAYS_INLINE U& operator*  () const noexcept { return  (*this_)[i]; }
+    C4_ALWAYS_INLINE U* operator-> () const noexcept { return &(*this_)[i]; }
 
-    paged_iterator_impl& operator++ (   ) noexcept {                                 ++i; return *this; }
-    paged_iterator_impl  operator++ (int) noexcept { paged_iterator_impl it = *this; ++i; return    it; }
+    C4_ALWAYS_INLINE paged_iterator_impl& operator++ (   ) noexcept {                                 ++i; return *this; }
+    C4_ALWAYS_INLINE paged_iterator_impl  operator++ (int) noexcept { paged_iterator_impl it = *this; ++i; return    it; }
 
-    paged_iterator_impl& operator-- (   ) noexcept {                                 --i; return *this; }
-    paged_iterator_impl  operator-- (int) noexcept { paged_iterator_impl it = *this; --i; return    it; }
+    C4_ALWAYS_INLINE paged_iterator_impl& operator-- (   ) noexcept {                                 --i; return *this; }
+    C4_ALWAYS_INLINE paged_iterator_impl  operator-- (int) noexcept { paged_iterator_impl it = *this; --i; return    it; }
 
-    bool operator== (paged_iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
-    bool operator!= (paged_iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
+    C4_ALWAYS_INLINE bool operator== (paged_iterator_impl const& that) const noexcept { return i == that.i && this_ == that.this_; }
+    C4_ALWAYS_INLINE bool operator!= (paged_iterator_impl const& that) const noexcept { return i != that.i || this_ != that.this_; }
 
 };
 
