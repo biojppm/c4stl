@@ -2478,9 +2478,9 @@ public:
     void _raw_reserve_allocate(I cap, tmp_type *tmp);
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp) { C4_XASSERT(!(*tmp)); /* nothing to do */ }
 
-    void _raw_resize(I pos, I prevsz, I more);
-    void _raw_make_room(I pos, I prevsz, I more);
-    void _raw_destroy_room(I pos, I prevsz, I less);
+    void _raw_resize(I pos, I currsz, I more);
+    void _raw_make_room(I pos, I currsz, I more);
+    void _raw_destroy_room(I pos, I currsz, I less);
 
     void _raw_add_pages(I first_page_to_add, I num_pages_to_add);
     void _raw_rem_pages(I first_page_to_rem, I num_pages_to_rem);
@@ -2676,9 +2676,9 @@ public:
     void _raw_reserve_allocate(I cap, tmp_type *tmp);
     void _raw_reserve_replace(I /*tmpsz*/, tmp_type *tmp) { C4_XASSERT(!(*tmp)); /* nothing to do */ }
 
-    void _raw_resize(I pos, I prevsz, I nextsz);
-    void _raw_make_room(I pos, I prevsz, I more);
-    void _raw_destroy_room(I pos, I prevsz, I less);
+    void _raw_resize(I pos, I currsz, I nextsz);
+    void _raw_make_room(I pos, I currsz, I more);
+    void _raw_destroy_room(I pos, I currsz, I less);
 
     void _raw_add_pages(I first_page_to_add, I num_pages_to_add);
     void _raw_rem_pages(I first_page_to_rem, I num_pages_to_rem);
@@ -3287,18 +3287,18 @@ _raw_add_pages(I first_page_to_add, I num_pages_to_add)
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_make_room(I pos, I prevsz, I more)
+_raw_make_room(I pos, I currsz, I more)
 {
     C4_ASSERT(pos <= _c4cthis->capacity() || (pos == 0 && _c4cthis->capacity() == 0));
-    C4_ASSERT(prevsz <= _c4cthis->capacity());
+    C4_ASSERT(currsz <= _c4cthis->capacity());
 
     if(!more) return;
 
-    if(pos == prevsz) // we're adding at the end, no data movement is needed
+    if(pos == currsz) // we're adding at the end, no data movement is needed
     {
-        if(_c4cthis->capacity() < prevsz + more)
+        if(_c4cthis->capacity() < currsz + more)
         {
-            this->_raw_reserve(prevsz, prevsz + more);
+            this->_raw_reserve(currsz, currsz + more);
         }
     }
     else if(this->_at_page_beginning(more))
@@ -3307,7 +3307,7 @@ _raw_make_room(I pos, I prevsz, I more)
         // the room to be made spans exactly a number of full pages
         const I pg = _c4cthis->_raw_pg(pos);
         const I id = _c4cthis->_raw_id(pos);
-        const I pgnext = _c4cthis->_raw_pg(prevsz + more);
+        const I pgnext = _c4cthis->_raw_pg(currsz + more);
 
         const I num_pages_to_add = pgnext - _c4cthis->num_pages();
         const I first_page_to_add = pg + (id>0);
@@ -3325,15 +3325,15 @@ _raw_make_room(I pos, I prevsz, I more)
             // (because we're adding a multiple of the page size)
             const I ps = _c4cthis->page_size();
             I num_elms_to_move;
-            if(prevsz >= pg * ps) // is the src page full?
+            if(currsz >= pg * ps) // is the src page full?
             {
                 C4_ASSERT(id + _c4cthis->_raw_id(more) <= ps);
                 num_elms_to_move = ps - (id + _c4cthis->_raw_id(more));
             }
             else
             {
-                C4_ASSERT(_c4cthis->_raw_id(prevsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(prevsz));
-                num_elms_to_move = _c4cthis->_raw_id(prevsz) - (id + _c4cthis->_raw_id(more));
+                C4_ASSERT(_c4cthis->_raw_id(currsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(currsz));
+                num_elms_to_move = _c4cthis->_raw_id(currsz) - (id + _c4cthis->_raw_id(more));
             }
             const I dstpg = _c4this->_raw_pg(pg + more);
             move_construct_n(_c4this->m_pages[dstpg]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
@@ -3343,11 +3343,11 @@ _raw_make_room(I pos, I prevsz, I more)
     {
         C4_NOT_IMPLEMENTED();
         /*
-        const I idprev = _c4cthis->_raw_id(prevsz);
-        const I pgprev = _c4cthis->_raw_pg(prevsz);
-        const I idnext = _c4cthis->_raw_id(prevsz + more);
+        const I idcurr = _c4cthis->_raw_id(currsz);
+        const I pgcurr = _c4cthis->_raw_pg(currsz);
+        const I idnext = _c4cthis->_raw_id(currsz + more);
         // add the pages at the end, as we'll need to move from existing pages into them
-        const I first_page_to_add = pgprev + (id>0);
+        const I first_page_to_add = pgcurr + (id>0);
 
         _c4this->_raw_add_pages(first_page_to_add, num_pages_to_add);
 
@@ -3364,28 +3364,28 @@ _raw_make_room(I pos, I prevsz, I more)
 
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
-_raw_make_room(I pos, I prevsz, I more)
+_raw_make_room(I pos, I currsz, I more)
 {
     C4_NOT_IMPLEMENTED();
-    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(more);
+    C4_UNUSED(pos); C4_UNUSED(currsz); C4_UNUSED(more);
 }
 
 //-----------------------------------------------------------------------------
 
 template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::
-_raw_destroy_room(I pos, I prevsz, I less)
+_raw_destroy_room(I pos, I currsz, I less)
 {
     C4_NOT_IMPLEMENTED();
-    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(less);
+    C4_UNUSED(pos); C4_UNUSED(currsz); C4_UNUSED(less);
 }
 
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
-_raw_destroy_room(I pos, I prevsz, I less)
+_raw_destroy_room(I pos, I currsz, I less)
 {
     C4_NOT_IMPLEMENTED();
-    C4_UNUSED(pos); C4_UNUSED(prevsz); C4_UNUSED(less);
+    C4_UNUSED(pos); C4_UNUSED(currsz); C4_UNUSED(less);
 }
 
 //-----------------------------------------------------------------------------

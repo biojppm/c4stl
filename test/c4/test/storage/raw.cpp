@@ -954,7 +954,7 @@ void test_paged_resize(Args... args)
     }
 
     // add one page at the end - no data moves
-    r._raw_make_room(r.capacity(), sz, ps);
+    r._raw_make_room(sz, sz, ps);
     sz += ps;
     EXPECT_EQ(r.num_pages(), 3);
     EXPECT_EQ(r.capacity(), sz);
