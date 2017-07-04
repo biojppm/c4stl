@@ -1011,6 +1011,34 @@ void test_paged_resize(Args... args)
         EXPECT_EQ(r[3 * ps + i], i);
         EXPECT_EQ(r[4 * ps + i], 2 * ps + i);
     }
+
+    return;
+    // add half a page at the beginning of the first page
+    r._raw_make_room(0, sz, ps/2);
+    sz += ps;
+    EXPECT_EQ(r.num_pages(), 6);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps/2; ++i)
+    {
+        r[ps/2 + i] = 5 * ps + i;
+    }
+    for(int i = 0; i < ps; ++i)
+    {
+        if(i < ps/2)
+        {
+            EXPECT_EQ(r[i], 5 * ps + i);
+            EXPECT_EQ(r[ps/2 + i], ps - 1 - i);
+            EXPECT_EQ(r[ps/2 + ps/2 + i], 4 * ps + i);
+        }
+        else
+        {
+            EXPECT_EQ(r[ps/2 + ps/2 + i], 4 * ps + i);
+            EXPECT_EQ(r[ps/2 + ps + i], ps - 1 - i);
+        }
+        EXPECT_EQ(r[ps/2 + 2 * ps + i], 3 * ps + i);
+        EXPECT_EQ(r[ps/2 + 3 * ps + i], i);
+        EXPECT_EQ(r[ps/2 + 4 * ps + i], 2 * ps + i);
+    }
 }
 
 TEST(raw_paged, resize)

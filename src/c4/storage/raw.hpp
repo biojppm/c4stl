@@ -2415,6 +2415,10 @@ struct _raw_paged_common_crtp
         return cap;
     }
 
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _is_page_size_multiple(I sz)
+    {
+        return (sz & _c4this->m_id_mask) == 0;
+    }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _at_page_beginning(I pos)
     {
         return (pos & _c4this->m_id_mask) == 0;
@@ -3248,6 +3252,7 @@ template< class T, class I, I Alignment, class RawPaged >
 void _raw_paged_crtp< T, I, Alignment, RawPaged >::
 _raw_add_pages(I first_page_to_add, I num_pages_to_add)
 {
+    if(num_pages_to_add == 0) return;
     const I nextnp = _c4cthis->num_pages() + num_pages_to_add;
     C4_ASSERT(first_page_to_add <= _c4cthis->num_pages());
     auto &al = _c4this->m_numpages_n_alloc.alloc();
@@ -3289,22 +3294,25 @@ _raw_make_room(I pos, I prevsz, I more)
 
     if(!more) return;
 
-    const I pg = _c4cthis->_raw_pg(pos);
-    const I id = _c4cthis->_raw_id(pos);
-    const I pgsznext = _c4cthis->_raw_pg(prevsz + more);
-    const I num_pages_to_add = pgsznext - _c4cthis->num_pages();
-
-    if(num_pages_to_add > 0)
+    if(pos == prevsz) // we're adding at the end, no data movement is needed
     {
-        _c4this->_raw_add_pages(pg + (id>0), num_pages_to_add);
+        if(_c4cthis->capacity() < prevsz + more)
+        {
+            this->_raw_reserve(prevsz, prevsz + more);
+        }
     }
-
-    // move existing data as needed
-
-    if(this->_at_page_beginning(more))
+    else if(this->_at_page_beginning(more))
     {
         // we're adding a number of full pages, ie,
         // the room to be made spans exactly a number of full pages
+        const I pg = _c4cthis->_raw_pg(pos);
+        const I id = _c4cthis->_raw_id(pos);
+        const I pgnext = _c4cthis->_raw_pg(prevsz + more);
+
+        const I num_pages_to_add = pgnext - _c4cthis->num_pages();
+        const I first_page_to_add = pg + (id>0);
+        _c4this->_raw_add_pages(first_page_to_add, num_pages_to_add);
+        C4_ASSERT(pg == _c4cthis->_raw_pg(pos));
 
         if(this->_at_page_beginning(pos))
         {
@@ -3315,17 +3323,17 @@ _raw_make_room(I pos, I prevsz, I more)
             // we need to move the data from pos up to the end of the original
             // page to a new page, placing the data at the same position
             // (because we're adding a multiple of the page size)
-            I ps = _c4cthis->page_size();
+            const I ps = _c4cthis->page_size();
             I num_elms_to_move;
             if(prevsz >= pg * ps) // is the src page full?
             {
-                C4_ASSERT(_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more) <= ps);
-                num_elms_to_move = ps - (_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more));
+                C4_ASSERT(id + _c4cthis->_raw_id(more) <= ps);
+                num_elms_to_move = ps - (id + _c4cthis->_raw_id(more));
             }
             else
             {
                 C4_ASSERT(_c4cthis->_raw_id(prevsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(prevsz));
-                num_elms_to_move = _c4cthis->_raw_id(prevsz) - (_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more));
+                num_elms_to_move = _c4cthis->_raw_id(prevsz) - (id + _c4cthis->_raw_id(more));
             }
             const I dstpg = _c4this->_raw_pg(pg + more);
             move_construct_n(_c4this->m_pages[dstpg]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
@@ -3333,10 +3341,24 @@ _raw_make_room(I pos, I prevsz, I more)
     }
     else // we're not adding full pages so we'll need to move data around
     {
-        const I pgszprev = _c4cthis->_raw_pg(prevsz);
-        const I pgidprev = _c4cthis->_raw_id(prevsz);
         C4_NOT_IMPLEMENTED();
-        C4_UNUSED(pgszprev); C4_UNUSED(pgidprev);
+        /*
+        const I idprev = _c4cthis->_raw_id(prevsz);
+        const I pgprev = _c4cthis->_raw_pg(prevsz);
+        const I idnext = _c4cthis->_raw_id(prevsz + more);
+        // add the pages at the end, as we'll need to move from existing pages into them
+        const I first_page_to_add = pgprev + (id>0);
+
+        _c4this->_raw_add_pages(first_page_to_add, num_pages_to_add);
+
+        for(I i = first_page_to_add-1; i != I(-1); --i)
+        {
+            auto const* src = _c4cthis->m_pages[i];
+            auto      * dst = _c4cthis->m_pages[i + num_pages_to_add];
+            I num_elms_to_move = 0;
+            move_construct_n(dst+id, src+id, num_elms_to_move);
+        }
+        */
     }
 }
 
