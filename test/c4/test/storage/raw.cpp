@@ -909,48 +909,118 @@ TEST(raw_small_soa, soa_resize_2)
 }
 
 
+
+template< class PagedStorage, class... Args >
+void test_paged_resize(Args... args)
+{
+    PagedStorage r(args...);
+
+    typename PagedStorage::size_type sz = 0;
+    typename PagedStorage::size_type ps = r.page_size();
+
+    EXPECT_EQ(r.num_pages(), 0);
+    EXPECT_EQ(r.capacity(), 0);
+
+    r._raw_reserve(ps);
+    sz += ps;
+    EXPECT_EQ(r.num_pages(), 1);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps; ++i)
+    {
+        r[i] = i;
+    }
+
+    r._raw_make_room(0, sz, 0); // must not change
+    EXPECT_EQ(r.num_pages(), 1);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps; ++i)
+    {
+        EXPECT_EQ(r[i], i);
+    }
+
+    // add one page at the beginning - no data moves
+    r._raw_make_room(0, sz, ps);
+    sz += ps;
+    EXPECT_EQ(r.num_pages(), 2);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps; ++i)
+    {
+        r[i] = ps - 1 - i;
+    }
+    for(int i = 0; i < ps; ++i)
+    {
+        EXPECT_EQ(r[i], ps - 1 - i);
+        EXPECT_EQ(r[ps + i], i);
+    }
+
+    // add one page at the end - no data moves
+    r._raw_make_room(r.capacity(), sz, ps);
+    sz += ps;
+    EXPECT_EQ(r.num_pages(), 3);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps; ++i)
+    {
+        r[2 * ps + i] = 2 * ps + i;
+    }
+    for(int i = 0; i < ps; ++i)
+    {
+        EXPECT_EQ(r[i], ps - 1 - i);
+        EXPECT_EQ(r[ps + i], i);
+        EXPECT_EQ(r[2 * ps + i], 2 * ps + i);
+    }
+
+    // add one page in the middle - no data moves
+    r._raw_make_room(ps, sz, ps);
+    sz += ps;
+    EXPECT_EQ(r.num_pages(), 4);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps; ++i)
+    {
+        r[ps + i] = 3 * ps + i;
+    }
+    for(int i = 0; i < ps; ++i)
+    {
+        EXPECT_EQ(r[i], ps - 1 - i);
+        EXPECT_EQ(r[ps + i], 3 * ps + i);
+        EXPECT_EQ(r[2 * ps + i], i);
+        EXPECT_EQ(r[3 * ps + i], 2 * ps + i);
+    }
+
+    // add one page at the middle of the first page
+    r._raw_make_room(ps/2, sz, ps);
+    sz += ps;
+    EXPECT_EQ(r.num_pages(), 5);
+    EXPECT_EQ(r.capacity(), sz);
+    for(int i = 0; i < ps; ++i)
+    {
+        r[ps/2 + i] = 4 * ps + i;
+    }
+    for(int i = 0; i < ps; ++i)
+    {
+        if(i < ps/2)
+        {
+            EXPECT_EQ(r[i], ps - 1 - i); // 1st page, 1st half
+            EXPECT_EQ(r[ps/2 + i], 4 * ps + i); // 1st page, 2nd half
+        }
+        else
+        {
+            EXPECT_EQ(r[ps/2 + i], 4 * ps + i); // 2nd page, 1st half
+            EXPECT_EQ(r[ps + i], ps - 1 - i); // 2nd page, 2nd half
+        }
+        EXPECT_EQ(r[2 * ps + i], 3 * ps + i);
+        EXPECT_EQ(r[3 * ps + i], i);
+        EXPECT_EQ(r[4 * ps + i], 2 * ps + i);
+    }
+}
+
 TEST(raw_paged, resize)
 {
-    {
-        raw_paged< int, int, 8 > r;
-        EXPECT_EQ(r.num_pages(), 0);
-        r._raw_reserve(r.page_size());
-        EXPECT_EQ(r.num_pages(), 1);
-        for(int i = 0; i < r.page_size(); ++i)
-        {
-            r[i] = i;
-        }
-        r._raw_make_room(0, 0, 0); // must not change
-        for(int i = 0; i < r.page_size(); ++i)
-        {
-            EXPECT_EQ(r[i], i);
-        }
-        // add one page at the beginning
-        r._raw_make_room(0, r.page_size(), r.page_size());
-        EXPECT_EQ(r.num_pages(), 2);
-        for(int i = 0; i < r.page_size(); ++i)
-        {
-            r[i] = r.page_size() - 1 - i;
-        }
-        for(int i = 0; i < r.page_size(); ++i)
-        {
-            EXPECT_EQ(r[i], r.page_size() - 1 - i);
-            EXPECT_EQ(r[r.page_size() + i], i);
-        }
-        // add one page at the end
-        r._raw_make_room(r.capacity(), 2*r.page_size(), r.page_size());
-        EXPECT_EQ(r.num_pages(), 3);
-        for(int i = 0; i < r.page_size(); ++i)
-        {
-            r[2 * r.page_size() + i] = 2 * r.page_size() + i;
-        }
-        for(int i = 0; i < r.page_size(); ++i)
-        {
-            EXPECT_EQ(r[i], r.page_size() - 1 - i);
-            EXPECT_EQ(r[r.page_size() + i], i);
-            EXPECT_EQ(r[2 * r.page_size() + i], 2 * r.page_size() + i);
-        }
-    }
+    test_paged_resize< raw_paged< int, int, 8 > >();
+}
+
+TEST(raw_paged_rt, resize)
+{
+    test_paged_resize< raw_paged_rt< int, int > >(0, 8);
 }
 
 C4_END_NAMESPACE(stg)

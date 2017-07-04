@@ -3296,7 +3296,7 @@ _raw_make_room(I pos, I prevsz, I more)
 
     if(num_pages_to_add > 0)
     {
-        _c4this->_raw_add_pages(pg, num_pages_to_add);
+        _c4this->_raw_add_pages(pg + (id>0), num_pages_to_add);
     }
 
     // move existing data as needed
@@ -3327,7 +3327,8 @@ _raw_make_room(I pos, I prevsz, I more)
                 C4_ASSERT(_c4cthis->_raw_id(prevsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(prevsz));
                 num_elms_to_move = _c4cthis->_raw_id(prevsz) - (_c4cthis->_raw_id(pos) + _c4cthis->_raw_id(more));
             }
-            move_construct_n(_c4this->m_pages[pgsznext]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
+            const I dstpg = _c4this->_raw_pg(pg + more);
+            move_construct_n(_c4this->m_pages[dstpg]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
         }
     }
     else // we're not adding full pages so we'll need to move data around
