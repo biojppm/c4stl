@@ -3021,7 +3021,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
-_do_raw_reserve_allocate(I cap, tmp_type */*tmp*/, I ps, I np)
+_do_raw_reserve_allocate(I cap, tmp_type * /*tmp*/, I ps, I np)
 {
     C4_ASSERT(cap == ps * np); C4_UNUSED(cap);
     auto al = _c4this->template nth_allocator<n>();
@@ -3374,11 +3374,11 @@ _raw_make_room(I pos, I currsz, I more)
         const I idcurr = _c4cthis->_raw_id(currsz);
         const I pgcurr = _c4cthis->_raw_pg(currsz);
         const I idnext = _c4cthis->_raw_id(currsz + more);
-        //const I pgnext = _c4cthis->_raw_pg(currsz + more);
-        const I num_pages_to_add = idnext - _c4cthis->num_pages();
+        const I pgnext = _c4cthis->_raw_pg(currsz + more);
+        const I num_pages_to_add = (pgnext + (idnext>0)) - _c4cthis->num_pages();
 
         C4_ASSERT(idcurr > id); // this should have been caught earlier
-        if(more + idcurr < ps)
+        if(more + idcurr <= ps)
         {
             // we can do everything in the last page
             C4_ASSERT(num_pages_to_add == 0);

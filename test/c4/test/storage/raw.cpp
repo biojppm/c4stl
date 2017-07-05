@@ -936,7 +936,7 @@ struct PagedStorageInsertionTester
 
     void add_and_test(I pos, I num)
     {
-        s->_raw_make_room(pos, checker.size(), num);
+        s->_raw_make_room(pos, szconv<I>(checker.size()), num);
         tmp.resize(num);
         for(I i = 0; i < num; ++i)
         {
@@ -1062,6 +1062,10 @@ void test_paged_resize(Args... args)
         psit.add_and_test(0, ps/4);
         EXPECT_EQ(psit.s->num_pages(), 1);
         psit.add_and_test(0, ps/4);
+        EXPECT_EQ(psit.s->num_pages(), 1);
+        psit.add_and_test(ps/4, ps/4);
+        EXPECT_EQ(psit.s->num_pages(), 1);
+        psit.add_and_test(ps/4, ps/4);
         EXPECT_EQ(psit.s->num_pages(), 1);
     }
 }
