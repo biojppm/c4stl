@@ -5,6 +5,9 @@
 #include "c4/test/storage/raw.hpp"
 #include "c4/test.hpp"
 
+#include <random>
+#include <memory>
+
 C4_BEGIN_NAMESPACE(c4)
 C4_BEGIN_NAMESPACE(stg)
 
@@ -910,6 +913,46 @@ TEST(raw_small_soa, soa_resize_2)
 
 
 
+template< class PagedStorage >
+struct PagedStorageInsertionTester
+{
+    using T = typename PagedStorage::value_type;
+    using I = typename PagedStorage::size_type;
+
+    std::unique_ptr< PagedStorage > s;
+    std::vector< T > checker;
+    std::uniform_int_distribution< I > dist;
+    std::mt19937 engine;
+    std::vector< T > tmp;
+
+    template< class... Args >
+    static PagedStorageInsertionTester create(Args&&... args)
+    {
+        PagedStorageInsertionTester pst;
+        pst.s.reset(new PagedStorage(std::forward< Args >(args)...));
+        pst.dist = std::uniform_int_distribution<I>{0, 200};
+        return pst;
+    }
+
+    void add_and_test(I pos, I num)
+    {
+        s->_raw_make_room(pos, checker.size(), num);
+        tmp.resize(num);
+        for(I i = 0; i < num; ++i)
+        {
+            tmp[i] = dist(engine);
+            (*s)[pos + i] = tmp[i];
+        }
+        auto cpos = checker.cbegin() + pos;
+        checker.insert(cpos, tmp.begin(), tmp.end());
+        C4_ASSERT(s->capacity() >= checker.size());
+        for(I i = 0; i < checker.size(); ++i)
+        {
+            EXPECT_EQ((*s)[i], checker[i]) << "i=" << i;
+        }
+    }
+};
+
 template< class PagedStorage, class... Args >
 void test_paged_resize(Args... args)
 {
@@ -1012,32 +1055,14 @@ void test_paged_resize(Args... args)
         EXPECT_EQ(r[4 * ps + i], 2 * ps + i);
     }
 
-    return;
-    // add half a page at the beginning of the first page
-    r._raw_make_room(0, sz, ps/2);
-    sz += ps;
-    EXPECT_EQ(r.num_pages(), 6);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps/2; ++i)
+
     {
-        r[ps/2 + i] = 5 * ps + i;
-    }
-    for(int i = 0; i < ps; ++i)
-    {
-        if(i < ps/2)
-        {
-            EXPECT_EQ(r[i], 5 * ps + i);
-            EXPECT_EQ(r[ps/2 + i], ps - 1 - i);
-            EXPECT_EQ(r[ps/2 + ps/2 + i], 4 * ps + i);
-        }
-        else
-        {
-            EXPECT_EQ(r[ps/2 + ps/2 + i], 4 * ps + i);
-            EXPECT_EQ(r[ps/2 + ps + i], ps - 1 - i);
-        }
-        EXPECT_EQ(r[ps/2 + 2 * ps + i], 3 * ps + i);
-        EXPECT_EQ(r[ps/2 + 3 * ps + i], i);
-        EXPECT_EQ(r[ps/2 + 4 * ps + i], 2 * ps + i);
+        using ttype = PagedStorageInsertionTester< PagedStorage >;
+        auto psit = ttype::create(args...);
+        psit.add_and_test(0, ps/4);
+        EXPECT_EQ(psit.s->num_pages(), 1);
+        psit.add_and_test(0, ps/4);
+        EXPECT_EQ(psit.s->num_pages(), 1);
     }
 }
 
@@ -1048,7 +1073,7 @@ TEST(raw_paged, resize)
 
 TEST(raw_paged_rt, resize)
 {
-    test_paged_resize< raw_paged_rt< int, int > >(0, 8);
+    test_paged_resize< raw_paged_rt< int, int > >(/*capacity*/0, /*page_size*/8);
 }
 
 C4_END_NAMESPACE(stg)
