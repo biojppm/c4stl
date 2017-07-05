@@ -192,6 +192,7 @@ struct srcloc
 #   error not implemented
 #endif
 
+
 //-----------------------------------------------------------------------------
 // assertions
 
@@ -230,6 +231,7 @@ struct srcloc
 #   define C4_ASSERT_MSG(cond, fmt, ...)
 #   define C4_NOEXCEPT_A noexcept
 #endif
+
 
 //-----------------------------------------------------------------------------
 // extreme assertions
@@ -274,7 +276,7 @@ struct srcloc
 // checks: never switched-off
 
 /** Check that a condition is true, or raise an error when not
- * true. Unlike C4_ASSERT(), this check is not omitted in non-debug
+ * true. Unlike C4_ASSERT(), this check is not disabled in non-debug
  * builds.
  * @see C4_ASSERT
  * @ingroup error_checking
