@@ -3327,10 +3327,11 @@ _raw_make_room(I pos, I currsz, I more)
             this->_raw_reserve(currsz, currsz + more);
         }
     }
-    else if(this->_at_page_beginning(more))
+    else if(this->_is_page_size_multiple(more))
     {
         // we're adding a number of full pages, ie,
         // the room to be made spans exactly a number of full pages
+
         const I pg = _c4cthis->_raw_pg(pos);
         const I id = _c4cthis->_raw_id(pos);
         const I num_pages_to_add = _c4cthis->_raw_pg(currsz + more) - _c4cthis->num_pages();
@@ -3348,6 +3349,7 @@ _raw_make_room(I pos, I currsz, I more)
             // we need to move the data from pos up to the end of the original
             // page to a new page, placing the data at the same position
             // (because we're adding a multiple of the page size)
+
             const I ps = _c4cthis->page_size();
             I num_elms_to_move;
             if(currsz >= pg * ps) // is the src page full?
@@ -3368,6 +3370,7 @@ _raw_make_room(I pos, I currsz, I more)
     {
         // we're not at the end and we're not adding full pages
         // so we'll need to move data to the right
+
         const I ps = _c4cthis->page_size();
         const I pg = _c4cthis->_raw_pg(pos);
         const I id = _c4cthis->_raw_id(pos);
@@ -3378,13 +3381,18 @@ _raw_make_room(I pos, I currsz, I more)
         const I num_pages_to_add = (pgnext + (idnext>0)) - _c4cthis->num_pages();
 
         C4_ASSERT(idcurr > id); // this should have been caught earlier
-        if(more + idcurr <= ps)
+
+        if(more + idcurr <= ps)  // no spilling - we can do everything in the last page
         {
-            // we can do everything in the last page
             C4_ASSERT(num_pages_to_add == 0);
-            c4::make_room(_c4this->m_pages[pgcurr], ps, id, more);
+            C4_ASSERT(pgcurr == _c4cthis->num_pages() - 1);
+            c4::make_room(_c4this->m_pages[pgcurr], ps, idcurr, id, more);
         }
-        else
+        else if(id + more <= ps) // only existing data spills; created room stays within the same page
+        {
+            C4_NOT_IMPLEMENTED();
+        }
+        else // both created room and existing data spill
         {
             C4_NOT_IMPLEMENTED();
             _c4this->_raw_add_pages(pg, num_pages_to_add);

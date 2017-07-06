@@ -302,10 +302,13 @@ make_room(U *buf, I bufsz, I room) C4_NOEXCEPT_A
 
 /** make room to the right of pos */
 template< class U, class I >
-C4_ALWAYS_INLINE void make_room(U *buf, I bufsz, I pos, I room)
+C4_ALWAYS_INLINE void make_room(U *buf, I bufsz, I currsz, I pos, I room)
 {
-    C4_ASSERT((pos >= 0 && pos < bufsz) || (bufsz == 0 && pos == 0));
-    make_room(buf + pos, bufsz - pos, room);
+    C4_ASSERT(pos >= 0 && pos <= currsz);
+    C4_ASSERT(currsz <= bufsz);
+    C4_ASSERT(room + currsz <= bufsz);
+    C4_UNUSED(bufsz);
+    make_room(buf + pos, num_elms - pos, room);
 }
 
 

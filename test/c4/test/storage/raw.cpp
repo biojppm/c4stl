@@ -936,7 +936,8 @@ struct PagedStorageInsertionTester
 
     void add_and_test(I pos, I num)
     {
-        s->_raw_make_room(pos, szconv<I>(checker.size()), num);
+        I currsz = szconv<I>(checker.size());
+        s->_raw_make_room(pos, currsz, num);
         tmp.resize(num);
         for(I i = 0; i < num; ++i)
         {
@@ -1059,14 +1060,26 @@ void test_paged_resize(Args... args)
     {
         using ttype = PagedStorageInsertionTester< PagedStorage >;
         auto psit = ttype::create(args...);
-        psit.add_and_test(0, ps/4);
-        EXPECT_EQ(psit.s->num_pages(), 1);
-        psit.add_and_test(0, ps/4);
-        EXPECT_EQ(psit.s->num_pages(), 1);
-        psit.add_and_test(ps/4, ps/4);
-        EXPECT_EQ(psit.s->num_pages(), 1);
-        psit.add_and_test(ps/4, ps/4);
-        EXPECT_EQ(psit.s->num_pages(), 1);
+        {
+            SCOPED_TRACE("add 1/4 at page beginning, no spilling I");
+            psit.add_and_test(0, ps/4);
+            EXPECT_EQ(psit.s->num_pages(), 1);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at page beginning, no spilling, II");
+            psit.add_and_test(0, ps/4);
+            EXPECT_EQ(psit.s->num_pages(), 1);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle, no spilling, I");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(psit.s->num_pages(), 1);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle, no spilling, II");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(psit.s->num_pages(), 1);
+        }
     }
 }
 
