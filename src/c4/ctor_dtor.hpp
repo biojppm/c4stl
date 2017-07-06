@@ -308,7 +308,7 @@ C4_ALWAYS_INLINE void make_room(U *buf, I bufsz, I currsz, I pos, I room)
     C4_ASSERT(currsz <= bufsz);
     C4_ASSERT(room + currsz <= bufsz);
     C4_UNUSED(bufsz);
-    make_room(buf + pos, num_elms - pos, room);
+    make_room(buf + pos, currsz - pos, room);
 }
 
 
