@@ -1098,7 +1098,7 @@ void test_paged_resize(Args... args)
 
 TEST(raw_paged, resize)
 {
-    test_paged_resize< raw_paged< int, int, 8 > >();
+    test_paged_resize< raw_paged< int, int, /*page_size*/8 > >(/*capacity*/0);
 }
 
 TEST(raw_paged_rt, resize)
