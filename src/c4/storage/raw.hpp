@@ -3358,12 +3358,11 @@ _raw_make_room(I pos, I currsz, I more)
             // page to a new page, placing the data at the same position
             // (because we're adding a multiple of the page size)
 
-            const I ps = _c4cthis->page_size();
             I num_elms_to_move;
-            if(currsz >= pg * ps) // is the src page full?
+            if(currsz >= pg * _c4cthis->page_size()) // is the src page full?
             {
-                C4_ASSERT(id + _c4cthis->_raw_id(more) <= ps);
-                num_elms_to_move = ps - (id + _c4cthis->_raw_id(more));
+                C4_ASSERT(id + _c4cthis->_raw_id(more) <= _c4cthis->page_size());
+                num_elms_to_move = _c4cthis->page_size() - (id + _c4cthis->_raw_id(more));
             }
             else
             {
