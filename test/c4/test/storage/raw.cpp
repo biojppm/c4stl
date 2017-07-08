@@ -936,8 +936,8 @@ struct PagedStorageInsertionTester
 
     void add_and_test(I pos, I num)
     {
-        I currsz = szconv<I>(checker.size());
-        s->_raw_make_room(pos, currsz, num);
+        I currsz = szconv<I>(checker.size()); auto *ptr = s.get();
+        ptr->_raw_make_room(pos, currsz, num);
         tmp.resize(num);
         for(I i = 0; i < num; ++i)
         {
@@ -1083,27 +1083,74 @@ void test_paged_resize(Args... args)
         }
         // we have one full page here
         EXPECT_EQ(psit.checker.size(), s->capacity());
+
         {
-            SCOPED_TRACE("add 1/4 at middle, spill existing, I");
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, I");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
         {
-            SCOPED_TRACE("add 1/4 at middle, spill existing, II");
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, II");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
         {
-            SCOPED_TRACE("add 1/4 at middle, spill existing, III");
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, III");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
         {
-            SCOPED_TRACE("add 1/4 at middle, spill existing, IV");
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, IV");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
         // we have two full pages here
+        EXPECT_EQ(psit.checker.size(), s->capacity());
+
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, I");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 3);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, II");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 3);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, III");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 3);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, IV");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 3);
+        }
+        // we have three full pages here
+        EXPECT_EQ(psit.checker.size(), s->capacity());
+
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, I");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 4);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, II");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 4);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, III");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 4);
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, IV");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 4);
+        }
+        // we have three full pages here
         EXPECT_EQ(psit.checker.size(), s->capacity());
     }
 }

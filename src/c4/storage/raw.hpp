@@ -3425,7 +3425,7 @@ _raw_make_room(I pos, I currsz, I more)
             {
                 C4_ASSERT(this->_page_is_full(i-1, currsz));
                 // make room on the current page
-                c4::make_room(_c4this->m_pages[i], ps, idcurr+1, 0, more);
+                c4::make_room(_c4this->m_pages[i], ps, ps-more, 0, more);
                 // move spilling elements from the previous page to the current page
                 c4::move_construct_n(_c4this->m_pages[i], _c4this->m_pages[i-1]+ps-more, more);
             }
