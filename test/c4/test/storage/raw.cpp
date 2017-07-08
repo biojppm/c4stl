@@ -1072,12 +1072,12 @@ void test_paged_resize(Args... args)
             EXPECT_EQ(s->num_pages(), 1);
         }
         {
-            SCOPED_TRACE("add 1/4 at middle, no spilling, I");
+            SCOPED_TRACE("add 1/4 at page interior, no spilling, I");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 1);
         }
         {
-            SCOPED_TRACE("add 1/4 at middle, no spilling, II");
+            SCOPED_TRACE("add 1/4 at page interior, no spilling, II");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 1);
         }
@@ -1088,11 +1088,23 @@ void test_paged_resize(Args... args)
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
-        /*{
+        {
             SCOPED_TRACE("add 1/4 at middle, spill existing, II");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
-        }*/
+        }
+        {
+            SCOPED_TRACE("add 1/4 at middle, spill existing, III");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 2);
+        }
+        /*{
+            SCOPED_TRACE("add 1/4 at middle, spill existing, IV");
+            psit.add_and_test(ps/4, ps/4);
+            EXPECT_EQ(s->num_pages(), 2);
+        }
+        // we have two full pages here
+        EXPECT_EQ(psit.checker.size(), s->capacity());*/
     }
 }
 
