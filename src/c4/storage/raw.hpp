@@ -3394,29 +3394,27 @@ _raw_make_room(I pos, I currsz, I more)
         const I npnext = (currsz + more + ps - 1) / ps;
         I num_pages_to_add = npnext > np ? npnext - np : 0;
 
-        if(currsz + more <= ps)
+        if((pg == pgnext) && (_c4cthis->_raw_id(currsz) + more <= ps))
         {
             // CASE 1. no spilling. everything can be done in the last page
-            // no spilling - we can do everything in the last page
+
             C4_ASSERT(num_pages_to_add == 0);
             C4_ASSERT(npcurr == npnext);
             C4_ASSERT(idcurr > id); // this should have been caught earlier
             c4::make_room(_c4this->m_pages[pgcurr], ps, idcurr+1, id, more);
         }
-        /*else if(currsz + more <= _c4cthis->capacity())
-        {
-            C4_NOT_IMPLEMENTED();
-        }*/
         else
         {
+            // CASE 2. either the added room spills or the data
+            // to the right of the added is made to spill
+
             // handle pgcurr, the last page reported as containing elements
-            if(currsz + more >= _c4cthis->capacity()) // does it spill?
+            if(currsz + more > _c4cthis->capacity()) // does it spill?
             {
-                if(npcurr == np) // are there no pages after?
-                {
-                    _c4this->_raw_add_pages(np, 1);
-                    if(num_pages_to_add) --num_pages_to_add;
-                }
+                C4_ASSERT(npcurr == np);
+                // add a page to receive the spilling elements
+                _c4this->_raw_add_pages(np, 1);
+                if(num_pages_to_add) --num_pages_to_add;
                 // move spilling elements from pgcurr to the next page
                 // idnext is the number of spilling elements (why?)
                 C4_ASSERT(idnext < idcurr);
@@ -3436,18 +3434,6 @@ _raw_make_room(I pos, I currsz, I more)
             c4::make_room(_c4this->m_pages[pg], ps, ps-more, id, more);
             _c4this->_raw_add_pages(pg, num_pages_to_add);
         }
-        /*else
-        {
-            // CASE 2. there's spilling only from the existing data;
-            // created room stays within the same page (modulo page size)
-
-            // CASE 3. there's spilling both from created room and existing data
-
-            C4_NOT_IMPLEMENTED();
-            _c4this->_raw_add_pages(pg, num_pages_to_add);
-        }*/
-
-
     }
 }
 

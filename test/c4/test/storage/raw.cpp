@@ -1098,13 +1098,13 @@ void test_paged_resize(Args... args)
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
-        /*{
+        {
             SCOPED_TRACE("add 1/4 at middle, spill existing, IV");
             psit.add_and_test(ps/4, ps/4);
             EXPECT_EQ(s->num_pages(), 2);
         }
         // we have two full pages here
-        EXPECT_EQ(psit.checker.size(), s->capacity());*/
+        EXPECT_EQ(psit.checker.size(), s->capacity());
     }
 }
 
