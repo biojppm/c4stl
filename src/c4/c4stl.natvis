@@ -368,6 +368,13 @@ See also:
 
   <!-- =========================================================================================== -->
 
+  <Type Name="c4::stg::_raw_paged_crtp&lt;*,*,*,*&gt;">
+    <DisplayString>{(($T4*)this)}</DisplayString>
+    <Expand>
+      <ExpandedItem>(($T4*)this)</ExpandedItem>
+    </Expand>
+  </Type>
+
   <Type Name="c4::stg::raw_paged&lt;*,*,*,*,*&gt;">
     <DisplayString>{{pg_sz={$T3} #pgs={m_numpages_n_alloc.m_value}}}</DisplayString>
     <Expand>
