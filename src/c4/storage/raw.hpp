@@ -3389,16 +3389,14 @@ _raw_make_room(I pos, I currsz, I more)
         const I pgcurr = _c4cthis->_raw_pg(currsz - 1);
         const I idnext = _c4cthis->_raw_id(currsz - 1 + more);
         const I pgnext = _c4cthis->_raw_pg(currsz - 1 + more);
-        const I npcurr = (currsz + ps - 1) / ps;
-        const I npnext = (currsz + more + ps - 1) / ps;
-        I num_pages_to_add = npnext > np ? npnext - np : 0;
+        I num_pages_to_add = pgnext+1 > np ? pgnext+1 - np : 0;
 
         if((pg == pgnext) && (_c4cthis->_raw_id(currsz) + more <= ps))
         {
             // CASE 1. no spilling. everything can be done in the last page
 
             C4_ASSERT(num_pages_to_add == 0);
-            C4_ASSERT(npcurr == npnext);
+            C4_ASSERT(pgcurr == pgnext);
             C4_ASSERT(idcurr > id); // this should have been caught earlier
             c4::make_room(_c4this->m_pages[pgcurr], ps, idcurr+1, id, more);
         }
@@ -3410,7 +3408,7 @@ _raw_make_room(I pos, I currsz, I more)
             // handle pgcurr, the last page reported as containing elements
             if(currsz + more > _c4cthis->capacity()) // does it spill?
             {
-                C4_ASSERT(npcurr == np);
+                C4_ASSERT(pgcurr+1 == np);
                 // add a page to receive the spilling elements
                 _c4this->_raw_add_pages(np, 1);
                 if(num_pages_to_add) --num_pages_to_add;
