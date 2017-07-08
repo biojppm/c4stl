@@ -3370,7 +3370,7 @@ _raw_make_room(I pos, I currsz, I more)
                 C4_ASSERT(_c4cthis->_raw_id(currsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(currsz));
                 num_elms_to_move = _c4cthis->_raw_id(currsz) - (id + _c4cthis->_raw_id(more));
             }
-            const I dstpg = _c4this->_raw_pg(pg + more);
+            const I dstpg = first_page_to_add + num_pages_to_add - 1;
             move_construct_n(_c4this->m_pages[dstpg]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
         }
     }
