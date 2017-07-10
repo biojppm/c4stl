@@ -704,6 +704,53 @@ TEST(raw_paged_rt, construction)
 
 
 //-----------------------------------------------------------------------------
+template< class RawPaged >
+void test_page_slack(RawPaged const& rp)
+{
+    C4_ASSERT(rp.page_size() == 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/0), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/1), 7);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/2), 6);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/3), 5);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/4), 4);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/5), 3);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/6), 2);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/7), 1);
+    EXPECT_EQ(rp._page_slack(/*pg*/0, /*sz*/8), 0);
+
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/0), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/1), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/2), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/3), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/4), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/5), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/6), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/7), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8), 8);
+
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+0), 8);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+1), 7);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+2), 6);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+3), 5);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+4), 4);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+5), 3);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+6), 2);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+7), 1);
+    EXPECT_EQ(rp._page_slack(/*pg*/1, /*sz*/8+8), 0);
+}
+TEST(raw_paged, page_slack)
+{
+    raw_paged< int, int, 8 > rp;
+    test_page_slack(rp);
+}
+TEST(raw_paged_rt, page_slack)
+{
+    raw_paged_rt< int, int > rp(0, 8);
+    test_page_slack(rp);
+}
+
+
+//-----------------------------------------------------------------------------
 template< class Raw >
 void test_raw_data()
 {
@@ -1111,6 +1158,18 @@ void test_paged_resize(Args... args)
         { SCOPED_TRACE("add 3*ps @begin(pg1)+1");  psit.add_and_test(ps+1, 3*ps); EXPECT_EQ(s->num_pages(), 21); }
         EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
 
+        { SCOPED_TRACE("add ps+1   @begin(pg1)");  psit.add_and_test(ps, ps+1);   EXPECT_EQ(s->num_pages(), 23); }
+        { SCOPED_TRACE("add 2*ps+1 @begin(pg1)");  psit.add_and_test(ps, 2*ps+1); EXPECT_EQ(s->num_pages(), 25); }
+        { SCOPED_TRACE("add 3*ps+1 @begin(pg1)");  psit.add_and_test(ps, 3*ps+1); EXPECT_EQ(s->num_pages(), 28); }
+        { SCOPED_TRACE("add ps-3");                psit.add_and_test(ps, ps-3);   EXPECT_EQ(s->num_pages(), 28); }
+        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+
+        { SCOPED_TRACE("add ps+1 @begin(pg1)+1");    psit.add_and_test(ps+1, ps+1); EXPECT_EQ(s->num_pages(), 30); }
+        { SCOPED_TRACE("add 2*ps+1 @begin(pg1)+1");  psit.add_and_test(ps+1, 2*ps+1); EXPECT_EQ(s->num_pages(), 32); }
+        { SCOPED_TRACE("add 3*ps+1 @begin(pg1)+1");  psit.add_and_test(ps+1, 3*ps+1); EXPECT_EQ(s->num_pages(), 35); }
+        { SCOPED_TRACE("add ps-3");                  psit.add_and_test(ps+1, ps-3);   EXPECT_EQ(s->num_pages(), 35); }
+        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+
     }
 }
 
@@ -1125,6 +1184,7 @@ TEST(raw_paged_rt, make_room)
     test_paged_resize< raw_paged_rt< int, int > >(/*capacity*/0, /*page_size*/8);
     test_paged_resize< raw_paged_rt< int, int > >(/*capacity*/0, /*page_size*/16);
 }
+
 
 C4_END_NAMESPACE(stg)
 C4_END_NAMESPACE(c4)
