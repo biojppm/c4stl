@@ -3428,7 +3428,7 @@ _raw_make_room(I pos, I currsz, I more)
             c4::make_room(_c4this->m_pages[pg], ps, ps-spill, id, spill);
             _c4this->_raw_add_pages(pg, num_pages_to_add);
             // move elements to the left of pos to the first new page
-            c4::move_construct_n(_c4this->m_pages[pg], _c4this->m_pages[pg+num_pages_to_add], pos);
+            c4::move_construct_n(_c4this->m_pages[pg], _c4this->m_pages[pg+num_pages_to_add], id);
         }
     }
 }
