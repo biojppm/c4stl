@@ -66,21 +66,25 @@ inline void construct_n(U* ptr, I n, Args&&... args)
 template< class U > _C4REQUIRE(std::is_trivially_copy_constructible< U >::value)
 copy_construct(U* dst, U const* src) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, sizeof(U));
 }
 template< class U > _C4REQUIRE( ! std::is_trivially_copy_constructible< U >::value)
 copy_construct(U* dst, U const* src)
 {
+    C4_ASSERT(dst != src);
     new ((void*)dst) U(*src);
 }
 template< class U, class I > _C4REQUIRE(std::is_trivially_copy_constructible< U >::value)
 copy_construct_n(U* dst, U const* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, n * sizeof(U));
 }
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_copy_constructible< U >::value)
 copy_construct_n(U* dst, U const* src, I n)
 {
+    C4_ASSERT(dst != src);
     for(I i = 0; i < n; ++i)
     {
         new ((void*)(dst + i)) U(*(src + i));
@@ -95,6 +99,7 @@ copy_construct(U* dst, U src) noexcept // pass by value for scalar types
 template< class U > _C4REQUIRE( ! std::is_scalar< U >::value)
 copy_construct(U* dst, U const& src) // pass by reference for non-scalar types
 {
+    C4_ASSERT(dst != &src);
     new ((void*)dst) U(src);
 }
 template< class U, class I > _C4REQUIRE(std::is_scalar< U >::value)
@@ -108,6 +113,7 @@ copy_construct_n(U* dst, U src, I n) noexcept // pass by value for scalar types
 template< class U, class I > _C4REQUIRE( ! std::is_scalar< U >::value)
 copy_construct_n(U* dst, U const& src, I n) // pass by reference for non-scalar types
 {
+    C4_ASSERT(dst != &src);
     for(I i = 0; i < n; ++i)
     {
         new ((void*)(dst + i)) U(src);
@@ -126,21 +132,25 @@ C4_ALWAYS_INLINE void copy_construct(U (&dst)[N], U const (&src)[N]) noexcept
 template< class U > _C4REQUIRE(std::is_trivially_copy_assignable< U >::value)
 copy_assign(U* dst, U const* src) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, sizeof(U));
 }
 template< class U > _C4REQUIRE( ! std::is_trivially_copy_assignable< U >::value)
 copy_assign(U* dst, U const* src) noexcept
 {
+    C4_ASSERT(dst != src);
     *dst = *src;
 }
 template< class U, class I > _C4REQUIRE(std::is_trivially_copy_assignable< U >::value)
 copy_assign_n(U* dst, U const* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, n * sizeof(U));
 }
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_copy_assignable< U >::value)
 copy_assign_n(U* dst, U const* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     for(I i = 0; i < n; ++i)
     {
         dst[i] = src[i];
@@ -155,6 +165,7 @@ copy_assign(U* dst, U src) noexcept // pass by value for scalar types
 template< class U > _C4REQUIRE( ! std::is_scalar< U >::value)
 copy_assign(U* dst, U const& src) noexcept // pass by reference for non-scalar types
 {
+    C4_ASSERT(dst != &src);
     *dst = src;
 }
 template< class U, class I > _C4REQUIRE(std::is_scalar< U >::value)
@@ -168,6 +179,7 @@ copy_assign_n(U* dst, U src, I n) noexcept // pass by value for scalar types
 template< class U, class I > _C4REQUIRE( ! std::is_scalar< U >::value)
 copy_assign_n(U* dst, U const& src, I n) noexcept // pass by reference for non-scalar types
 {
+    C4_ASSERT(dst != &src);
     for(I i = 0; i < n; ++i)
     {
         dst[i] = src;
@@ -186,21 +198,25 @@ C4_ALWAYS_INLINE void copy_assign(U (&dst)[N], U const (&src)[N]) noexcept
 template< class U > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
 move_construct(U* dst, U* src) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, sizeof(U));
 }
 template< class U > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
 move_construct(U* dst, U* src) noexcept
 {
+    C4_ASSERT(dst != src);
     new ((void*)dst) U(std::move(*src));
 }
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_constructible< U >::value)
 move_construct_n(U* dst, U* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, n * sizeof(U));
 }
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_constructible< U >::value)
 move_construct_n(U* dst, U* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     for(I i = 0; i < n; ++i)
     {
         new ((void*)(dst + i)) U(std::move(src[i]));
@@ -213,21 +229,25 @@ move_construct_n(U* dst, U* src, I n) noexcept
 template< class U > _C4REQUIRE(std::is_trivially_move_assignable< U >::value)
 move_assign(U* dst, U* src) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, sizeof(U));
 }
 template< class U > _C4REQUIRE( ! std::is_trivially_move_assignable< U >::value)
 move_assign(U* dst, U* src) noexcept
 {
+    C4_ASSERT(dst != src);
     *dst = std::move(*src);
 }
 template< class U, class I > _C4REQUIRE(std::is_trivially_move_assignable< U >::value)
 move_assign_n(U* dst, U* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     memcpy(dst, src, n * sizeof(U));
 }
 template< class U, class I > _C4REQUIRE( ! std::is_trivially_move_assignable< U >::value)
 move_assign_n(U* dst, U* src, I n) noexcept
 {
+    C4_ASSERT(dst != src);
     for(I i = 0; i < n; ++i)
     {
         *(dst + i) = std::move(*(src + i));
