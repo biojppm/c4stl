@@ -3484,7 +3484,10 @@ _raw_make_room(I pos, I currsz, I more)
                 C4_ASSERT(idpos + numr - shift <= ps);
                 make_room(_c4this->m_pages[pgpos+num_pages_to_add], ps, idpos+numr-shift, idpos, shift);
             }
-            move_construct_n(_c4this->m_pages[pgpos], _c4this->m_pages[pgpos+num_pages_to_add], idpos);
+            if(num_pages_to_add)
+            {
+                move_construct_n(_c4this->m_pages[pgpos], _c4this->m_pages[pgpos+num_pages_to_add], idpos);
+            }
         }
     }
 }
