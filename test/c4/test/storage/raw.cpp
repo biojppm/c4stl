@@ -971,6 +971,7 @@ struct PagedStorageInsertionTester
     std::uniform_int_distribution< I > dist;
     std::mt19937 engine;
     std::vector< T > tmp;
+    int num_adds;
 
     template< class... Args >
     static PagedStorageInsertionTester create(Args&&... args)
@@ -978,28 +979,47 @@ struct PagedStorageInsertionTester
         PagedStorageInsertionTester pst;
         pst.s.reset(new PagedStorage(std::forward< Args >(args)...));
         pst.dist = std::uniform_int_distribution<I>{0, 200};
+        pst.checker.reserve(6 * pst.s->page_size());
+        pst.num_adds = 0;
         return pst;
     }
 
-    void add_and_test(I pos, I num)
+    void clear()
+    {
+        checker.clear();
+        s->_raw_reserve(0);
+    }
+
+    bool full_capacity() const
+    {
+        return checker.size() == s->capacity();
+    }
+
+    bool add_and_test(I pos, I num)
     {
         I currsz = szconv<I>(checker.size()); auto *ptr = s.get();
         ptr->_raw_make_room(pos, currsz, num);
         tmp.resize(num);
         for(I i = 0; i < num; ++i)
         {
-            tmp[i] = dist(engine);
-            (*s)[pos + i] = tmp[i];
+            //tmp[i] = num_adds;
+            tmp[i] = num_adds*1000 + dist(engine);
+            (*ptr)[pos + i] = tmp[i];
         }
         auto cpos = checker.cbegin() + pos;
         checker.insert(cpos, tmp.begin(), tmp.end());
         C4_ASSERT(s->capacity() >= checker.size());
+        bool ok = true;
         for(I i = 0; i < checker.size(); ++i)
         {
             EXPECT_EQ((*s)[i], checker[i]) << "i=" << i;
+            ok &= ((*s)[i] == checker[i]);
         }
+        num_adds++;
+        return ok;
     }
 };
+
 
 template< class PagedStorage, class... Args >
 void test_paged_resize(Args... args)
@@ -1115,61 +1135,96 @@ void test_paged_resize(Args... args)
         { SCOPED_TRACE("add 1/4 at page beginning, no spilling, II");  psit.add_and_test(0, ps/4); EXPECT_EQ(s->num_pages(), 1); }
         { SCOPED_TRACE("add 1/4 at page interior, no spilling, I");    psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 1); }
         { SCOPED_TRACE("add 1/4 at page interior, no spilling, II");   psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 1); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, I");   psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 2); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, II");  psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 2); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, III"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 2); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 1->2, IV");  psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 2); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, I"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 3); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, II"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 3); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, III"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 3); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2, IV"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 3); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, I"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 4); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, II"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 4); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, III"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 4); }
         { SCOPED_TRACE("add 1/4 at middle of first page, spill 0->1,1->2,2->3, IV"); psit.add_and_test(ps/4, ps/4); EXPECT_EQ(s->num_pages(), 4); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add 1/4 at beginning of page 1, spill 1->2,2->3,3->4, I"); psit.add_and_test(ps, ps/4); EXPECT_EQ(s->num_pages(), 5); }
         { SCOPED_TRACE("add 1/4 at beginning of page 1, spill 1->2,2->3,3->4, II"); psit.add_and_test(ps, ps/4); EXPECT_EQ(s->num_pages(), 5); }
         { SCOPED_TRACE("add 1/4 at beginning of page 1, spill 1->2,2->3,3->4, III"); psit.add_and_test(ps, ps/4); EXPECT_EQ(s->num_pages(), 5); }
         { SCOPED_TRACE("add 1/4 at beginning of page 1, spill 1->2,2->3,3->4, IV"); psit.add_and_test(ps, ps/4); EXPECT_EQ(s->num_pages(), 5); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add (ps-1) @begin(pg1), I");   psit.add_and_test(ps, ps-1); EXPECT_EQ(s->num_pages(), 6); }
         { SCOPED_TRACE("add (ps-1) @begin(pg1), II");  psit.add_and_test(ps, ps-1); EXPECT_EQ(s->num_pages(), 7); }
         { SCOPED_TRACE("add (ps-1) @begin(pg1), III"); psit.add_and_test(ps, ps-1); EXPECT_EQ(s->num_pages(), 8); }
         { SCOPED_TRACE("add (ps-1) @begin(pg1), IV");  psit.add_and_test(ps, ps-1); EXPECT_EQ(s->num_pages(), 9); }
         { SCOPED_TRACE("add 4");           psit.add_and_test(ps, 4);    EXPECT_EQ(s->num_pages(), 9); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add ps @begin(pg1)");   psit.add_and_test(ps, ps); EXPECT_EQ(s->num_pages(), 10); }
         { SCOPED_TRACE("add 2*ps @begin(pg1)");  psit.add_and_test(ps, 2*ps); EXPECT_EQ(s->num_pages(), 12); }
         { SCOPED_TRACE("add 3*ps @begin(pg1)");  psit.add_and_test(ps, 3*ps); EXPECT_EQ(s->num_pages(), 15); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add ps @begin(pg1)+1");   psit.add_and_test(ps+1, ps); EXPECT_EQ(s->num_pages(), 16); }
         { SCOPED_TRACE("add 2*ps @begin(pg1)+1");  psit.add_and_test(ps+1, 2*ps); EXPECT_EQ(s->num_pages(), 18); }
         { SCOPED_TRACE("add 3*ps @begin(pg1)+1");  psit.add_and_test(ps+1, 3*ps); EXPECT_EQ(s->num_pages(), 21); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add ps+1   @begin(pg1)");  psit.add_and_test(ps, ps+1);   EXPECT_EQ(s->num_pages(), 23); }
         { SCOPED_TRACE("add 2*ps+1 @begin(pg1)");  psit.add_and_test(ps, 2*ps+1); EXPECT_EQ(s->num_pages(), 25); }
         { SCOPED_TRACE("add 3*ps+1 @begin(pg1)");  psit.add_and_test(ps, 3*ps+1); EXPECT_EQ(s->num_pages(), 28); }
         { SCOPED_TRACE("add ps-3");                psit.add_and_test(ps, ps-3);   EXPECT_EQ(s->num_pages(), 28); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
         { SCOPED_TRACE("add ps+1 @begin(pg1)+1");    psit.add_and_test(ps+1, ps+1); EXPECT_EQ(s->num_pages(), 30); }
         { SCOPED_TRACE("add 2*ps+1 @begin(pg1)+1");  psit.add_and_test(ps+1, 2*ps+1); EXPECT_EQ(s->num_pages(), 32); }
         { SCOPED_TRACE("add 3*ps+1 @begin(pg1)+1");  psit.add_and_test(ps+1, 3*ps+1); EXPECT_EQ(s->num_pages(), 35); }
         { SCOPED_TRACE("add ps-3");                  psit.add_and_test(ps+1, ps-3);   EXPECT_EQ(s->num_pages(), 35); }
-        EXPECT_EQ(psit.checker.size(), s->capacity()); // we have full capacity here
+        EXPECT_TRUE(psit.full_capacity());
 
+        for(int num = 0; num < ps; ++num)
+        {
+            for(int pos = 0; pos < ps; ++pos)
+            {
+                for(int pg = 0; pg < 3; ++pg)
+                {
+                    for(int ipg = 1; ipg < 4; ++ipg)
+                    {
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add   ps+num page[pg][pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg+pos, s->capacity()),   ps+num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 2*ps+num page[pg][pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg+pos, s->capacity()), 2*ps+num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 3*ps+num page[pg][pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg+pos, s->capacity()), 3*ps+num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 4*ps+num page[pg][pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg+pos, s->capacity()), 4*ps+num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 5*ps+num page[pg][pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg+pos, s->capacity()), 5*ps+num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+
+                        if(ps*pg < pos) continue;
+
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add   ps+num page[pg][-pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg-pos, s->capacity()),   ps-num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 2*ps+num page[pg][-pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg-pos, s->capacity()), 2*ps-num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 3*ps+num page[pg][-pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg-pos, s->capacity()), 3*ps-num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 4*ps+num page[pg][-pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg-pos, s->capacity()), 4*ps-num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                        psit.clear(); psit.add_and_test(0, ipg*ps); EXPECT_EQ(s->num_pages(), ipg);
+                        { SCOPED_TRACE("add 5*ps+num page[pg][-pos]");  EXPECT_TRUE(psit.add_and_test(std::min(ps*pg-pos, s->capacity()), 5*ps-num)) << "num=" << num << "  pg=" << pg << "  pos=" << pos; }
+                    }
+                }
+            }
+        }
     }
 }
 

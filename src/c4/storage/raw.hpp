@@ -2420,7 +2420,8 @@ struct _raw_paged_common_crtp
     C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _at_page_end(I pos) const { return (pos & _c4cthis->m_id_mask) == _c4cthis->m_id_mask; }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _page_is_full(I pg, I currsz) const { return currsz >= (pg + 1) * _c4cthis->page_size(); }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 bool _page_has_data(I pg, I currsz) const { return currsz > pg * _c4cthis->page_size(); }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 I    _page_slack(I pg, I currsz) const
+
+    C4_CONSTEXPR14 I _page_slack(I pg, I currsz) const
     {
         const I bsz = pg * _c4cthis->page_size();
         if(currsz < bsz)
@@ -2430,6 +2431,48 @@ struct _raw_paged_common_crtp
         else if(bsz <= currsz && currsz < bsz + _c4cthis->page_size())
         {
             return _c4cthis->page_size() - _c4cthis->_raw_id(currsz);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    C4_CONSTEXPR14 I _page_elms_before(I pg, I currsz, I pos) const
+    {
+        C4_XASSERT(pos <= currsz);
+        C4_UNUSED(currsz);
+        const I bsz = pg * _c4cthis->page_size();
+        if(pos < bsz)
+        {
+            return 0;
+        }
+        else if(bsz <= pos && pos < bsz + _c4cthis->page_size())
+        {
+            return _c4cthis->_raw_id(pos);
+        }
+        else
+        {
+            return _c4cthis->page_size();
+        }
+    }
+    C4_CONSTEXPR14 I _page_elms_after(I pg, I currsz, I pos) const
+    {
+        C4_XASSERT(pos <= currsz);
+        const I bsz = pg * _c4cthis->page_size();
+        if(pos < bsz)
+        {
+            return _c4cthis->page_size();
+        }
+        else if(bsz <= pos && pos < bsz + _c4cthis->page_size())
+        {
+            if(bsz <= currsz && currsz < bsz + _c4cthis->page_size())
+            {
+                return _c4cthis->_raw_id(currsz) - _c4cthis->_raw_id(pos);
+            }
+            else
+            {
+                return _c4cthis->page_size() - _c4cthis->_raw_id(pos);
+            }
         }
         else
         {
@@ -3384,54 +3427,64 @@ _raw_make_room(I pos, I currsz, I more)
 
         const I np = _c4cthis->num_pages();
         const I ps = _c4cthis->page_size();
-        const I pg = _c4cthis->_raw_pg(pos);
-        const I id = _c4cthis->_raw_id(pos);
+        const I pgpos = _c4cthis->_raw_pg(pos);
+        const I idpos = _c4cthis->_raw_id(pos);
         const I idcurr = _c4cthis->_raw_id(currsz - 1);
         const I pgcurr = _c4cthis->_raw_pg(currsz - 1);
         const I idnext = _c4cthis->_raw_id(currsz - 1 + more);
         const I pgnext = _c4cthis->_raw_pg(currsz - 1 + more);
         I num_pages_to_add = pgnext+1 > np ? pgnext+1 - np : 0;
 
-        if((pg == pgnext) && (_c4cthis->_raw_id(currsz) + more <= ps))
+        if((pgpos == pgnext) && (_c4cthis->_raw_id(currsz) + more <= ps))
         {   // CASE 1. no spilling. everything can be done in the last page
             C4_ASSERT(num_pages_to_add == 0);
             C4_ASSERT(pgcurr == pgnext);
-            C4_ASSERT(idcurr > id); // this should have been caught earlier
-            c4::make_room(_c4this->m_pages[pgcurr], ps, idcurr+1, id, more);
+            C4_ASSERT(idcurr > idpos); // this should have been caught earlier
+            make_room(_c4this->m_pages[pgcurr], ps, idcurr+1, idpos, more);
         }
         else // CASE 2. either the added room spills or the data
-        {    // to the right of the added is made to spill
-            const I spill = _c4cthis->_raw_id(more);
-            C4_ASSERT(spill);
-            // handle pgcurr, the last page reported as containing elements
-            if(currsz + more > _c4cthis->capacity() && this->_page_slack(pgcurr, currsz) < spill) // does it spill?
+        {    // to the right of the added room is made to spill
+            const I shift = _c4cthis->_raw_id(more);
+            C4_ASSERT(shift > 0);
+            I numr, pgcurrsz = idcurr+1;
+            // add a page if needed
+            if(currsz + more > _c4cthis->capacity() && this->_page_slack(pgcurr, currsz) < shift)
             {
-                C4_ASSERT(pgcurr+1 == np);
                 // add a page to receive the spilling elements
                 _c4this->_raw_add_pages(np, 1);
                 if(num_pages_to_add) --num_pages_to_add;
                 // move spilling elements from pgcurr to the next page
-                const I delta = idnext < idcurr ? idcurr-idnext : idnext-idcurr;
-                c4::move_construct_n(_c4this->m_pages[pgcurr+1], _c4this->m_pages[pgcurr]+delta, spill);
+                I spill = shift <= idnext+1 ? shift : idnext+1;
+                // don't spill more than the existing elements
+                numr = this->_page_elms_after(pgcurr, currsz, pos);
+                spill = spill < numr ? spill : numr;
+                I dest = _c4this->_raw_id(currsz + more - spill);
+                move_construct_n(_c4this->m_pages[pgcurr+1]+dest, _c4this->m_pages[pgcurr] + pgcurrsz - spill, spill);
+                pgcurrsz -= spill;
             }
-            // handle intermediate pages between pgcurr and pg, in descending order
-            for(I i = pgcurr; i != pg; --i)
+            // handle intermediate pages
+            for(I i = pgcurr; i != pgpos; --i)
             {
+                C4_ASSERT(i > 0);
                 C4_ASSERT(this->_page_is_full(i-1, currsz));
-                // make room on the current page
-                c4::make_room(_c4this->m_pages[i], ps, ps-spill, 0, spill);
+                const I isz = i==pgcurr ? pgcurrsz : ps-shift;
+                // shift elements in the ith page
+                if(isz)
+                {
+                    make_room(_c4this->m_pages[i], ps, isz, 0, shift);
+                }
                 // move spilling elements from the previous page to the current page
-                c4::move_construct_n(_c4this->m_pages[i], _c4this->m_pages[i-1]+ps-spill, spill);
+                move_construct_n(_c4this->m_pages[i], _c4this->m_pages[i-1]+ps-shift, shift);
             }
-            // finally, handle the first spilling page
-            C4_ASSERT(this->_page_is_full(pg, currsz));
-            c4::make_room(_c4this->m_pages[pg], ps, ps-spill, id, spill);
-            if(num_pages_to_add)
+            // handle the first page (where pos hits)
+            _c4this->_raw_add_pages(pgpos, num_pages_to_add);
+            numr = this->_page_elms_after(pgpos, currsz, pos);
+            if(numr >= shift)
             {
-                _c4this->_raw_add_pages(pg, num_pages_to_add);
-                // move elements to the left of pos to the first new page
-                c4::move_construct_n(_c4this->m_pages[pg], _c4this->m_pages[pg+num_pages_to_add], id);
+                C4_ASSERT(idpos + numr - shift <= ps);
+                make_room(_c4this->m_pages[pgpos+num_pages_to_add], ps, idpos+numr-shift, idpos, shift);
             }
+            move_construct_n(_c4this->m_pages[pgpos], _c4this->m_pages[pgpos+num_pages_to_add], idpos);
         }
     }
 }
