@@ -225,10 +225,12 @@ struct srcloc
 #ifdef C4_USE_ASSERT
 #   define C4_ASSERT(cond) C4_CHECK(cond)
 #   define C4_ASSERT_MSG(cond, fmt, ...) C4_CHECK_MSG(cond, fmt, ## __VA_ARGS__)
+#   define C4_ASSERT_IF(predicate, cond) if(predicate) { C4_ASSERT(cond); }
 #   define C4_NOEXCEPT_A C4_NOEXCEPT
 #else
 #   define C4_ASSERT(cond)
 #   define C4_ASSERT_MSG(cond, fmt, ...)
+#   define C4_ASSERT_IF(predicate, cond)
 #   define C4_NOEXCEPT_A noexcept
 #endif
 
@@ -264,10 +266,12 @@ struct srcloc
 #ifdef C4_USE_XASSERT
 #   define C4_XASSERT(cond) C4_CHECK(cond)
 #   define C4_XASSERT_MSG(cond, fmt, ...) C4_CHECK_MSG(cond, fmt, ## __VA_ARGS__)
+#   define C4_XASSERT_IF(predicate, cond) if(predicate) { C4_XASSERT(cond); }
 #   define C4_NOEXCEPT_X C4_NOEXCEPT
 #else
 #   define C4_XASSERT(cond)
 #   define C4_XASSERT_MSG(cond, fmt, ...)
+#   define C4_XASSERT_IF(predicate, cond)
 #   define C4_NOEXCEPT_X noexcept
 #endif
 
