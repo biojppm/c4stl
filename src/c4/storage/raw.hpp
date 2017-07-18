@@ -2706,7 +2706,7 @@ public:
         const I id = i & _c4cthis->m_id_mask;
         C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
         C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
-        return _c4this->m_pages[pg][id];
+        return std::get<n>(_c4this->m_soa).m_pages[pg][id];
     }
     template< I n=0 > C4_ALWAYS_INLINE nth_type<n> const& get(I i) const C4_NOEXCEPT_X
     {
@@ -2715,7 +2715,7 @@ public:
         const I id = i & _c4cthis->m_id_mask;
         C4_XASSERT(pg >= 0 && pg < _c4cthis->m_numpages_n_alloc.m_value);
         C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
-        return _c4cthis->m_pages[pg][id];
+        return std::get<n>(_c4cthis->m_soa).m_pages[pg][id];
     }
 
 public:
@@ -3189,7 +3189,7 @@ _do_raw_clear(I currsz)
     auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
     const I ps = _c4this->page_size();
-    C4_STATIC_ASSERT(currsz == _c4this->m_numpages_n_alloc.m_value * ps);
+    C4_ASSERT(currsz == _c4this->m_numpages_n_alloc.m_value * ps);
     C4_UNUSED(currsz);
     for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
     {
@@ -3341,7 +3341,7 @@ _do_raw_add_pages(I first_page_to_add, I num_pages_to_add)
     auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
 
-    nth_type<n> **   tmp = at.allocate(np, max_alignment_n< Alignment, nth_type<n>* >::value);
+    nth_type<n> **   tmp = at.allocate(nextnp, max_alignment_n< Alignment, nth_type<n>* >::value);
     nth_type<n> ** & old = std::get<n>(_c4this->m_soa).m_pages;
     for(I i = 0; i < first_page_to_add; ++i)
     {
@@ -3881,6 +3881,10 @@ public:
 
 public:
 
+    template< I n=0 > C4_ALWAYS_INLINE nth_allocator_type<n> nth_allocator() const { return nth_allocator_type<n>(m_numpages_n_alloc.alloc()); }
+
+public:
+
     raw_paged_soa() : raw_paged_soa(0) {}
     raw_paged_soa(Alloc const& a) : raw_paged_soa(0, a) {}
 
@@ -4041,6 +4045,10 @@ public:
     using tuple_type = std::tuple< arr_type<SoaTypes>... >;
 
     using tmp_type = tmp_storage< raw_paged_soa >;
+
+public:
+
+    template< I n=0 > C4_ALWAYS_INLINE nth_allocator_type<n> nth_allocator() const { return nth_allocator_type<n>(m_numpages_n_alloc.alloc()); }
 
 public:
 
