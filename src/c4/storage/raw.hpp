@@ -103,7 +103,7 @@ struct max_alignment_n
  * marker.
  * @warning assumes npos==-1 */
 template< class Storage >
-C4_CONSTEXPR14 C4_ALWAYS_INLINE size_t raw_max_size_with_npos()
+C4_CONSTEXPR14 C4_ALWAYS_INLINE size_t raw_max_size_with_npos() noexcept
 {
     using I = typename Storage::size_type;
     size_t mc = Storage::max_capacity();
@@ -2744,6 +2744,9 @@ public:
     template< I n >
     void _do_raw_clear(I currsz);
 
+    template< I n >
+    void _do_raw_add_pages(I first_page_to_add, I num_pages_to_add);
+
 public:
 
     template< class ...Args >
@@ -3020,7 +3023,7 @@ _process_pages(Function handler, U **pages, I first_id_this, U **other, I first_
         }
         else
         {
-            // it's complicated, needs to be implemented. merely a placeholder.
+            // it's complicated, needs to be implemented
             C4_NOT_IMPLEMENTED();
         }
         ++pg;
@@ -3042,7 +3045,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
     if(np == _c4this->m_numpages_n_alloc.m_value) return;
 
     auto at = _c4this->m_numpages_n_alloc.alloc().template rebound< T* >();
-    T** tmp_pages = at.allocate(np);
+    T** tmp_pages = at.allocate(np, max_alignment_n< Alignment, T* >::value);
     if(np > _c4this->m_numpages_n_alloc.m_value) // more pages (grow)
     {
         for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
@@ -3065,7 +3068,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve_allocate(I cap, 
             _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
         }
     }
-    at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
+    at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value, max_alignment_n< Alignment, T* >::value);
     _c4this->m_pages = tmp_pages;
     _c4this->m_numpages_n_alloc.m_value = np;
 }
@@ -3078,7 +3081,7 @@ _do_raw_reserve_allocate(I cap, tmp_type * /*tmp*/, I ps, I np)
     C4_ASSERT(cap == ps * np); C4_UNUSED(cap);
     auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
-    nth_type<n>** tmp_pages = at.allocate(np);
+    nth_type<n>** tmp_pages = at.allocate(np, max_alignment_n< Alignment, nth_type<n>* >::value);
     if(np > _c4this->m_numpages_n_alloc.m_value) // more pages (grow)
     {
         for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
@@ -3101,7 +3104,7 @@ _do_raw_reserve_allocate(I cap, tmp_type * /*tmp*/, I ps, I np)
             al.deallocate(std::get<n>(_c4this->m_soa).m_pages[i], ps, nth_alignment<n>::value);
         }
     }
-    at.deallocate(std::get<n>(_c4this->m_soa).m_pages, _c4this->m_numpages_n_alloc.m_value);
+    at.deallocate(std::get<n>(_c4this->m_soa).m_pages, _c4this->m_numpages_n_alloc.m_value, max_alignment_n< Alignment, nth_type<n>* >::value);
     _c4this->m_pages = tmp_pages;
 }
 
@@ -3151,7 +3154,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
         return;
     }
 
-    T ** tmp = at.allocate(np);
+    T ** tmp = at.allocate(np, max_alignment_n< Alignment, T* >::value);
     for(I i = 0; i < np; ++i)
     {
         tmp[i] = _c4this->m_numpages_n_alloc.alloc().allocate(ps, Alignment);
@@ -3172,7 +3175,7 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
         {
             _c4this->m_numpages_n_alloc.alloc().deallocate(_c4this->m_pages[i], ps, Alignment);
         }
-        at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value);
+        at.deallocate(_c4this->m_pages, _c4this->m_numpages_n_alloc.m_value, max_alignment_n< Alignment, T* >::value);
     }
     _c4this->m_numpages_n_alloc.m_value = np;
     _c4this->m_pages = tmp;
@@ -3206,7 +3209,7 @@ _do_raw_reserve(I currsz, I cap, I ps, I np)
     auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
 
-    nth_type<n> **   tmp = at.allocate(np);
+    nth_type<n> **   tmp = at.allocate(np, max_alignment_n< Alignment, nth_type<n>* >::value);
     nth_type<n> ** & old = std::get<n>(_c4this->m_soa).m_pages;
     for(I i = 0; i < np; ++i)
     {
@@ -3228,7 +3231,7 @@ _do_raw_reserve(I currsz, I cap, I ps, I np)
         {
             al.deallocate(old[i], ps, nth_alignment<n>::value);
         }
-        at.deallocate(old, _c4this->m_numpages_n_alloc.m_value);
+        at.deallocate(old, _c4this->m_numpages_n_alloc.m_value, max_alignment_n< Alignment, nth_type<n>* >::value);
     }
     old = tmp;
     C4_ASSERT(std::get<n>(_c4this->m_soa).m_pages == tmp);
@@ -3328,13 +3331,46 @@ _raw_add_pages(I first_page_to_add, I num_pages_to_add)
 }
 
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
+template< I n >
+void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
+_do_raw_add_pages(I first_page_to_add, I num_pages_to_add)
+{
+    C4_ASSERT(num_pages_to_add > 0);
+    const I nextnp = _c4cthis->num_pages() + num_pages_to_add;
+
+    auto al = _c4this->template nth_allocator<n>();
+    auto at = al.template rebound< nth_type<n>* >();
+
+    nth_type<n> **   tmp = at.allocate(np, max_alignment_n< Alignment, nth_type<n>* >::value);
+    nth_type<n> ** & old = std::get<n>(_c4this->m_soa).m_pages;
+    for(I i = 0; i < first_page_to_add; ++i)
+    {
+        tmp[i] = old[i];
+    }
+    for(I i = first_page_to_add; i < first_page_to_add+num_pages_to_add; ++i)
+    {
+        tmp[i] = al.allocate(_c4cthis->page_size(), Alignment);
+    }
+    for(I i = first_page_to_add+num_pages_to_add; i < nextnp; ++i)
+    {
+        tmp[i] = old[i - num_pages_to_add];
+    }
+    at.deallocate(old, _c4this->m_numpages_n_alloc.m_value, max_alignment_n< Alignment, nth_type<n>* >::value);
+    old = tmp;
+}
+
+template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _raw_add_pages(I first_page_to_add, I num_pages_to_add)
 {
     C4_ASSERT(first_page_to_add <= _c4cthis->num_pages());
     if(num_pages_to_add == 0) return;
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(first_page_to_add); C4_UNUSED(num_pages_to_add);
+
+    #define _c4mcr(pgs, n) this->template _do_raw_add_pages<n>(first_page_to_add, num_pages_to_add)
+    _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+    #undef _c4mcr
+
+    _c4this->m_numpages_n_alloc.m_value = _c4cthis->num_pages() + num_pages_to_add;
 }
 
 //-----------------------------------------------------------------------------
@@ -3496,8 +3532,153 @@ template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Ind
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
 _raw_make_room(I pos, I currsz, I more)
 {
-    C4_NOT_IMPLEMENTED();
-    C4_UNUSED(pos); C4_UNUSED(currsz); C4_UNUSED(more);
+    C4_ASSERT(pos <= currsz);
+    C4_ASSERT(pos <= _c4cthis->capacity());
+    C4_ASSERT(currsz <= _c4cthis->capacity());
+
+    if(!more) return;
+
+    if(pos == currsz)
+    {
+        // we're adding at the end, no data moves are needed
+        if(_c4cthis->capacity() < currsz + more)
+        {
+            this->_raw_reserve(currsz, currsz + more);
+        }
+    }
+    else if(this->_is_page_size_multiple(more))
+    {
+        // we're adding a number of full pages, ie,
+        // the room to be made spans exactly a number of full pages
+
+        const I pg = _c4cthis->_raw_pg(pos);
+        const I id = _c4cthis->_raw_id(pos);
+        const I num_pages_to_add = _c4cthis->_raw_pg(currsz + more) - _c4cthis->num_pages();
+        const I first_page_to_add = pg + (id>0);
+
+        _c4this->_raw_add_pages(first_page_to_add, num_pages_to_add);
+        C4_ASSERT(pg == _c4cthis->_raw_pg(pos));
+
+        if(id == 0)
+        {
+            // we're done here: no data in the original pages needs to be moved
+        }
+        else
+        {
+            // we need to move the data from pos up to the end of the original
+            // page to a new page, placing the data at the same position
+            // (because we're adding a multiple of the page size)
+
+            I num_elms_to_move;
+            if(currsz >= pg * _c4cthis->page_size()) // is the src page full?
+            {
+                C4_ASSERT(id + _c4cthis->_raw_id(more) <= _c4cthis->page_size());
+                num_elms_to_move = _c4cthis->page_size() - (id + _c4cthis->_raw_id(more));
+            }
+            else
+            {
+                C4_ASSERT(_c4cthis->_raw_id(currsz) + _c4cthis->_raw_id(more) <= _c4cthis->_raw_id(currsz));
+                num_elms_to_move = _c4cthis->_raw_id(currsz) - (id + _c4cthis->_raw_id(more));
+            }
+            const I dstpg = first_page_to_add + num_pages_to_add - 1;
+
+            //move_construct_n(_c4this->m_pages[dstpg]+id, _c4cthis->m_pages[pg]+id, num_elms_to_move);
+            #define _c4mcr(pgn, n) move_construct_n(pgn[dstpg]+id, pgn[pg]+id, num_elms_to_move)
+            _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+            #undef _c4mcr
+        }
+    }
+    else
+    {
+        // we're not at the end and we're not adding full pages
+        // so we'll need to move data to the right
+        C4_ASSERT(_c4cthis->num_pages() > 0);
+        C4_ASSERT(!this->_is_page_size_multiple(more));
+        C4_ASSERT(currsz > 0);
+
+        const I np = _c4cthis->num_pages();
+        const I ps = _c4cthis->page_size();
+        const I pgpos = _c4cthis->_raw_pg(pos);
+        const I idpos = _c4cthis->_raw_id(pos);
+        const I idcurr = _c4cthis->_raw_id(currsz - 1);
+        const I pgcurr = _c4cthis->_raw_pg(currsz - 1);
+        const I idnext = _c4cthis->_raw_id(currsz - 1 + more);
+        const I pgnext = _c4cthis->_raw_pg(currsz - 1 + more);
+        I num_pages_to_add = pgnext+1 > np ? pgnext+1 - np : 0;
+
+        if((pgpos == pgnext) && (_c4cthis->_raw_id(currsz) + more <= ps))
+        {   // CASE 1. no spilling. everything can be done in the last page
+            C4_ASSERT(num_pages_to_add == 0);
+            C4_ASSERT(pgcurr == pgnext);
+            C4_ASSERT(idcurr > idpos); // this should have been caught earlier
+            //make_room(_c4this->m_pages[pgcurr], ps, idcurr+1, idpos, more);
+            #define _c4mcr(pgn, n) make_room(pgn[pgcurr], ps, idcurr+1, idpos, more)
+            _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+            #undef _c4mcr
+        }
+        else // CASE 2. either the added room spills or the data
+        {    // to the right of the added room is made to spill
+            const I shift = _c4cthis->_raw_id(more);
+            C4_ASSERT(shift > 0);
+            I numr, pgcurrsz = idcurr+1;
+            // add a page if needed
+            if(currsz + more > _c4cthis->capacity() && this->_page_slack(pgcurr, currsz) < shift)
+            {
+                // add a page to receive the spilling elements
+                _c4this->_raw_add_pages(np, 1);
+                if(num_pages_to_add) --num_pages_to_add;
+                // move spilling elements from pgcurr to the next page
+                I spill = shift <= idnext+1 ? shift : idnext+1;
+                // don't spill more than the existing elements
+                numr = this->_page_elms_after(pgcurr, currsz, pos);
+                spill = spill < numr ? spill : numr;
+                I dest = _c4this->_raw_id(currsz + more - spill);
+                //move_construct_n(_c4this->m_pages[pgcurr+1]+dest, _c4this->m_pages[pgcurr] + pgcurrsz - spill, spill);
+                #define _c4mcr(pgn, n) move_construct_n(pgn[pgcurr+1]+dest, pgn[pgcurr] + pgcurrsz - spill, spill)
+                _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+                #undef _c4mcr
+                pgcurrsz -= spill;
+            }
+            // handle intermediate pages
+            for(I i = pgcurr; i != pgpos; --i)
+            {
+                C4_ASSERT(i > 0);
+                C4_ASSERT(this->_page_is_full(i-1, currsz));
+                const I isz = i==pgcurr ? pgcurrsz : ps-shift;
+                // shift elements in the ith page
+                if(isz)
+                {
+                    //make_room(_c4this->m_pages[i], ps, isz, 0, shift);
+                    #define _c4mcr(pgn, n) make_room(pgn[i], ps, isz, 0, shift)
+                    _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+                    #undef _c4mcr
+                }
+                // move spilling elements from the previous page to the current page
+                //move_construct_n(_c4this->m_pages[i], _c4this->m_pages[i-1]+ps-shift, shift);
+                #define _c4mcr(pgn, n) move_construct_n(pgn[i], pgn[i-1]+ps-shift, shift)
+                _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+                #undef _c4mcr
+            }
+            // handle the first page (where pos hits)
+            _c4this->_raw_add_pages(pgpos, num_pages_to_add);
+            numr = this->_page_elms_after(pgpos, currsz, pos);
+            if(numr >= shift)
+            {
+                C4_ASSERT(idpos + numr - shift <= ps);
+                //make_room(_c4this->m_pages[pgpos+num_pages_to_add], ps, idpos+numr-shift, idpos, shift);
+                #define _c4mcr(pgn, n) make_room(pgn[pgpos+num_pages_to_add], ps, idpos+numr-shift, idpos, shift)
+                _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+                #undef _c4mcr
+            }
+            if(num_pages_to_add)
+            {
+                //move_construct_n(_c4this->m_pages[pgpos], _c4this->m_pages[pgpos+num_pages_to_add], idpos);
+                #define _c4mcr(pgn, n) move_construct_n(pgn[pgpos], pgn[pgpos+num_pages_to_add], idpos)
+                _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
+                #undef _c4mcr
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -3817,9 +3998,9 @@ public:
 template< class... SoaTypes, class I, I Alignment, class Alloc >
 struct raw_paged_soa< soa<SoaTypes...>, I, 0, Alignment, Alloc >
     :
-    public _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged<soa<SoaTypes...>, I, 0, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >
+    public _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged_soa<soa<SoaTypes...>, I, 0, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >
 {
-    using crtp_base = _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged<soa<SoaTypes...>, I, 0, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >;
+    using crtp_base = _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, raw_paged_soa<soa<SoaTypes...>, I, 0, Alignment, Alloc >, index_sequence_for<SoaTypes...>() >;
     static_assert(std::is_integral< I >::value, "size type must be an integral type");
     static_assert(Alignment >= alignof(soa<SoaTypes...>), "bad alignment");
 
@@ -3827,7 +4008,7 @@ public:
 
     template< class U > using arr_type = mem_paged<U>;
 
-    std::tuple< mem_paged<SoaTypes...> > m_soa;
+    std::tuple< mem_paged<SoaTypes>... > m_soa;
     valnalloc<I, Alloc> m_numpages_n_alloc;     ///< number of current pages in the array + allocator (for empty base class optimization)
     I                   m_id_mask;              ///< page size - 1: cannot be changed after construction.
     I                   m_page_lsb;             ///< least significant bit of the page size: cannot be changed after construction.

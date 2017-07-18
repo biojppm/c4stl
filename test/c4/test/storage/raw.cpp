@@ -967,10 +967,9 @@ struct PagedStorageInsertionTester
     using I = typename PagedStorage::size_type;
 
     std::unique_ptr< PagedStorage > s;
-    std::vector< T > checker;
+    std::vector< T > checker, tmp;
     std::uniform_int_distribution< I > dist;
     std::mt19937 engine;
-    std::vector< T > tmp;
     int num_adds;
 
     template< class... Args >
@@ -1002,9 +1001,9 @@ struct PagedStorageInsertionTester
         tmp.resize(num);
         for(I i = 0; i < num; ++i)
         {
-            //tmp[i] = num_adds;
-            tmp[i] = num_adds*1000 + dist(engine);
-            (*ptr)[pos + i] = tmp[i];
+            auto r = num_adds*10000 + dist(engine);
+            tmp[i] = r;
+            (*ptr)[pos + i] = r;
         }
         auto cpos = checker.cbegin() + pos;
         checker.insert(cpos, tmp.begin(), tmp.end());
@@ -1015,6 +1014,69 @@ struct PagedStorageInsertionTester
             EXPECT_EQ((*s)[i], checker[i]) << "i=" << i;
             ok &= ((*s)[i] == checker[i]);
         }
+        num_adds++;
+        return ok;
+    }
+};
+
+template< class... SoaTypes, class I, size_t PageSize, I Alignment, class Alloc >
+struct PagedStorageInsertionTester< raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc > >
+{
+    using PagedStorage = raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >;
+
+    std::unique_ptr< PagedStorage > s;
+    std::vector< std::tuple<SoaTypes...> > checker, tmp;
+    std::uniform_int_distribution< I > dist;
+    std::mt19937 engine;
+    int num_adds;
+
+    template< class... Args >
+    static PagedStorageInsertionTester create(Args&&... args)
+    {
+        PagedStorageInsertionTester pst;
+        pst.s.reset(new PagedStorage(std::forward< Args >(args)...));
+        pst.dist = std::uniform_int_distribution<I>{0, 200};
+        pst.checker.reserve(6 * pst.s->page_size());
+        pst.num_adds = 0;
+        return pst;
+    }
+
+    void clear()
+    {
+        checker.clear();
+        s->_raw_reserve(0);
+    }
+
+    bool full_capacity() const
+    {
+        return checker.size() == s->capacity();
+    }
+
+    bool add_and_test(I pos, I num)
+    {
+        // WORK IN PROGRESS
+        /*
+        I currsz = szconv<I>(checker.size()); auto *ptr = s.get();
+        ptr->_raw_make_room(pos, currsz, num);
+        tmp.resize(num);
+        for(I i = 0; i < num; ++i)
+        {
+            auto r = num_adds*10000 + dist(engine);
+            tmp[i] = r;
+            (*ptr)[pos + i] = r;
+        }
+        auto cpos = checker.cbegin() + pos;
+        checker.insert(cpos, tmp.begin(), tmp.end());
+        C4_ASSERT(s->capacity() >= checker.size());
+        */
+        bool ok = true;
+        /*
+        for(I i = 0; i < checker.size(); ++i)
+        {
+            EXPECT_EQ((*s)[i], checker[i]) << "i=" << i;
+            ok &= ((*s)[i] == checker[i]);
+        }
+        */
         num_adds++;
         return ok;
     }
@@ -1238,6 +1300,18 @@ TEST(raw_paged_rt, make_room)
 {
     test_paged_resize< raw_paged_rt< int, int > >(/*capacity*/0, /*page_size*/8);
     test_paged_resize< raw_paged_rt< int, int > >(/*capacity*/0, /*page_size*/16);
+}
+
+TEST(raw_paged_soa, make_room)
+{
+    test_paged_resize< raw_paged_soa< soa<int,int>, int, /*page_size*/8 > >(/*capacity*/0);
+    test_paged_resize< raw_paged_soa< soa<int,int>, int, /*page_size*/16 > >(/*capacity*/0);
+}
+
+TEST(raw_paged_soa_rt, make_room)
+{
+    test_paged_resize< raw_paged_soa_rt< soa<int,int>, int > >(/*capacity*/0, /*page_size*/8);
+    test_paged_resize< raw_paged_soa_rt< soa<int,int>, int > >(/*capacity*/0, /*page_size*/16);
 }
 
 
