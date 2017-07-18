@@ -381,6 +381,7 @@ template< class U, class I > _C4REQUIRE(std::is_scalar< U >::value || std::is_po
 destroy_room(U *buf, I n, I room) C4_NOEXCEPT_A
 {
     C4_ASSERT(n >= 0 && room >= 0);
+    C4_ASSERT(room <= n);
     if(room < n)
     {
         memmove(buf, buf + room, (n - room) * sizeof(U));
@@ -395,6 +396,7 @@ template< class U, class I > _C4REQUIRE( ! (std::is_scalar< U >::value || std::i
 destroy_room(U *buf, I n, I room)
 {
     C4_ASSERT(n >= 0 && room >= 0);
+    C4_ASSERT(room <= n);
     if(room < n)
     {
         for(I i = 0, e = n - room; i < e; ++i)
@@ -417,6 +419,7 @@ destroy_room(U *dst, U const* src, I n, I room, I pos) C4_NOEXCEPT_A
 {
     C4_ASSERT(n >= 0 && room >= 0 && pos >= 0);
     C4_ASSERT(pos < n);
+    C4_ASSERT(pos + room <= n);
     memcpy(dst, src, pos * sizeof(U));
     memcpy(dst + pos, src + room + pos, (n - pos - room) * sizeof(U));
 }
@@ -426,6 +429,7 @@ destroy_room(U *dst, U const* src, I n, I room, I pos)
 {
     C4_ASSERT(n >= 0 && room >= 0 && pos >= 0);
     C4_ASSERT(pos < n);
+    C4_ASSERT(pos + room <= n);
     for(I i = 0; i < pos; ++i)
     {
         new ((void*)(dst + i)) U(std::move(src[i]));
