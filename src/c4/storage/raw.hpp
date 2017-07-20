@@ -2735,15 +2735,11 @@ public:
 
 public:
 
-    template< I n >
-    void _do_raw_reserve(I currsz, I cap, I ps, I np);
-    template< I n >
-    void _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np);
-    template< I n >
-    void _do_raw_clear(I currsz);
+    template< I n > void _do_raw_reserve(I currsz, I cap, I ps, I np);
+    template< I n > void _do_raw_reserve_allocate(I cap, tmp_type *tmp, I ps, I np);
+    template< I n > void _do_raw_clear();
 
-    template< I n >
-    void _do_raw_add_pages(I first_page_to_add, I num_pages_to_add);
+    template< I n > void _do_raw_add_pages(I first_page_to_add, I num_pages_to_add);
 
 public:
 
@@ -3182,16 +3178,13 @@ void _raw_paged_crtp< T, I, Alignment, RawPaged >::_raw_reserve(I currsz, I cap)
 template< class... SoaTypes, class I, I Alignment, class RawPaged, size_t... Indices >
 template< I n >
 void _raw_paged_soa_crtp< soa<SoaTypes...>, I, Alignment, RawPaged, index_sequence<Indices...>() >::
-_do_raw_clear(I currsz)
+_do_raw_clear()
 {
     auto al = _c4this->template nth_allocator<n>();
     auto at = al.template rebound< nth_type<n>* >();
-    const I ps = _c4this->page_size();
-    C4_ASSERT(currsz == _c4this->m_numpages_n_alloc.m_value * ps);
-    C4_UNUSED(currsz);
     for(I i = 0; i < _c4this->m_numpages_n_alloc.m_value; ++i)
     {
-        al.deallocate(std::get<n>(_c4this->m_soa).m_pages[i], ps, nth_alignment<n>::value);
+        al.deallocate(std::get<n>(_c4this->m_soa).m_pages[i], _c4this->page_size(), nth_alignment<n>::value);
     }
     at.deallocate(std::get<n>(_c4this->m_soa).m_pages, _c4this->m_numpages_n_alloc.m_value);
     std::get<n>(_c4this->m_soa).m_pages = nullptr;
@@ -3242,7 +3235,7 @@ _raw_reserve(I currsz, I cap)
     if(cap == 0)
     {
         _c4this->_raw_destroy_n(0, currsz);
-        #define _c4mcr(pgs, i) _do_raw_clear<i>(currsz)
+        #define _c4mcr(pgs, i) _do_raw_clear<i>()
         _C4_FOREACH_ARR(_c4this->m_soa, m_pages, _c4mcr)
         #undef _c4mcr
         _c4this->m_numpages_n_alloc.m_value = 0;
