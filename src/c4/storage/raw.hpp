@@ -561,9 +561,6 @@ struct mem_paged
 };
 
 
-template< class T, size_t Cap >                struct ___natvis_util       { T*  p; };
-template< class T, size_t PgSz, size_t NumPg > struct ___natvis_util_paged { T** p; };
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -2717,6 +2714,7 @@ public:
         C4_XASSERT(id >= 0 && id < _c4cthis->m_id_mask + 1);
         return std::get<n>(_c4cthis->m_soa).m_pages[pg][id];
     }
+
 
 public:
 

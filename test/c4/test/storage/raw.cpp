@@ -1017,68 +1017,144 @@ struct PagedStorageInsertionTester
         num_adds++;
         return ok;
     }
+
+    PagedStorage* get() { return s.get(); }
 };
+
 
 template< class... SoaTypes, class I, size_t PageSize, I Alignment, class Alloc >
 struct PagedStorageInsertionTester< raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc > >
 {
     using PagedStorage = raw_paged_soa< soa<SoaTypes...>, I, PageSize, Alignment, Alloc >;
 
-    std::unique_ptr< PagedStorage > s;
-    std::vector< std::tuple<SoaTypes...> > checker, tmp;
-    std::uniform_int_distribution< I > dist;
-    std::mt19937 engine;
-    int num_adds;
+    // we need an index sequence for iterating the tuple, so we hack a
+    // structure containing the members
+    template< class T >
+    struct member_holder;
+    template< size_t... Indices >
+    struct member_holder< index_sequence<Indices...>() >
+    {
+        std::unique_ptr< PagedStorage > s;
+        std::tuple< std::vector<SoaTypes>... > checker, tmp;
+        std::uniform_int_distribution< I > dist;
+        std::mt19937 engine;
+        std::tuple< SoaTypes... > rands;
+        int num_adds;
+
+        #define _C4_FOREACH_ARR_NOMEM(soa, macro)              \
+        {                                                      \
+            size_t C4_XCAT(_foreach_dummy, __LINE__)[] = {     \
+                (                                              \
+                 macro(std::get<Indices>(soa), Indices)        \
+                 C4_COMMA                                      \
+                 size_t(0)                                     \
+                )...                                           \
+            };                                                 \
+            C4_UNUSED(C4_XCAT(_foreach_dummy, __LINE__));      \
+        }
+
+        template< class... Args >
+        void init(Args&&... args)
+        {
+            s.reset(new PagedStorage(std::forward< Args >(args)...));
+            dist = std::uniform_int_distribution<I>{0, 200};
+            //checker.reserve(6 * pst.s->page_size());
+            #define _c4mcr(arr, n) arr.reserve(6 * s->page_size())
+            _C4_FOREACH_ARR_NOMEM(checker, _c4mcr)
+            #undef _c4mcr
+            num_adds = 0;
+        }
+
+        void clear()
+        {
+            s->_raw_reserve(0);
+            #define _c4mcr(arr, n) arr.clear()
+            _C4_FOREACH_ARR_NOMEM(checker, _c4mcr)
+            #undef _c4mcr
+        }
+
+        bool add_and_test(I pos, I num)
+        {
+            I currsz = szconv<I>(std::get<0>(checker).size()); auto *ptr = s.get();
+            ptr->_raw_make_room(pos, currsz, num);
+
+            //tmp.resize(num);
+            #define _c4mcr(arr, n) arr.resize(num)
+            _C4_FOREACH_ARR_NOMEM(tmp, _c4mcr)
+            #undef _c4mcr
+
+            for(I i = 0; i < num; ++i)
+            {
+                #define _c4mcr(arr, n) std::get<n>(rands) = num_adds*10000 + dist(engine)
+                _C4_FOREACH_ARR_NOMEM(tmp, _c4mcr)
+                #undef _c4mcr
+
+                //auto r = num_adds*10000 + dist(engine);
+                //tmp[i] = r;
+                #define _c4mcr(arr, n) std::get<n>(tmp)[i] = std::get<n>(rands)
+                _C4_FOREACH_ARR_NOMEM(tmp, _c4mcr)
+                #undef _c4mcr
+
+                //(*ptr)[pos + i] = r;
+                #define _c4mcr(arr, n) ptr->template get<n>(pos + i) = std::get<n>(rands)
+                _C4_FOREACH_ARR_NOMEM(tmp, _c4mcr)
+                #undef _c4mcr
+            }
+            //checker.insert(checker.cbegin() + pos, tmp.begin(), tmp.end());
+            #define _c4mcr(arr, n) arr.insert(arr.cbegin() + pos, std::get<n>(tmp).begin(), std::get<n>(tmp).end())
+            _C4_FOREACH_ARR_NOMEM(checker, _c4mcr)
+            #undef _c4mcr
+
+            C4_ASSERT(s->capacity() >= std::get<0>(checker).size());
+
+            bool ok = true;
+            #define _c4mcr(arr, n) ok &= this->template check<n>()
+            _C4_FOREACH_ARR_NOMEM(checker, _c4mcr)
+            #undef _c4mcr
+
+            num_adds++;
+            return ok;
+        }
+
+        template< size_t n >
+        bool check() const
+        {
+            auto const& ch = std::get<n>(checker);
+
+            bool ok = true;
+            for(I i = 0; i < ch.size(); ++i)
+            {
+                EXPECT_EQ(s->template get<n>(i), ch[i]) << "  n=" << n << "  i=" << i;
+                ok &= (s->template get<n>(i) == ch[i]);
+            }
+            return ok;
+        }
+    };
+    member_holder< index_sequence_for<SoaTypes...>() > members;
+    
+    PagedStorage* get() { return members.s.get(); }
 
     template< class... Args >
     static PagedStorageInsertionTester create(Args&&... args)
     {
         PagedStorageInsertionTester pst;
-        pst.s.reset(new PagedStorage(std::forward< Args >(args)...));
-        pst.dist = std::uniform_int_distribution<I>{0, 200};
-        pst.checker.reserve(6 * pst.s->page_size());
-        pst.num_adds = 0;
+        pst.members.init(std::forward< Args >(args)...);
         return pst;
     }
 
     void clear()
     {
-        checker.clear();
-        s->_raw_reserve(0);
+        members.clear();
     }
 
     bool full_capacity() const
     {
-        return checker.size() == s->capacity();
+        return std::get<0>(members.checker).size() == members.s->capacity();
     }
 
     bool add_and_test(I pos, I num)
     {
-        // WORK IN PROGRESS
-        /*
-        I currsz = szconv<I>(checker.size()); auto *ptr = s.get();
-        ptr->_raw_make_room(pos, currsz, num);
-        tmp.resize(num);
-        for(I i = 0; i < num; ++i)
-        {
-            auto r = num_adds*10000 + dist(engine);
-            tmp[i] = r;
-            (*ptr)[pos + i] = r;
-        }
-        auto cpos = checker.cbegin() + pos;
-        checker.insert(cpos, tmp.begin(), tmp.end());
-        C4_ASSERT(s->capacity() >= checker.size());
-        */
-        bool ok = true;
-        /*
-        for(I i = 0; i < checker.size(); ++i)
-        {
-            EXPECT_EQ((*s)[i], checker[i]) << "i=" << i;
-            ok &= ((*s)[i] == checker[i]);
-        }
-        */
-        num_adds++;
-        return ok;
+        return members.add_and_test(pos, num);
     }
 };
 
@@ -1086,112 +1162,14 @@ struct PagedStorageInsertionTester< raw_paged_soa< soa<SoaTypes...>, I, PageSize
 template< class PagedStorage, class... Args >
 void test_paged_resize(Args... args)
 {
-    PagedStorage r(args...);
-
-    typename PagedStorage::size_type sz = 0;
-    typename PagedStorage::size_type ps = r.page_size();
-
-    EXPECT_EQ(r.num_pages(), 0);
-    EXPECT_EQ(r.capacity(), 0);
-
-    r._raw_reserve(ps);
-    sz += ps;
-    EXPECT_EQ(r.num_pages(), 1);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps; ++i)
-    {
-        r[i] = i;
-    }
-
-    r._raw_make_room(0, sz, 0); // must not change
-    EXPECT_EQ(r.num_pages(), 1);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps; ++i)
-    {
-        EXPECT_EQ(r[i], i);
-    }
-
-    // add one page at the beginning - no data moves
-    r._raw_make_room(0, sz, ps);
-    sz += ps;
-    EXPECT_EQ(r.num_pages(), 2);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps; ++i)
-    {
-        r[i] = ps - 1 - i;
-    }
-    for(int i = 0; i < ps; ++i)
-    {
-        EXPECT_EQ(r[i], ps - 1 - i);
-        EXPECT_EQ(r[ps + i], i);
-    }
-
-    // add one page at the end - no data moves
-    r._raw_make_room(sz, sz, ps);
-    sz += ps;
-    EXPECT_EQ(r.num_pages(), 3);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps; ++i)
-    {
-        r[2 * ps + i] = 2 * ps + i;
-    }
-    for(int i = 0; i < ps; ++i)
-    {
-        EXPECT_EQ(r[i], ps - 1 - i);
-        EXPECT_EQ(r[ps + i], i);
-        EXPECT_EQ(r[2 * ps + i], 2 * ps + i);
-    }
-
-    // add one page in the middle - no data moves
-    r._raw_make_room(ps, sz, ps);
-    sz += ps;
-    EXPECT_EQ(r.num_pages(), 4);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps; ++i)
-    {
-        r[ps + i] = 3 * ps + i;
-    }
-    for(int i = 0; i < ps; ++i)
-    {
-        EXPECT_EQ(r[i], ps - 1 - i);
-        EXPECT_EQ(r[ps + i], 3 * ps + i);
-        EXPECT_EQ(r[2 * ps + i], i);
-        EXPECT_EQ(r[3 * ps + i], 2 * ps + i);
-    }
-
-    // add one page at the middle of the first page
-    r._raw_make_room(ps/2, sz, ps);
-    sz += ps;
-    EXPECT_EQ(r.num_pages(), 5);
-    EXPECT_EQ(r.capacity(), sz);
-    for(int i = 0; i < ps; ++i)
-    {
-        r[ps/2 + i] = 4 * ps + i;
-    }
-    for(int i = 0; i < ps; ++i)
-    {
-        if(i < ps/2)
-        {
-            EXPECT_EQ(r[i], ps - 1 - i); // 1st page, 1st half
-            EXPECT_EQ(r[ps/2 + i], 4 * ps + i); // 1st page, 2nd half
-        }
-        else
-        {
-            EXPECT_EQ(r[ps/2 + i], 4 * ps + i); // 2nd page, 1st half
-            EXPECT_EQ(r[ps + i], ps - 1 - i); // 2nd page, 2nd half
-        }
-        EXPECT_EQ(r[2 * ps + i], 3 * ps + i);
-        EXPECT_EQ(r[3 * ps + i], i);
-        EXPECT_EQ(r[4 * ps + i], 2 * ps + i);
-    }
-
-
     {
         using ttype = PagedStorageInsertionTester< PagedStorage >;
         auto psit = ttype::create(args...);
-        auto s = psit.s.get();
+        auto s = psit.get();
 
         C4_ASSERT(s->page_size() >= 4);
+
+        typename PagedStorage::size_type ps = s->page_size();
 
         { SCOPED_TRACE("add 1/4 at page beginning, no spilling, I");   psit.add_and_test(0, ps/4); EXPECT_EQ(s->num_pages(), 1); }
         { SCOPED_TRACE("add 1/4 at page beginning, no spilling, II");  psit.add_and_test(0, ps/4); EXPECT_EQ(s->num_pages(), 1); }
